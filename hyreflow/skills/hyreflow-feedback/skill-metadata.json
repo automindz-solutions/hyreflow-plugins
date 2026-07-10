@@ -1,0 +1,10 @@
+{
+  "documents": {
+    "SKILL.md": {
+      "kind": "entrypoint",
+      "title": "Hyreflow Feedback",
+      "tags": ["feedback", "support", "bug-report"],
+      "providers": []
+    }
+  }
+}

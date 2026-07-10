@@ -1,0 +1,33 @@
+{
+  "name": "hyreflow",
+  "version": "0.1.0",
+  "description": "Source, enrich, qualify, sequence, and push candidates to your ATS from your agent. Drives the Hyreflow CLI.",
+  "author": {
+    "name": "Automindz Solutions"
+  },
+  "homepage": "https://hyreflow.ai",
+  "repository": "https://github.com/automindz-solutions/hyreflow-plugins",
+  "license": "MIT",
+  "keywords": [
+    "recruiting",
+    "sourcing",
+    "enrichment",
+    "gtm",
+    "outbound",
+    "ats",
+    "hyreflow"
+  ],
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/approve-cli.sh claude"
+          }
+        ]
+      }
+    ]
+  }
+}

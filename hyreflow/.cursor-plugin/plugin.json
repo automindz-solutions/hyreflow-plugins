@@ -1,0 +1,12 @@
+{
+  "name": "hyreflow",
+  "version": "0.1.0",
+  "description": "Source, enrich, qualify, sequence, and push candidates to your ATS from your agent. Drives the Hyreflow CLI.",
+  "author": {
+    "name": "Automindz Solutions"
+  },
+  "skills": [
+    "./skills"
+  ],
+  "hooks": "./hooks/cursor-hooks.json"
+}

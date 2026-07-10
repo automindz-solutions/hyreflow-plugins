@@ -1,0 +1,18 @@
+{
+  "name": "hyreflow",
+  "version": "0.1.0",
+  "description": "Source, enrich, qualify, sequence, and push candidates to your ATS from your agent. Drives the Hyreflow CLI.",
+  "author": {
+    "name": "Automindz Solutions"
+  },
+  "skills": "./skills/",
+  "hooks": "./hooks/codex-hooks.json",
+  "interface": {
+    "displayName": "Hyreflow",
+    "shortDescription": "Recruitment automation in Codex",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

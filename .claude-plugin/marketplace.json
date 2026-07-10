@@ -1,0 +1,28 @@
+{
+  "name": "hyreflow",
+  "owner": {
+    "name": "Automindz Solutions",
+    "url": "https://hyreflow.ai"
+  },
+  "metadata": {
+    "description": "Hyreflow recruitment-automation skills for Claude Code and Claude Cowork."
+  },
+  "plugins": [
+    {
+      "name": "hyreflow",
+      "source": "./hyreflow",
+      "description": "Source, enrich, qualify, sequence, and push candidates to your ATS from your agent. Drives the Hyreflow CLI.",
+      "version": "0.1.0",
+      "category": "productivity",
+      "keywords": [
+        "recruiting",
+        "sourcing",
+        "enrichment",
+        "gtm",
+        "outbound",
+        "ats",
+        "hyreflow"
+      ]
+    }
+  ]
+}

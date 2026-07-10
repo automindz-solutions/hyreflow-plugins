@@ -1,0 +1,19 @@
+{
+  "name": "hyreflow",
+  "interface": {
+    "displayName": "Hyreflow"
+  },
+  "plugins": [
+    {
+      "name": "hyreflow",
+      "source": {
+        "source": "local",
+        "path": "./hyreflow"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      }
+    }
+  ]
+}

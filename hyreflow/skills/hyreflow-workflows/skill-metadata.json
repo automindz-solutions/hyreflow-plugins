@@ -1,0 +1,14 @@
+{
+  "documents": {
+    "SKILL.md": {
+      "kind": "entrypoint",
+      "title": "Hyreflow Workflows (native + n8n)",
+      "tags": ["workflows", "automation", "n8n", "scheduling", "webhook"],
+      "providers": []
+    }
+  },
+  "prefixes": {
+    "references/": { "kind": "reference" },
+    "agents/": { "kind": "agent" }
+  }
+}
