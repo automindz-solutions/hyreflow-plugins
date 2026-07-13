@@ -83,7 +83,7 @@ true → impact → fix/status. This is the feedback loop: live test → record 
 
 ### 🟢 `cli.py` — permanent adapter-invocation tool (replaces temp scripts)
 - `python cli.py <tool> <method> [positional...] [--kwarg value]` — loads `.env` (robust loader above), auto-discovers the adapter class in `lib/<tool>.py`, JSON-coerces args (`--limit 1`→int, `--codes '["a"]'`→list), prints JSON, `iter_*`→list. Set `PYTHONIOENCODING=utf-8` to avoid cp1252 console crashes on unicode output.
-- **This is the same shape `code.hyreflow.ai` uses** (load creds → instantiate adapter → call method) — so testing via `cli.py` exercises the real production path, not a throwaway. Examples: `python cli.py predictleads financing_events anthropic.com`, `python cli.py github get_rate_limit`.
+- **This is the same shape `recruit.hyreflow.ai` uses** (load creds → instantiate adapter → call method) — so testing via `cli.py` exercises the real production path, not a throwaway. Examples: `python cli.py predictleads financing_events anthropic.com`, `python cli.py github get_rate_limit`.
 
 ### 🟢 Apify — auth + `list_store_actors` live (2026-06-02)
 - `list_store_actors(limit=5)` → GET /store returned real data (25,033 store actors; top = `compass/crawler-google-places` Google Maps Scraper). **Confirms Bearer auth + base URL `https://api.apify.com/v2` + the store-discovery path.** FREE — listing the Store consumes no compute; Apify bills compute units only on actor *runs* (`run_actor_sync`/`run_actor`), so the read/discovery endpoints (`list_store_actors`, `get_actor_input_schema`, `get_run`, `get_dataset_items`) are the safe pilots.

@@ -18,7 +18,7 @@ source node name → `{main: [[{node, type:"main", index:0}]]}`.
 
 ## Calling Hyreflow from an HTTP Request node
 
-Hyreflow API base: `https://code.hyreflow.ai`. Auth: header `Authorization: Bearer <hf_live_ key>`.
+Hyreflow API base: `https://recruit.hyreflow.ai`. Auth: header `Authorization: Bearer <hf_live_ key>`.
 Useful endpoints (POST, JSON body):
 
 - `/tools/{tool}/{method}` — any provider tool, e.g. `/tools/apollo/search_people`
@@ -31,7 +31,7 @@ HTTP Request node parameters (typeVersion 4):
 ```json
 {
   "method": "POST",
-  "url": "https://code.hyreflow.ai/search/people_search",
+  "url": "https://recruit.hyreflow.ai/search/people_search",
   "sendHeaders": true,
   "headerParameters": { "parameters": [
     { "name": "Authorization", "value": "Bearer ={{ $env.HYREFLOW_API_KEY }}" }
@@ -55,7 +55,7 @@ has no env var, fall back to inlining the key value — but warn them it lives i
       "parameters": { "httpMethod": "POST", "path": "hyreflow-people-search" } },
     { "name": "Hyreflow Search", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4,
       "position": [520, 300],
-      "parameters": { "method": "POST", "url": "https://code.hyreflow.ai/search/people_search",
+      "parameters": { "method": "POST", "url": "https://recruit.hyreflow.ai/search/people_search",
         "sendHeaders": true, "headerParameters": { "parameters": [
           { "name": "Authorization", "value": "Bearer ={{ $env.HYREFLOW_API_KEY }}" } ] },
         "sendBody": true, "specifyBody": "json",

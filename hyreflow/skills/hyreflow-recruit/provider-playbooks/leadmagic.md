@@ -24,5 +24,5 @@ hyreflow enrich --input contacts.csv --output contacts.csv.out.csv \
 
 Related docs:
 
-- [leadmagic_email_validation reference](https://code.hyreflow.ai/tools/leadmagic_email_validation)
-- [leadmagic_email_finder reference](https://code.hyreflow.ai/tools/leadmagic_email_finder)
+- [leadmagic_email_validation reference](https://recruit.hyreflow.ai/tools/leadmagic_email_validation)
+- [leadmagic_email_finder reference](https://recruit.hyreflow.ai/tools/leadmagic_email_finder)
