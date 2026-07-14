@@ -15,10 +15,13 @@ all fallbacks are exhausted, or (b) the user's ask doesn't match this recipe. Ne
 
 0. **Check for updates (once per session, before anything else).** Run `hyreflow update --check --json`.
    - **If `hyreflow` is not installed** ("command not found" — common when the skills came from the plugin
-     marketplace rather than the CLI installer): install it — **prefer npm**: `npm install -g hyreflow`
-     (locked-down sandbox that can't reach npmjs.com? add `--registry https://recruit.hyreflow.ai/api/v2/npm/`;
-     no Node? `curl -fsSL https://recruit.hyreflow.ai/api/v2/cli/install | bash -s -- --no-skills`), then
-     `hyreflow auth login` to sign in. Then continue.
+     marketplace rather than the CLI installer): install it — **prefer npm** (in an agent sandbox use the
+     no-sudo, quiet form so a global EACCES / verbose npm output doesn't trip the tool's output limit):
+     `npm install -g hyreflow --prefix "$HOME/.local" --silent --no-fund --no-audit`, then add
+     `$HOME/.local/bin` to PATH. Plain `npm install -g hyreflow` is fine in a normal terminal; can't reach
+     npmjs.com? add `--registry https://recruit.hyreflow.ai/api/v2/npm/`; no Node? the installer does it
+     all: `curl -fsSL https://recruit.hyreflow.ai/api/v2/cli/install | bash -s -- --no-skills`. Then
+     `hyreflow auth login` to sign in, and continue.
    - On error (older CLI without `--check`), fall back to `hyreflow auth status` and read its
      "run `hyreflow update`" / skills "sync needed" lines.
    - If `cli_stale` or `skills_stale` (or the fallback shows either): tell the user in one line that a newer
