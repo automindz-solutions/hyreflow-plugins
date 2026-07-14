@@ -6,45 +6,34 @@ disable-model-invocation: false
 
 # Hyreflow Quickstart
 
-Run a high-confidence demo to show what Hyreflow can do. Default to Recipe 1 if no context is given.
+## Quick Start
+
+```bash
+# Install the CLI (sandbox-safe: no-sudo prefix + quiet). In a normal terminal, plain `npm install -g hyreflow` is fine.
+npm install -g hyreflow --prefix "$HOME/.local" --silent --no-fund --no-audit
+export PATH="$HOME/.local/bin:$PATH"
+# Fallbacks: blocked npmjs.com → add `--registry https://recruit.hyreflow.ai/api/v2/npm/`; no Node → `curl -fsSL https://recruit.hyreflow.ai/api/v2/cli/install | bash -s -- --no-skills`
+hyreflow auth login              # prints a browser sign-in link (relay it to the user) and returns
+hyreflow auth wait --timeout 120 # completes approval; if it says "still pending", relay the link & re-run this
+hyreflow auth status             # confirm you're connected
+hyreflow -h                      # see available commands
+```
+
+Run a high-confidence demo to show what Hyreflow can do. Pick the recipe below, or default to Recipe 1.
 
 **Prefer the hardcoded recipe below.** `/hyreflow-recruit` is the fallback only if (a) a command fails and
 all fallbacks are exhausted, or (b) the user's ask doesn't match this recipe. Never invoke it preemptively.
 
 ## Execution flow
 
-0. **Check for updates (once per session, before anything else).** Run `hyreflow update --check --json`.
-   - **If `hyreflow` is not installed** ("command not found" — common when the skills came from the plugin
-     marketplace rather than the CLI installer): install it — **prefer npm** (in an agent sandbox use the
-     no-sudo, quiet form so a global EACCES / verbose npm output doesn't trip the tool's output limit):
-     `npm install -g hyreflow --prefix "$HOME/.local" --silent --no-fund --no-audit`, then add
-     `$HOME/.local/bin` to PATH. Plain `npm install -g hyreflow` is fine in a normal terminal; can't reach
-     npmjs.com? add `--registry https://recruit.hyreflow.ai/api/v2/npm/`; no Node? the installer does it
-     all: `curl -fsSL https://recruit.hyreflow.ai/api/v2/cli/install | bash -s -- --no-skills`. Then
-     `hyreflow auth login` to sign in, and continue.
-   - On error (older CLI without `--check`), fall back to `hyreflow auth status` and read its
-     "run `hyreflow update`" / skills "sync needed" lines.
-   - If `cli_stale` or `skills_stale` (or the fallback shows either): tell the user in one line that a newer
-     Hyreflow CLI/skills is available, then **ask** whether to run `hyreflow update` now or continue as-is.
-     If they update → run `hyreflow update`, then proceed, and note: the new **CLI** is live on the next
-     `hyreflow` command, but refreshed **skill guidance** applies from the next `/hyreflow*` invocation
-     (re-invoke or restart for it now). If `below_min` is true, recommend updating strongly, then ask.
-   - If up to date, unreachable, or offline (`reachable:false`): say nothing, continue. Check **once** —
-     don't re-run on every later `hyreflow` call.
+Follow this pattern for the recipe:
 
 1. **Tell the user what you're about to do** — the goal + which data source(s), before running anything.
-2. **Register a session start** so the live Playground can render progress:
-   ```bash
-   hyreflow session start --steps '["Search candidates", "Enrich emails", "Display results"]' \
-     --user-prompt "Original user request"
-   ```
-3. **For each step**: send a status, run the command, mark it done.
-   ```bash
-   hyreflow session status --message "Searching…" --step-index 0
-   hyreflow session update --index 0 --status completed
-   ```
-4. **Register output** after any CSV: `hyreflow session output --csv <path> --label "…"`.
-5. **Summarize** results, where they came from, and what's next.
+2. **Run the recipe directly.** Keep it fast: do NOT run `hyreflow session …` progress commands or
+   `hyreflow --version` / `auth status` on this path — they don't improve the demo. (Session/Playground
+   progress is for real runs — see `/hyreflow-recruit` or `/hyreflow-workflows`.)
+3. **Tell the user the results** — what came back, where it came from, and the exact CSV path to inspect
+   next. Mention they can go deeper (phones, firmographics, hiring signals) with `/hyreflow-recruit`.
 
 ---
 

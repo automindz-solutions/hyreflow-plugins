@@ -4,6 +4,12 @@ All notable changes to the Hyreflow plugin are documented here. Versions track
 the plugin, kept in lockstep across the marketplace manifests and the plugin's
 own `plugin.json` files.
 
+## 0.1.4 — 2026-07-14
+
+- Deepline-parity sign-in: `hyreflow auth login` prints a browser link and returns
+  (no hang in agent sandboxes), `hyreflow auth wait` completes the approval, and
+  `hyreflow auth status` recovers a pending sign-in. Quickstart flow simplified.
+
 ## 0.1.3 — 2026-07-14
 
 - CLI install is now sandbox-safe: the npm step uses a no-sudo user prefix and

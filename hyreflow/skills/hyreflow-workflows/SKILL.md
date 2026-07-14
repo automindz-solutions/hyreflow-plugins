@@ -21,18 +21,22 @@ surface (the dashboard list + `hyreflow workflows …`):
 their CRM), or already lives in n8n → **n8n**. If they want a headless, metered, Hyreflow-native pipeline
 with run history in Hyreflow → **native**. When unsure, ask.
 
-## Step 0 — check for updates (once per session, before anything else)
-- **First, is the CLI installed?** If a `hyreflow` command returns "command not found", the CLI isn't
-  installed yet (common when these skills came from the plugin marketplace rather than the CLI installer).
-  Offer to install it — **prefer npm**. In an agent sandbox (Cowork/CI) use the no-sudo, quiet form — a
-  plain global install can hit EACCES and its verbose error can overflow the tool's output limit:
-  `npm install -g hyreflow --prefix "$HOME/.local" --silent --no-fund --no-audit`, then ensure
-  `$HOME/.local/bin` is on PATH. In a normal terminal with global write, plain `npm install -g hyreflow`
-  is fine. Can't reach npmjs.com? add `--registry https://recruit.hyreflow.ai/api/v2/npm/`. No Node at
-  all? the installer handles PATH + fallbacks for you:
-  `curl -fsSL https://recruit.hyreflow.ai/api/v2/cli/install | bash -s -- --no-skills`. Then sign in with
-  `hyreflow auth login`. npm ships the CLI only (no duplicate skills copy — you already have them via the
-  plugin). Once it's installed, continue.
+## Step 0 — connect + check for updates (once per session, before anything else)
+
+**CLI installed?** If `hyreflow` returns "command not found" (common when the skills came from the plugin
+marketplace, not the CLI installer), install it + sign in:
+
+```bash
+npm install -g hyreflow --prefix "$HOME/.local" --silent --no-fund --no-audit  # sandbox-safe; plain `npm install -g hyreflow` in a normal terminal
+export PATH="$HOME/.local/bin:$PATH"
+# blocked npmjs.com → add `--registry https://recruit.hyreflow.ai/api/v2/npm/`; no Node → `curl -fsSL https://recruit.hyreflow.ai/api/v2/cli/install | bash -s -- --no-skills`
+hyreflow auth login              # prints a sign-in link (relay it to the user) and returns
+hyreflow auth wait --timeout 120 # completes approval; if it says "still pending", relay the link & re-run this
+hyreflow auth status             # confirm you're connected
+hyreflow -h                      # see available commands
+```
+
+npm ships the CLI only (no duplicate skills copy — you already have them via the plugin). Once connected, continue.
 
 Then run `hyreflow update --check --json`.
 - On error (older CLI without `--check`), fall back to `hyreflow auth status` and read its

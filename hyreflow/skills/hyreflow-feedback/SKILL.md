@@ -11,14 +11,15 @@ everything needed to reproduce — so debugging is smooth.
 
 ## Steps
 
-> **CLI required.** This skill files the report through the `hyreflow` CLI. If a `hyreflow` command returns
-> "command not found" (common when the skills came from the plugin marketplace rather than the CLI
-> installer), install it first — **prefer npm** (in an agent sandbox use the no-sudo, quiet form so a
-> global EACCES / verbose output doesn't trip the tool's output limit):
-> `npm install -g hyreflow --prefix "$HOME/.local" --silent --no-fund --no-audit` (add `$HOME/.local/bin`
-> to PATH). Plain `npm install -g hyreflow` works in a normal terminal; no Node?
-> `curl -fsSL https://recruit.hyreflow.ai/api/v2/cli/install | bash -s -- --no-skills`. Then
-> `hyreflow auth login`.
+> **CLI required.** This skill files the report through the `hyreflow` CLI. If it isn't installed
+> (`hyreflow` → "command not found"), install it + sign in first:
+
+```bash
+npm install -g hyreflow --prefix "$HOME/.local" --silent --no-fund --no-audit  # sandbox-safe; plain `npm install -g hyreflow` in a normal terminal
+export PATH="$HOME/.local/bin:$PATH"
+hyreflow auth login && hyreflow auth wait --timeout 120   # sign-in link (relay it); re-run `auth wait` if it says "still pending"
+hyreflow auth status                                      # confirm you're connected
+```
 
 1. **Get feedback text + the repro command.**
    - Use the argument if provided (e.g. `/hyreflow-feedback the waterfall broke`). Otherwise ask the
