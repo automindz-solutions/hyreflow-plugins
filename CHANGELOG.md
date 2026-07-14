@@ -4,6 +4,11 @@ All notable changes to the Hyreflow plugin are documented here. Versions track
 the plugin, kept in lockstep across the marketplace manifests and the plugin's
 own `plugin.json` files.
 
+## 0.1.2 — 2026-07-14
+
+- CLI install now prefers **`npm install -g hyreflow`** (public npm) across all
+  skills, with the curl installer as a no-Node fallback.
+
 ## 0.1.1 — 2026-07-13
 
 - Skills re-synced to the current engine (provider-playbook + reference doc

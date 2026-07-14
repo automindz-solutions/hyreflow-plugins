@@ -12,9 +12,11 @@ the "hands") paired with a **playbook** (`provider-playbooks/<tool>.md`, the "br
 ## Step 0 — check for updates (once per session, before anything else)
 - **First, is the CLI installed?** If a `hyreflow` command returns "command not found", the CLI isn't
   installed yet (common when these skills came from the plugin marketplace rather than the CLI installer).
-  Offer to install it: `curl -fsSL https://recruit.hyreflow.ai/api/v2/cli/install | bash -s -- --no-skills`
-  — this installs the `hyreflow` CLI and signs the user in. `--no-skills` skips re-installing the skills
-  (you already have them via the plugin), so there's no duplicate copy. Once it's installed, continue.
+  Offer to install it — **prefer npm**: `npm install -g hyreflow` (locked-down sandbox that can't reach
+  npmjs.com? add `--registry https://recruit.hyreflow.ai/api/v2/npm/`). No Node on the machine? Use the
+  installer instead: `curl -fsSL https://recruit.hyreflow.ai/api/v2/cli/install | bash -s -- --no-skills`.
+  Then sign in with `hyreflow auth login`. npm ships the CLI only (no duplicate skills copy — you already
+  have them via the plugin). Once it's installed, continue.
 
 Then run `hyreflow update --check --json`.
 - On error (older CLI without `--check`), fall back to `hyreflow auth status` and read its
