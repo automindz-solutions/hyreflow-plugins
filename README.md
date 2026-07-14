@@ -6,11 +6,27 @@ Cursor. This repository is a **plugin marketplace**: add it once, install the
 `hyreflow` plugin, and your agent gains the Hyreflow skills.
 
 The skills drive the **Hyreflow CLI** (`hyreflow`). If it isn't installed yet,
-the skills will offer to install it on first use, or install it yourself:
+the skills will offer to install it on first use, or install it yourself — via
+**npm** (recommended):
+
+```bash
+npm install -g hyreflow
+```
+
+Behind a locked-down sandbox that can't reach npmjs.com? Install from the
+Hyreflow registry instead:
+
+```bash
+npm install -g hyreflow --registry https://recruit.hyreflow.ai/api/v2/npm/
+```
+
+No Node? Use the one-line installer (Python 3.9+ required):
 
 ```bash
 curl -fsSL https://recruit.hyreflow.ai/api/v2/cli/install | bash
 ```
+
+Then sign in: `hyreflow auth login`.
 
 ---
 
