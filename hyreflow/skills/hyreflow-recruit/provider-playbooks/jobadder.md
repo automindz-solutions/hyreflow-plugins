@@ -1,6 +1,6 @@
 ---
 name: jobadder
-description: "Read/write JobAdder (recruiting ATS/CRM) via its v2 API — find/get/create/update candidates, jobs, companies, contacts, applications, placements, job ads, requisitions; notes, statuses, identity search. Use when the user mentions JobAdder, pushing candidates into the ATS, attaching candidates to jobs, or reading jobs/companies/placements. Keys: BYOK OAuth app."
+description: "Read/write JobAdder (recruiting ATS/CRM) via its v2 API — find/get/create/update candidates, jobs, companies, contacts, applications, placements, job ads, requisitions; notes, statuses, identity search. Use when the user mentions JobAdder, pushing candidates into the ATS, attaching candidates to jobs, or reading jobs/companies/placements. Keys: OAuth app credentials, not a self-serve dashboard BYOK key."
 ---
 
 # JobAdder — Integration Meta Skill
@@ -9,7 +9,7 @@ HOW in `lib/jobadder.py`. Built from the official OpenAPI v2 (spec-verified; not
 
 ## Auth & config (OAuth2, region-aware base)
 - **Auth:** OAuth2 **authorization-code** flow; this client runs the **refresh-token** grant to mint ~60-min access tokens (Bearer).
-- **Env (BYOK):** `JOBADDER_CLIENT_ID`, `JOBADDER_CLIENT_SECRET`, `JOBADDER_REFRESH_TOKEN`. Optional pre-minted-token shortcut: `JOBADDER_ACCESS_TOKEN` (+ `JOBADDER_API_BASE`). Never hardcode.
+- **Env:** `JOBADDER_CLIENT_ID`, `JOBADDER_CLIENT_SECRET`, `JOBADDER_REFRESH_TOKEN`. Optional pre-minted-token shortcut: `JOBADDER_ACCESS_TOKEN` (+ `JOBADDER_API_BASE`). Never hardcode. Because this is an OAuth credential rather than a single key, JobAdder is **not a self-serve integration yet** — it can't be pasted into the dashboard and isn't held per-workspace; enabling it is a conversation with Hyreflow.
 - **⚠️ Base URL is returned by the token endpoint** (`api` field), region-specific (AU/EU/US shards differ — default `https://api.jobadder.com/v2`). The client reads it from the refresh response automatically — don't hardcode a region.
 - **Refresh-token rotation:** JobAdder may return a new `refresh_token` on each refresh — the client keeps the latest in memory for the session; persist it back to `JOBADDER_REFRESH_TOKEN` if you run long-lived.
 - **One-time setup:** authorize at `id.jobadder.com/connect/authorize` with **`offline_access`** (required for a refresh token) + the read/write scopes you need → exchange `code` at `id.jobadder.com/connect/token` → store the `refresh_token`. Scopes are granular (`read_candidate`, `write_candidate`, `read_job`, `write_job`, …) plus broad `read`/`write`.
@@ -89,3 +89,10 @@ Run via the CLI: `hyreflow tools execute jobadder <method> --payload '{...}'` �
 - `update_job(job_id: int, payload: dict) -> Any`
 
 <!-- API-SURFACE:END -->
+
+## Bulk writes & rate limits
+
+For large pushes use `add_candidates_batch`, `add_companies_batch`, `add_contacts_batch`,
+`add_jobs_batch`. They pace calls to a conservative **120 req/min** default and return
+`{created, failed, total, elapsed_ms}`. Override with `JOBADDER_RATE_LIMIT_RPM`. See
+`crm-bulk-pushes.md` for the cross-CRM guide.

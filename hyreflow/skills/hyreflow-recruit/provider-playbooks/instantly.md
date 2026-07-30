@@ -14,5 +14,5 @@ hyreflow tools execute instantly_list_campaigns --payload '{}'
 ```
 
 ```bash
-hyreflow tools execute instantly_add_to_campaign --payload '{"campaign_id":"abc-123","leads":[{"email":"ada@example.com","first_name":"Ada","last_name":"Lovelace","company_name":"Babbage Ltd"}]}'
+hyreflow tools execute instantly_add_leads_bulk --payload '{"campaign_id":"abc-123","leads":[{"email":"ada@example.com","first_name":"Ada","last_name":"Lovelace","company_name":"Babbage Ltd"}]}'
 ```

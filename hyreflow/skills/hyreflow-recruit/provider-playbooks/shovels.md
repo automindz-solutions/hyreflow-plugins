@@ -1,6 +1,6 @@
 ---
 name: shovels
-description: "US building-permit & contractor data via the Shovels API — search permits and contractors by location + date, resolve addresses/cities/zips to geo_ids, pull contractor employees/permits/metrics, residents, and area metrics. Use when the user mentions Shovels, building permits, construction contractors, or sourcing/recruiting in construction & the trades (electrical, HVAC, roofing, solar). Keys: hyreflow-managed credits or BYOK."
+description: "US building-permit & contractor data via the Shovels API — search permits and contractors by location + date, resolve addresses/cities/zips to geo_ids, pull contractor employees/permits/metrics, residents, and area metrics. Use when the user mentions Shovels, building permits, construction contractors, or sourcing/recruiting in construction & the trades (electrical, HVAC, roofing, solar). Keys: BYOK required — no hyreflow-managed option."
 ---
 
 # Shovels — Integration Meta Skill

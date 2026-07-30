@@ -91,7 +91,7 @@ funding raised →  ICP check    →     hiring managers   →    work email    
 |---|---|
 | 1 signal (predictleads) | metered (per the funding source's cost) |
 | 2 ICP qualify | **free** (Model A reasoning + free firmographic filters) |
-| 3 people-search waterfall | metered (first source that hits; e.g. aiark ~0.07) |
+| 3 people-search waterfall | metered (first source that hits; e.g. aiark ~3.0; current costs in cost-card.json) |
 | 4 email waterfall (+verify) | metered (first hitting provider) |
 | 5 personalization | metered (hyreflow-agent tokens) |
 | 6 sequencer / 7 CRM | usually free (client BYOK) |

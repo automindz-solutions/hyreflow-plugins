@@ -1,6 +1,6 @@
 ---
 name: aiark
-description: "B2B data via the AI Ark API — company & people search, reverse lookup (email/phone → person), mobile phone finder, personality analysis, and async export + email-finder flows. Use when the user mentions AI Ark, sourcing people/companies, or finding mobiles/emails at scale. Keys: hyreflow-managed credits or BYOK."
+description: "B2B data via the AI Ark API — company & people search, reverse lookup (email/phone → person), mobile phone finder, personality analysis, and async export + email-finder flows. Use when the user mentions AI Ark, sourcing people/companies, or finding mobiles/emails at scale. Keys: hyreflow-managed credits or BYOK (bring your own AI Ark API key)."
 ---
 
 # AI Ark — Integration Meta Skill
@@ -58,9 +58,9 @@ providers can't honor them, so they're skipped rather than silently returning no
 | `min_experience_years` (existing) | `…duration.total.min.year` | whole-career experience, years |
 | `profile_badges` | `contact.profileBadge` | enum[]: VERIFIED / OPEN_TO_WORK / HIRING / INFLUENCER / CREATOR / PREMIUM |
 | `departments` | `contact.departmentAndFunction` | enum[] (200+): e.g. `master_sales`, `business_development`, `software_development` |
-| `company_founded_year_min` / `_max` | `account.foundedYear` | RANGE — **single `{start,end}` object** |
-| `company_employee_min` / `_max` | `account.employeeSize` | RANGE — **array** `[{start,end}]` |
-| `company_revenue_min` / `_max` | `account.revenue` | RANGE — **array** `[{start,end}]` |
+| `company_founded_year_min` / `_max` | `account.foundedYear` | RANGE — **single `{start,end}` object**: `{"type":"RANGE","range":{start,end}}` — the one exception to the array-under-`range` pattern below, don't copy it for employeeSize/revenue |
+| `company_employee_min` / `_max` | `account.employeeSize` | RANGE — **wrapped, array under `range`**: `{"type":"RANGE","range":[{start,end}]}` — ❌ a bare array (`{"employeeSize":[{start,end}]}` with no `type`/`range` wrapper) 400s: `AiArkError: AI Ark API 400: request not readable` |
+| `company_revenue_min` / `_max` | `account.revenue` | RANGE — **wrapped, array under `range`**: `{"type":"RANGE","range":[{start,end}]}` (see worked example under Company search filters) |
 | `company_funding_types` | `account.funding.type` | enum[]: PRE_SEED…SERIES_J, VENTURE_ROUND, ANGEL, … |
 
 Tenure is expressed in **months** and split into `{year, month}` (e.g. 18 → `{"year":1,"month":6}`). Enum
@@ -138,7 +138,7 @@ for personal-email or **candidate-acquisition** workflows. **Personal emails com
 `leadmagic` only** (COO-confirmed). AI Ark is for sourcing + work-email/mobile enrichment.
 
 ## Guardrails
-- `mobile_phone_finder` is expensive (~5 credits) — use only on high-confidence matches. `fetch_credit()` = safe read-only pilot. Pilot small; gate bulk export/find-emails.
+- `mobile_phone_finder` is expensive (10 credits) — use only on high-confidence matches. `fetch_credit()` = safe read-only pilot. Pilot small; gate bulk export/find-emails.
 
 ## Handoff
 Sourcing + enrichment: company→people search → email/phone (export/find-emails or mobile finder) → ATS/sequencer. Discover companies first, then people.
@@ -152,8 +152,8 @@ Sourcing + enrichment: company→people search → email/phone (export/find-emai
 
 > The filter shapes, mode enum (`SMART`/`WORD`/`STRICT`), field names, and response shape are now documented from the spec in the **Filter structure** section above — that supersedes an earlier inferred note's `FUZZY`/`contactLocation` wording, which was inaccurate.
 
-**Credit costs:** company search 0.1/result; people search 0.5/result; reverse lookup 0.5/req;
-**mobile phone finder 5.0/req** (use only after a high-confidence match); export/email-finder ~0.5/email;
+**Credit costs:** company search 3/result; people search 3/result; reverse lookup 5/req;
+**mobile phone finder 10/req** (use only after a high-confidence match); export/email-finder 3/result;
 polling, statistics, results = **free**.
 
 **Async (export_people / find_emails):** launch -> `trackId` -> poll `*_statistics` until `state:"DONE"` -> fetch `*_results` (paginated).

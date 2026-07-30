@@ -64,6 +64,10 @@ They may enter anywhere along that arc — meet them where they are and guide th
 **Discovery order depends on the job:** candidate sourcing is **people-first** (title + location across the
 people-DBs); BD / signal work is **company-first** (find the accounts/signals, *then* the contacts). Don't
 open a broad people search when the task is really "find the right companies first."
+**A connected CRM/ATS is a recognized branch, not an edge case:** as soon as a CRM is connected and the
+user wants to match candidates to a job from their **own existing candidate base**, route into
+[`recipes/crm-matching.md`](recipes/crm-matching.md) alongside (never instead of) pure net-new sourcing —
+the two are combinable.
 
 ## Speak the recruiter's language (always on)
 Talk like a sourcer/recruiter, not an operator: use the trade's vocabulary (shortlist, slate, Boolean
@@ -105,7 +109,9 @@ filter and pulling the entire DB). Reading more than one is normal and encourage
 | A **job description / spec** → candidate shortlist | [`recipes/jd-to-shortlist.md`](recipes/jd-to-shortlist.md) (parse → search + competitor-poach → qualify → enrich) |
 | **Max coverage / talent map / "find the passive ones"** (source from every angle) | [`recipes/multi-strategy-sourcing.md`](recipes/multi-strategy-sourcing.md) (5 angles: structured ∥ semantic + tiered competitor map + lookalike + open-to-work intent → qualify → signal/enrich survivors) |
 | **Cross-DB structured merge** (one title set across AI Ark · Lemlist · Prospeo) | [`recipes/multi-source-candidate-search.md`](recipes/multi-source-candidate-search.md) (gendered-title + location-superset gotchas → dedup by LinkedIn → qualify) |
+| Match candidates to a job from the client's **OWN connected CRM/ATS candidate base** (a CRM is connected, or the user wants to draw on existing candidates) | [`recipes/crm-matching.md`](recipes/crm-matching.md) (prefilter on CRM taxonomy/custom fields → longlist broad → enrich w/ CRM notes/activities/interviews → AI score; combinable with net-new sourcing) |
 | A **CV / candidate** → fitting open jobs + hiring manager (spec-out / MPC) | [`recipes/cv-to-jobs.md`](recipes/cv-to-jobs.md) (parse CV → job search → match → hiring manager → BD) |
+| A **CV / candidate** → a full sequenced BD **campaign** across many companies (MPC Shot / candidate-led BD) | [`recipes/candidate-led-bd-campaign.md`](recipes/candidate-led-bd-campaign.md) (evergreen-candidate gate → scrape+lookalike fan-out → fit-match → CRM-first routing → poaching guard → approval gate → frontsheet + send) |
 | Sourcing an **IT / engineering** role (devs) | [`recipes/it-sourcing.md`](recipes/it-sourcing.md) (GitHub ground-truth + people-DBs → qualify; free emails) |
 | Qualify against a role / ICP | [`recipes/qualify-against-icp.md`](recipes/qualify-against-icp.md) (+ the client's `ICP.md`) |
 | "Which companies are in my **TAM** / build a **target-account list**" | [`recipes/build-tam.md`](recipes/build-tam.md) (ICP → firmographic/people-first/lookalike sourcing → qualify → ICP-fit company list → opt. people) |
@@ -114,6 +120,7 @@ filter and pulling the entire DB). Reading more than one is normal and encourage
 | Build an outreach **sequence / campaign** (pick the cadence) | [`recipes/campaign-plays.md`](recipes/campaign-plays.md) (confirm cadence with the user → build idle → `start_campaign` is separately gated) |
 | A **tradeshow / conference page** → BD on exhibitors (or speakers) | [`recipes/tradeshow-to-bd.md`](recipes/tradeshow-to-bd.md) (crawl exhibitors/speakers → ICP → hiring manager → pre-conference soft intro) |
 | Signal-driven BD (funding / hiring / layoffs) | the signal tool's `provider-playbooks/<tool>.md` + [`recipes/funding-to-bd.md`](recipes/funding-to-bd.md) (funding→BD) / [`recipes/layoff-signal-to-poach.md`](recipes/layoff-signal-to-poach.md) (layoffs) |
+| A client's **LinkedIn connections export** → scored prospect DB + a weekly Dream 100 sweep | [`recipes/network-icp-qualification.md`](recipes/network-icp-qualification.md) (batch qualifier + Dream 100 build + weekly sweep, headless up to the human send) |
 | Any credit-consuming or write action | the **Credit & approval gate** section below |
 | Not sure which tool fits the intent | **start here:** `hyreflow tools search <intent>` (ranked flat tools) → then `hyreflow tools get <tool> <method>` for the exact payload — never guess |
 
@@ -195,7 +202,7 @@ hyreflow-recruit/                    <- this skill package (installed to ~/.agen
 The adapters (`lib/`) and the machine-readable call contract (`reference/tool-registry.json`) live
 **server-side** in the hosted engine — you reach them through the `hyreflow` CLI / API, not local files.
 
-## Tool catalog (38 playbooks — 35 adapters + 2 Hyreflow Natives + 1 parked)
+## Tool catalog (40 playbooks — 36 adapters + 3 Hyreflow Natives + 1 parked)
 
 > **Two tool classes.** **Adapters** wrap a third-party vendor API (BYOK or hyreflow-managed key; obey
 > the provider-precedence waterfall). **Hyreflow Natives** are first-party capabilities with no external
@@ -206,7 +213,7 @@ The adapters (`lib/`) and the machine-readable call contract (`reference/tool-re
 `apollo` · `zoominfo` (OAuth; enrich/search/intent/scoops, lookalikes & recommendations)
 
 **Enrichment** — emails/phones/contact + company data
-`lusha` · `leadmagic` · `icypeas` · `prospeo` · `fullenrich` · `bettercontact` · `exa` · `enrichley` (email validation)
+`lusha` · `leadmagic` · `icypeas` · `prospeo` · `fullenrich` · `bettercontact` · `wiza` · `exa` · `enrichley` (email validation)
 
 **Data / sourcing** — search, scrape, actors, signals
 `apify` · `aiark` · `firecrawl` · `serper` · `theirstack` (hiring/intent signals) · `predictleads` (funding rounds incl. Series A + job openings + tech detections — funding/hiring discovery) · `shovels` (US building permits + contractors — construction/trades) · `github` (developer sourcing — IT recruiting) · `clinicaltrials` (pharma/biotech/CRO hiring signals; no key) · `builtwith` (technographics — source/qualify companies by tech stack)
@@ -215,13 +222,13 @@ The adapters (`lib/`) and the machine-readable call contract (`reference/tool-re
 `instantly` (email) · `lemlist` (email+LinkedIn) · `heyreach` (LinkedIn) · `smartlead` (email) · `sourcewhale` (recruiting outreach)
 
 **Recruiting CRMs / ATS** — the write targets
-`recruit-crm` · `loxo` · `vincere` · `recruiterflow` · `bullhorn` · `jobadder` (OAuth refresh-token; region base from token)
+`recruit-crm` · `loxo` · `vincere` · `recruiterflow` · `atlas` · `bullhorn` · `jobadder` (OAuth refresh-token; region base from token)
 
 **Comms** — calls & meeting intelligence
-`aircall` (phone) · `fathom` (meeting notetaker API) · `quil` (**parked — no public API**)
+`aircall` (phone) · `fathom` (meeting notetaker API) · `granola` (meeting notes) · `quil` (**parked — no public API**)
 
 **Hyreflow Natives** — first-party, no external vendor, always credit-metered (no BYOK)
-`layoffsignal` (layoff/RIF recruiting trigger — built on free public news RSS; poach displaced talent + BD signal) · `hyreflow-agent` (AI reasoning agent — OpenRouter model + adapter toolbelt; `infer` plain + `research` agentic; the metered reasoning layer for batch/headless — interactive reasoning stays free on the customer's Claude)
+`layoffsignal` (layoff/RIF recruiting trigger — built on free public news RSS; poach displaced talent + BD signal) · `hyreflow_native` (job scrapers — career pages, LinkedIn, Indeed, Arbeitsagentur; async launch→poll, pay-on-match per job) · `hyreflow-agent` (AI reasoning agent — OpenRouter model + adapter toolbelt; `infer` plain + `research` agentic; the metered reasoning layer for batch/headless — interactive reasoning stays free on the customer's Claude)
 
 > Read the matching `provider-playbooks/<tool>.md` before executing against any tool — it has the auth scheme,
 > the typed methods, the pagination contract, and the approval gates. Don't guess params.
@@ -275,7 +282,7 @@ Preview spend first with `--dry-run`; the CLI adds bearer auth, 429/5xx retries,
 `apollo`/`aiark`/`apify`/`theirstack` (find companies/people) → **qualify against the client's `ICP.md`
 (see below)** → `leadmagic`/`prospeo`/`fullenrich` (waterfall email+phone) → `enrichley` (validate
 deliverability) → `instantly`/`smartlead`/`heyreach`/`lemlist`/`sourcewhale` (activate) →
-`recruit-crm`/`bullhorn`/`loxo`/`vincere`/`recruiterflow` (land the record).
+`recruit-crm`/`bullhorn`/`loxo`/`vincere`/`recruiterflow`/`atlas` (land the record).
 `aircall` + `fathom` close the loop on the conversation side (call logs, transcripts → ATS activity).
 The same arc as recruiter **behaviour** (source → shortlist → outreach → slate, + BD/MPC + passive-poach)
 — the decision at each stage and *why* — is in [`recruiter-craft.md`](recruiter-craft.md) §B.
@@ -301,6 +308,11 @@ Multi-tool flows have a step-by-step recipe in `recipes/` — follow it as the e
   One title set across AI Ark · Lemlist · Prospeo with the gendered-title + location-superset gotchas → dedup by
   LinkedIn slug → qualify on profile text. The plain coverage-completion play (no semantic/competitor/intent angles —
   reach for `multi-strategy-sourcing` when you want those).
+- [`recipes/crm-matching.md`](recipes/crm-matching.md) — **CRM Matching: match the client's OWN candidate base
+  to a job.** A recognized branch alongside net-new sourcing, combinable with it. Prefilter on the CRM's own
+  taxonomy/custom fields → longlist broad (location, title variations) → enrich with rich CRM context (CV, notes,
+  activities, past interviews/applications, past jobs shortlisted for) → AI-score using that history, not just the
+  profile. Route in whenever a CRM is connected and the user wants their existing candidates included.
 - [`recipes/funding-to-bd.md`](recipes/funding-to-bd.md) — **funding → BD trigger.** Company raises →
   ICP check → find hiring managers (people_search wf) → work email (email_enrichment wf) → personalize →
   BD sequence → CRM. A pattern the agent composes from the capability waterfalls (not a hard-coded pipeline).
@@ -314,6 +326,12 @@ Multi-tool flows have a step-by-step recipe in `recipes/` — follow it as the e
   trio: LinkedIn + StepStone + Indeed via Apify) → match/score each job vs the CV → find the hiring manager
   (company-scoped people_search, **client-configured** size→title hierarchy + reporting-line-first) → work email →
   candidate-led BD. Channel = work email (pitching the candidate to the company).
+- [`recipes/candidate-led-bd-campaign.md`](recipes/candidate-led-bd-campaign.md) — **MPC Shot: candidate → full
+  BD campaign.** The multi-company, sequenced sibling of `cv-to-jobs.md`: an evergreen/one-paragraph-pitchable
+  candidate gate → scraped roles **+** lookalike-company fan-out → fit-match (>75) → **CRM-first split**
+  (existing clients route direct, enrich only net-new) → poaching/exclusion guard → mandatory human approval
+  gate → anonymised frontsheet + teaser → sequencer send → reply classify (positive-rate, not reply-rate) →
+  human spec-CV call. Candidate-triggered mirror of the signal→BD plays (`funding-to-bd.md`/`tradeshow-to-bd.md`).
 - [`recipes/tradeshow-to-bd.md`](recipes/tradeshow-to-bd.md) — **event → BD.** Public exhibitor/speaker page →
   firecrawl extract companies (speakers: + person + talk topic) → resolve domains → qualify vs ICP → find the
   hiring decision-maker (company-scoped, size-adaptive) → work email → **pre-conference soft intro** ("coffee
@@ -322,6 +340,12 @@ Multi-tool flows have a step-by-step recipe in `recipes/` — follow it as the e
   client's call: prompt with 2-4 example plays (LinkedIn-only / multichannel / …) → confirm → build it idle
   (no sender/leads/start) → `start_campaign` is a separate, approval-gated send. Channel per the data
   (no email → LinkedIn-only; candidates → personal+LinkedIn, never work).
+- [`recipes/network-icp-qualification.md`](recipes/network-icp-qualification.md) — **LinkedIn network →
+  scored prospect DB → weekly Dream 100 sweep.** A client's Connections.csv export → pre-filter → enrich
+  → deep screen (binary in/out vs a person-level `<client-slug>-network-icp.md`, never a score) → Airtable. Separately,
+  a layered `people_search` build feeds a Dream 100 table; a weekly scheduled sweep suppresses (90-day),
+  scores engagement, researches the top 10, and drafts invites in the client's voice — the human send is
+  a hard gate (cap 20-25/day, no LinkedIn send automation, ever); already-connected targets warm-DM instead.
 
 ### The ICP qualify gate (Model A — runs on the customer's Claude)
 - The client's **`ICP.md`** is built once by **`/icp`** at onboarding and lives in the client's working
@@ -519,6 +543,9 @@ for / when to reach for it*; the quirks live in the playbook. (Keep this list cu
 - [apollo playbook](provider-playbooks/apollo.md)
   Summary: Use search for free net-new previewing, then people/company enrichment when you need resolved emails/phones, plus CRM and sequence actions.
   Last reviewed: 2026-06-02
+- [atlas playbook](provider-playbooks/atlas.md)
+  Summary: Use as the Atlas ATS/CRM — push sourced/enriched candidates & leads, dedup companies/contacts, read projects (jobs) and opportunities (deals) as sourcing starting points.
+  Last reviewed: 2026-07-14
 - [bettercontact playbook](provider-playbooks/bettercontact.md)
   Summary: Use as a waterfall when you want email and/or phone across many providers in a single async job.
   Last reviewed: 2026-06-02
@@ -570,6 +597,9 @@ for / when to reach for it*; the quirks live in the playbook. (Keep this list cu
 - [layoffsignal playbook](provider-playbooks/layoffsignal.md)
   Summary: Use as the first-party layoff/RIF trigger — surface displaced talent to poach and companies to pitch (Hyreflow Native, credit-metered, no BYOK).
   Last reviewed: 2026-06-01
+- [hyreflow_native playbook](provider-playbooks/hyreflow_native.md)
+  Summary: First-party job scrapers (career pages, LinkedIn, Indeed, Arbeitsagentur) — async launch→poll, pay-on-match per job (Hyreflow Native, credit-metered, no BYOK).
+  Last reviewed: 2026-07-16
 - [leadmagic playbook](provider-playbooks/leadmagic.md)
   Summary: Use to find/validate work & personal email, find mobiles, resolve email↔LinkedIn, and enrich companies.
   Last reviewed: 2026-06-01

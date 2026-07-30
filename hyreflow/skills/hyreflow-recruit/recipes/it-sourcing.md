@@ -142,7 +142,7 @@ unconsented). See `writing-outreach.md`.
 | Step | Metered? |
 |---|---|
 | GitHub leg (search, dossier, email) | **free** (token; ~$0) |
-| people-DB leg | metered (aiark ~0.07, etc.) |
+| people-DB leg | metered (e.g. aiark people_search ~3.0; current costs in cost-card.json) |
 | deep context (Firecrawl + AI) | metered — **gate to finalists** |
 | qualify (AI) | metered (tokens) |
 So GitHub sourcing + emails are free margin; you meter the people-DB breadth + the Firecrawl/AI enrichment.

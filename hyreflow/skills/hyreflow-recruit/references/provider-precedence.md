@@ -12,8 +12,8 @@ engine (the server resolves the key + meters credits).
    - **client BYOK key present** (their env / vault) → use it — runs on *their* account/credits, costs hyreflow nothing.
    - else **hyreflow managed key** → use it — metered as hyreflow credits.
    - else **skip** this provider.
-   - **Apollo exception:** Apollo is BYOK-only for user workspaces. If the workspace has no Apollo BYOK key,
-     skip Apollo with `no_key`; do not fall back to a Hyreflow-managed Apollo key.
+   - **BYOK-only exception (Apollo, Shovels, BuiltWith, ZoomInfo):** these are BYOK-only for user workspaces. If the workspace
+     has no BYOK key for one, skip it with `no_key`; do not fall back to a Hyreflow-managed key.
 4. **Call it.** On no-result / miss → fall to the next provider. Stop at the first good result.
 5. **Single-source tools** (the client's ATS, their specific sequencer) **skip the order** — use *their*
    instance; **BYOK required** (you can't substitute someone's CRM).
@@ -43,7 +43,7 @@ BYOK availability can also *bias* the order: try the providers they hold keys fo
 | hiring/intent signals | theirstack · predictleads (job openings) · jobs scrape: apify · pharma: clinicaltrials · construction: shovels · **layoffs/RIF: layoffsignal (native)** |
 | funding discovery (Series A etc.) | **predictleads (discover_financing_events — by round type + recency)** → zoominfo scoops → leadmagic company_funding (enrich-only) → exa/serper (news) |
 | sequencer | usually single-source (use the client's); fallback email: instantly→smartlead→lemlist · LinkedIn: heyreach→lemlist · recruiting: sourcewhale. ⚠️ Sequencers are **activation only — never enrichment** (don't use Lemlist findEmail/linkedinEnrichment etc.; enrich upstream). |
-| ATS | single-source — the client's: recruit-crm \| loxo \| vincere \| recruiterflow \| bullhorn |
+| ATS | single-source — the client's: recruit-crm \| loxo \| vincere \| recruiterflow \| atlas \| bullhorn |
 
 ## Single-source by default — multi-source only on demand
 For substitutable discovery/enrichment (`people_search`, `email_enrichment`), **default to ONE source**

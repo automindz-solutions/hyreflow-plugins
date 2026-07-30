@@ -8,15 +8,16 @@ description: "Read/write Loxo (recruiting ATS/CRM) via its API — list/get jobs
 HOW in `lib/loxo.py`.
 
 ## Auth & config (agency-scoped)
-- **Base URL:** `https://{LOXO_DOMAIN}/api/{LOXO_AGENCY_SLUG}` — Loxo is agency-scoped.
-- **Env:** `LOXO_API_KEY` (Bearer), `LOXO_DOMAIN` (e.g. `youragency.app.loxo.co`), `LOXO_AGENCY_SLUG`. Never hardcode.
-- Paths **CONFIRMED** from loxo.readme.io (2026-06-01). Pagination via `page`/`per_page`. Index: `reference/docs/loxo/raw/endpoints.md`.
+- **Connect (BYOK):** dashboard **Integrations → Loxo** — your Loxo **API key** + **agency slug** (e.g. `acme`; pasting your full Loxo URL works too — the slug is its first label). Nothing to hardcode.
+- Loxo is agency-scoped on a fixed host; every call goes to `.../api/{agency_slug}/...`.
+- Paths **CONFIRMED** from loxo.readme.io. Pagination via `page`/`per_page` (people also `scroll_id`/`query`).
 
 ## Operations
 Jobs: `list_jobs`, `get_job`, `create_job`, `update_job`. People: `list_people`, `get_person`, `create_person`, `update_person`. Job↔candidate: `list_job_candidates` (`GET /jobs/{id}/candidates`), `apply_to_job` (`POST /jobs/{id}/apply`).
 
 ## Notes & guardrail
-- **Bug fixed in this pass:** adding a candidate to a job is `POST /jobs/{job_id}/apply` (was wrongly `/jobs/{id}/candidates`), and it's **multipart/form-data** with REQUIRED `email`+`name`+`phone` (+ optional `resume` file). Use `apply_to_job(...)`; `create_job_candidate` is kept as a deprecated alias.
+- Adding a candidate to a job is `apply_to_job` (`POST /jobs/{job_id}/apply`) — **multipart/form-data** with REQUIRED `email`+`name`+`phone` (+ optional `resume` file). `create_job_candidate` is a deprecated alias.
+- `create_person` / `create_job` / `update_*` send **form-encoded** bodies (`person[...]` / `job[...]`), not JSON — pass flat fields (`name`, `email`, `phone`, `title`, …) and the client wraps them. `create_person` also takes optional `resume`/`document` files.
 - Production ATS writes — pilot one, confirm, then bulk.
 
 ## Handoff
@@ -26,15 +27,21 @@ ATS write target: enriched candidates → `create_person` / `apply_to_job` (assi
 ## Callable surface — `lib/loxo.py`
 Run via the CLI: `hyreflow tools execute loxo <method> --payload '{...}'` — method names + params are in the **Callable surface** block above; preview with `--dry-run`. (any unwrapped endpoint is reachable through the tool's generic `request` passthrough.)
 - `apply_to_job(job_id: str, *, email: str, name: str, phone: str, resume: tuple | None = None, **fields) -> Any` — POST /jobs/{job_id}/apply — add a candidate to a job (CONFIRMED).
-- `create_job(payload: dict) -> Any` — POST /jobs — create a job.
+- `create_job(payload: dict) -> Any` — POST /jobs — create a job (form-encoded, job[...] params). CONFIRMED.
 - `create_job_candidate(job_id: str, payload: dict) -> Any` — DEPRECATED name → apply_to_job (path was wrong: it's /jobs/{id}/apply, multipart).
-- `create_person(payload: dict) -> Any` — POST /people — create a person. (Resume upload needs multipart via request().)
-- `get_job(job_id: str) -> Any` — GET /jobs/{id}.
-- `get_person(person_id: str) -> Any`
-- `list_job_candidates(job_id: str, **params) -> Any` — GET /jobs/{job_id}/candidates — candidates on a job, with pipeline stage (CONFIRMED).
-- `list_jobs(**params) -> Any` — GET /jobs — paginated (page, per_page).
-- `list_people(**params) -> Any` — GET /people — paginated people/candidates.
-- `update_job(job_id: str, payload: dict) -> Any` — PUT /jobs/{id}.
-- `update_person(person_id: str, payload: dict) -> Any`
+- `create_person(payload: dict, *, resume: tuple | None = None, document: tuple | None = None) -> Any` — POST /people — create a person (multipart, person[...] params). CONFIRMED.
+- `get_job(job_id: str) -> Any` — GET /jobs/{id}. CONFIRMED.
+- `get_person(person_id: str) -> Any` — GET /people/{id}. CONFIRMED.
+- `list_job_candidates(job_id: str, **params) -> Any` — GET /jobs/{job_id}/candidates — candidates on a job, with pipeline stage. CONFIRMED.
+- `list_jobs(**params) -> Any` — GET /jobs — paginated (page, per_page). CONFIRMED.
+- `list_people(**params) -> Any` — GET /people — paginated people/candidates (scroll_id/per_page/query). CONFIRMED.
+- `update_job(job_id: str, payload: dict) -> Any` — PUT /jobs/{id} (form-encoded, job[...] params). CONFIRMED.
+- `update_person(person_id: str, payload: dict) -> Any` — PUT /people/{id} (form-encoded, person[...] params). CONFIRMED.
 
 <!-- API-SURFACE:END -->
+
+## Bulk writes & rate limits
+
+For large pushes use `create_people_batch` and `create_jobs_batch`. They pace calls to a
+conservative **60 req/min** default and return `{created, failed, total, elapsed_ms}`. Override with
+`LOXO_RATE_LIMIT_RPM`. See `crm-bulk-pushes.md` for the cross-CRM guide.

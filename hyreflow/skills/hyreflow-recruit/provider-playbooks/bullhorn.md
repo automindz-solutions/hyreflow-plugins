@@ -36,3 +36,10 @@ Run via the CLI: `hyreflow tools execute bullhorn <method> --payload '{...}'` �
 - `update_entity(entity: str, entity_id: int, payload: dict) -> Any` — POST /entity/{entity}/{id} — update a record.
 
 <!-- API-SURFACE:END -->
+
+## Bulk writes & rate limits
+
+For large pushes use `create_candidates_batch`, `create_client_contacts_batch`,
+`create_client_corporations_batch`, `create_job_orders_batch`. They pace calls to the **1,500 req/min**
+per OAuth Client ID limit and return `{created, failed, total, elapsed_ms}`. Override with
+`BULLHORN_RATE_LIMIT_RPM`. See `crm-bulk-pushes.md` for the cross-CRM guide.

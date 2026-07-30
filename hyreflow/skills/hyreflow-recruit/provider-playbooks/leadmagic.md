@@ -1,11 +1,11 @@
 Use LeadMagic as a contact-resolution, verification, and intent layer.
 
-- Start with cheaper gates: `leadmagic_email_validation`, `leadmagic_company_search`, and `leadmagic_jobs_finder`.
-- Escalate to premium contact discovery only after the target is worth it: `leadmagic_email_finder`, `leadmagic_mobile_finder`, `leadmagic_profile_search`, `leadmagic_b2b_social_email`, and `leadmagic_email_to_profile`.
+- Start with cheaper gates: `leadmagic_email_validation`, `leadmagic_company_search`, and `leadmagic_job_change_detector`.
+- Escalate to premium contact discovery only after the target is worth it: `leadmagic_email_finder`, `leadmagic_mobile_finder`, `leadmagic_profile_search`, `leadmagic_b2b_profile`, and `leadmagic_personal_email_finder`.
 - For role-based discovery, use `leadmagic_role_finder` for a single decision-maker and `leadmagic_employee_finder` when you need a wider company roster.
 - `leadmagic_email_validation` is the final outbound validity gate for this layer. Default acceptance rule is `email_status == valid`; treat `catch_all` and `unknown` as unresolved unless the user explicitly accepts risk.
-- LeadMagic is **conservative on catch-all domains** (many Google Workspace and corporate domains). `email_status: "invalid"` with a populated `mx_record` + `mx_provider` usually means "mailbox not provable," not "does not deliver." Don't auto-discard these rows — fall back to `hyreflow_native` validation or a second provider (`zerobounce`, `bettercontact`) before giving up on the lead.
-- If LeadMagic profile or phone quality is noisy on pilot rows, switch to quality-first enrichment (`crustdata_person_enrichment`, `peopledatalabs_enrich_contact`) before scaling.
+- LeadMagic is **conservative on catch-all domains** (many Google Workspace and corporate domains). `email_status: "invalid"` with a populated `mx_record` + `mx_provider` usually means "mailbox not provable," not "does not deliver." Don't auto-discard these rows — fall back to a second validator (`enrichley`, `bettercontact`) before giving up on the lead.
+- If LeadMagic profile or phone quality is noisy on pilot rows, switch to quality-first enrichment (`fullenrich`, `aiark`, `lusha`) before scaling.
 
 Operational pattern:
 

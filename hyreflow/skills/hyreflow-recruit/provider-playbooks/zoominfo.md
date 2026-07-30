@@ -1,9 +1,16 @@
 ---
 name: zoominfo
-description: "B2B data via the ZoomInfo GTM Data API — enrich contacts & companies, search the database, pull signals (intent, scoops, news, technographics), and get company lookalikes / contact recommendations. Use when the user mentions ZoomInfo, enriching contacts/companies at scale, B2B intent/scoop signals, or net-new prospecting from ZoomInfo. Keys: hyreflow-managed credits or BYOK."
+description: "B2B data via the ZoomInfo GTM Data API — enrich contacts & companies, search the database, pull signals (intent, scoops, news, technographics), and get company lookalikes / contact recommendations. Use when the user mentions ZoomInfo, enriching contacts/companies at scale, B2B intent/scoop signals, or net-new prospecting from ZoomInfo. Keys: BYOK-only, not self-serve yet."
 ---
 
 # ZoomInfo — Integration Meta Skill
+
+ZoomInfo is **BYOK-only** in Hyreflow — there's no Hyreflow-managed fallback, so with no ZoomInfo
+credentials in place these tools are unavailable/skipped with `no_key`. Unlike a single-key adapter such as
+Apollo, ZoomInfo's OAuth client credentials are **not a self-serve integration yet**: they can't be pasted
+into the dashboard, and they aren't held per-workspace. Do not assume Hyreflow-managed ZoomInfo credentials
+exist, and don't tell a user they can connect ZoomInfo themselves today — enabling it is a conversation
+with Hyreflow.
 
 HOW in `lib/zoominfo.py`. Paths CONFIRMED from docs.zoominfo.com (2026-06-01); index: `reference/docs/zoominfo/raw/endpoints.md`.
 

@@ -38,3 +38,9 @@ Run via the CLI: `hyreflow tools execute vincere <method> --payload '{...}'` —
 - `update_candidate(candidate_id: str, payload: dict) -> Any`
 
 <!-- API-SURFACE:END -->
+
+## Bulk writes & rate limits
+
+For large pushes use `create_candidates_batch`. It paces calls to a conservative **60 req/min**
+default and returns `{created, failed, total, elapsed_ms}`. Override with `VINCERE_RATE_LIMIT_RPM`.
+See `crm-bulk-pushes.md` for the cross-CRM guide.

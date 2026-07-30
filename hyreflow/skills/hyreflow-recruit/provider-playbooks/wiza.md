@@ -8,13 +8,14 @@ Wiza for LinkedIn → email/phone enrichment. Key advantage over ContactOut: **a
 
 - **Input required**: LinkedIn URL (including Sales Nav), email, or name+company
 - **Geographic coverage**: Global
-- **Credit cost**: 1 credit for profile-only, 2 credits for email, 5 credits for phone
-- **Enrichment levels**: partial (email, 2 credits), phone (5 credits), full (email+phone, 7 credits), none (profile only, 1 credit)
+- **Credit cost**: flat 3 credits per revealed record, regardless of enrichment level (email, phone, or both)
+- **Enrichment levels**: `none` (profile only), `partial` (email), `phone`, `full` (email+phone) — the level only
+  controls what's returned, not the price; every non-`none` reveal bills the same 3 credits
 - **Async**: reveals are queued and processed — the handler polls until finished
 
 ## Key operations
 
-### wiza_reveal_person
+### wiza_start_individual_reveal
 
 Starts an async enrichment job and polls until finished. Accepts any LinkedIn URL type.
 
@@ -45,7 +46,7 @@ Name + company fallback:
 }
 ```
 
-### wiza_search_prospects
+### wiza_prospect_search
 
 Discover prospects by job title, level, company, industry, location. **Free** — returns masked profiles without contact info. Returns up to 30 results per search.
 
@@ -60,25 +61,28 @@ Discover prospects by job title, level, company, industry, location. **Free** �
 }
 ```
 
-Typical flow: search → get LinkedIn URLs → feed into `wiza_reveal_person` to enrich.
+Typical flow: search → get LinkedIn URLs → feed into `wiza_start_individual_reveal` to enrich.
 
 ## Output shape
 
-`wiza_reveal_person` returns a flat object. Email at `email`, phones at `phone_number1`, `mobile_phone1`. Status at `status` ("finished" | "failed").
+`wiza_start_individual_reveal` returns a flat object. Email at `email`, phones at `phone_number1`, `mobile_phone1`. Status at `status` ("finished" | "failed").
 
-`wiza_search_prospects` returns `{ prospects: [...], total: N }`.
+`wiza_prospect_search` returns `{ prospects: [...], total: N }`.
 
 ## Enrichment levels
 
-| Level     | Returns                        |
-| --------- | ------------------------------ |
-| `none`    | Profile data only (1 credit)   |
-| `partial` | Emails only (2 credits)        |
-| `phone`   | Phone numbers only (5 credits) |
-| `full`    | Emails + phones (7 credits)    |
+| Level     | Returns             | Cost       |
+| --------- | ------------------- | ---------- |
+| `none`    | Profile data only   | 3 credits  |
+| `partial` | Emails only         | 3 credits  |
+| `phone`   | Phone numbers only  | 3 credits  |
+| `full`    | Emails + phones     | 3 credits  |
+
+Pricing is per call to `start_individual_reveal`, not per field returned — the `enrichment_level` you request
+does not change the credit cost.
 
 ## Anti-patterns
 
-- Don't use `enrichment_level: "full"` on large lists without budgeting phone credits separately
+- Don't over-request `enrichment_level: "full"` reflexively — it costs the same as `partial`, but a phone match takes longer/is less reliable, so only ask for it when the workflow actually needs a phone number
 - Don't skip polling — reveals are async, status starts as "queued"
 - Don't expect more than 30 results from search per call

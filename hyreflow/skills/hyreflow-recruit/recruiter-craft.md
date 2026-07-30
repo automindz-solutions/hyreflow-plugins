@@ -23,7 +23,7 @@ generic equivalents:
 | **shortlist** | the qualified, ranked subset you'd actually present — not the raw search dump |
 | **slate** | the small set of candidates you formally submit to the hiring manager (the deliverable that ends sourcing) |
 | **Boolean / X-ray string** | the search expression (AND/OR/NOT + `site:`) that defines who you're looking for → see [`references/recruiter-playbooks/boolean-search.md`](references/recruiter-playbooks/boolean-search.md) |
-| **MPC** | *Most-Placeable Candidate* — a strong candidate you proactively pitch to companies (candidate-led BD / spec-out) → [`recipes/cv-to-jobs.md`](recipes/cv-to-jobs.md) |
+| **MPC** / **candidate-led BD** | *Most-Placeable Candidate* — a strong candidate you proactively pitch to companies (spec-out). "MPC" is UK/EU jargon; the US-facing name is **candidate-led BD** — both route to the same recipes. A single message → [`recipes/cv-to-jobs.md`](recipes/cv-to-jobs.md); a full sequenced multi-company send ("MPC Shot") → [`recipes/candidate-led-bd-campaign.md`](recipes/candidate-led-bd-campaign.md) |
 | **passive vs active** | *active* = looking now; *passive* = not looking but movable. Most of the best talent is passive — you sell, you don't just collect applications |
 | **open-to-work** | an explicit recruitability signal on the profile (badge / "seeking") — a strong but narrow filter |
 | **response rate / positive-reply rate** | outreach health metrics — % who reply, % who reply *interested*. Cadence and personalization move these |
@@ -102,12 +102,15 @@ plan — don't re-describe it here; no-loss rule).
    - *Decision:* a tight, ranked, evidence-backed set beats a long list; push to the ATS/CRM so the
      pipeline is tracked. Speed here is **time-to-slate**.
    - *Executes via:* the ATS/CRM `provider-playbooks/<tool>.md` (recruit-crm, bullhorn, loxo, vincere,
-     recruiterflow, jobadder) — auth + write methods + gates.
+     recruiterflow, atlas, jobadder) — auth + write methods + gates.
 
 ### Branch — BD / MPC (candidate-led or signal-led business development)
 Win the role/client, not just the candidate. Two on-ramps:
 - **MPC / spec-out** — you have a strong candidate → pitch them (anonymised) to companies with a fitting
-  open role → [`recipes/cv-to-jobs.md`](recipes/cv-to-jobs.md). Channel = **work email** (BD).
+  open role → [`recipes/cv-to-jobs.md`](recipes/cv-to-jobs.md) for a single message, or
+  [`recipes/candidate-led-bd-campaign.md`](recipes/candidate-led-bd-campaign.md) ("MPC Shot") when the ask
+  is a full sequenced campaign across many companies (frontsheet, CRM-first routing, poaching guard, reply
+  routing). Channel = **work email** (BD).
 - **Signal → BD** — a company shows a buying signal (funding, hiring, layoffs, an event) → ICP-qualify →
   find the hiring manager → BD outreach → [`recipes/funding-to-bd.md`](recipes/funding-to-bd.md),
   [`recipes/tradeshow-to-bd.md`](recipes/tradeshow-to-bd.md),

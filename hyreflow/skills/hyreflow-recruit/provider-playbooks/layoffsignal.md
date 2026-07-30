@@ -1,6 +1,6 @@
 ---
 name: layoffsignal
-description: "Layoff/RIF signal tracker — an Hyreflow Native (first-party, credit-metered, no BYOK). Finds recent layoff news via free public RSS (Google News + per-site feeds) so a recruiter can poach displaced talent and open BD. Use when the trigger is 'company is cutting staff' — e.g. source laid-off engineers at a named employer, or sweep the last 7 days of tech layoffs. No API key."
+description: "Layoff/RIF signal tracker — an Hyreflow Native (first-party, free, no BYOK). Finds recent layoff news via free public RSS (Google News + per-site feeds) so a recruiter can poach displaced talent and open BD. Use when the trigger is 'company is cutting staff' — e.g. source laid-off engineers at a named employer, or sweep the last 7 days of tech layoffs. No API key."
 ---
 
 # layoff-signal — Hyreflow Native (layoff/RIF recruiting trigger)
@@ -9,8 +9,8 @@ HOW in `lib/layoffsignal.py`. Index: `reference/docs/layoffsignal/raw/endpoints.
 
 ## Kind: Hyreflow Native — read this first
 - **First-party capability, no external vendor.** Built on **free public RSS** (Google News + per-site feeds).
-- **No BYOK, no env key.** A native has no third party to bring a key for → it is **always metered in
-  hyreflow credits** and runs on hyreflow infra. The provider-precedence waterfall does **not** apply.
+- **No BYOK, no env key.** A native has no third party to bring a key for → it runs on hyreflow infra at
+  **0 credits (free)** in current pricing. The provider-precedence waterfall does **not** apply.
 - **ToS-clean.** Surfaces *facts from primary public reporting* (the same sources a human tracker reads).
   Does **not** scrape or resell anyone's curated database (e.g. layoffs.fyi's Airtable). **Attribute the
   originating publisher.** Use as a **signal/trigger**, not a redistributed dataset for customers to browse.
@@ -42,9 +42,9 @@ HOW in `lib/layoffsignal.py`. Index: `reference/docs/layoffsignal/raw/endpoints.
 
 ## Why it's here — the signal model (the product angle)
 Layoffs are a live recruiting trigger: a company cutting staff = a pool of available candidates to poach
-+ a BD opening with the survivors. As a **native**, it's the high-margin core — near-zero run cost (free
-RSS), still billed in credits, and it's a hyreflow-owned asset (the news/RSS primitives are implementation
-detail). See `references/provider-precedence.md` (natives are exempt) and the recipe below.
++ a BD opening with the survivors. As a **native**, it's the high-margin core — zero run cost (free
+RSS, free to the customer too under current pricing), and it's a hyreflow-owned asset (the news/RSS primitives
+are implementation detail). See `references/provider-precedence.md` (natives are exempt) and the recipe below.
 
 ## Handoff (the recipe)
 `recipes/layoff-signal-to-poach.md`: sweep feeds → resolve+fetch article bodies (`firecrawl`) → **Claude

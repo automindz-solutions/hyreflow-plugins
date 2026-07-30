@@ -10,7 +10,7 @@ true → impact → fix/status. This is the feedback loop: live test → record 
 ### 🔴 Recruit CRM — Open API is PLAN-GATED (hard blocker)
 - `list_candidates` → **401 INSUFFICIENT_ACCESS**: "Please Upgrade Your Plan to 'Business' or 'Enterprise' to gain access to the Open API."
 - The key is **valid** (got past auth) — the **account plan tier** blocks the entire Open API (read *and* write: list/search/create all 401).
-- **Impact:** `recruit_crm` adapter is unusable until the account is Business/Enterprise. Candidate/company landing must fall back to **CSV export** or another ATS (`loxo`/`vincere`/`recruiterflow`/`bullhorn`) until then.
+- **Impact:** `recruit_crm` adapter is unusable until the account is Business/Enterprise. Candidate/company landing must fall back to **CSV export** or another ATS (`loxo`/`vincere`/`recruiterflow`/`atlas`/`bullhorn`) until then.
 - **Status:** account limitation, no code change. Noted in `provider-playbooks/recruit_crm.md`.
 
 ### 🟠 AI Ark `find_emails` — `webhook` is REQUIRED

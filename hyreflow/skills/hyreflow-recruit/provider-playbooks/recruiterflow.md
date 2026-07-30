@@ -62,3 +62,10 @@ Run via the CLI: `hyreflow tools execute recruiterflow <method> --payload '{...}
 - `update_job(payload: dict) -> Any` — POST /job/update — include `job_id`.
 
 <!-- API-SURFACE:END -->
+
+## Bulk writes & rate limits
+
+For large pushes use `add_candidates_batch`, `add_contacts_batch`, `add_clients_batch`,
+`create_jobs_batch`. They pace calls to a conservative **60 req/min** default and return
+`{created, failed, total, elapsed_ms}`. Override with `RECRUITERFLOW_RATE_LIMIT_RPM`. See
+`crm-bulk-pushes.md` for the cross-CRM guide.

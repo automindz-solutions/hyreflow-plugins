@@ -41,6 +41,7 @@ Python client. Read the matching doc BEFORE making any call.
 | ------------------------------------------------------------------ | ---------------------------------------- |
 | Any endpoint shape, params, pagination, field names                | `reference/endpoints.md`                 |
 | Pushing enriched leads (companies + contacts) from a CSV           | `recipes/push-enriched-leads.md`         |
+| Rate limits, batch helpers, and stress-test sizing                 | `recruit-crm-rate-limits.md`             |
 | Calling the API from Python                                        | `lib/recruit_crm.py` (docstrings)        |
 
 If the exact payload for an operation is marked `TODO (paste schema)` in
@@ -49,16 +50,30 @@ https://docs.recruitcrm.io first. (The docs site is a JS-rendered SPA and cannot
 
 ## 4) Approval gates (writes & bulk operations)
 
-Recruit CRM writes are real, irreversible changes to a production ATS. Before any
-create/update/delete or bulk push:
+Recruit CRM writes are real changes to a production ATS. Before any create/update or bulk push:
 
 1. **Dry-run first.** For bulk loads, process `--rows 0:1` (one record) and show the user
    the exact payload + response before continuing.
 2. **Confirm field mapping.** Custom-field IDs and hiring-stage IDs are account-specific
    (see `reference/endpoints.md` → "Account-specific IDs"). Confirm the mapping before writing.
-3. **Get explicit go-ahead** before writing more than one record.
+3. **Confirm rate-limit headroom.** For >50 records, read `recruit-crm-rate-limits.md` and size the
+   batch so it does not exceed `X-RateLimit-Remaining`. Use the `create_*_batch` helpers and run
+   in chunks if needed.
+4. **Get explicit go-ahead** before writing more than one record.
 
-## 5) Resource groups covered
+## 5) Rate limits & bulk helpers
+
+See [`recruit-crm-rate-limits.md`](recruit-crm-rate-limits.md) for the full contract and
+[`crm-bulk-pushes.md`](crm-bulk-pushes.md) for the cross-CRM bulk guide. Summary:
+
+- Default rate limit: **60 req/min** (≤6 licenses) or **10 req/min per license** (>6 licenses).
+- Batch helpers loop single `POST` calls and pace them via `RECRUITCRM_RATE_LIMIT_RPM`:
+  - `create_candidates_batch(payloads)`
+  - `create_contacts_batch(payloads)`
+  - `create_companies_batch(payloads)`
+- For 1,000+ records, chunk the input (e.g. 50–200 per call) and use the returned `failed` list to retry.
+
+## 6) Resource groups covered
 
 - **Candidates** — create / search / update
 - **Companies & contacts** — create / update (primary target for enriched-lead pushes)
@@ -80,10 +95,6 @@ Run via the CLI: `hyreflow tools execute recruit-crm <method> --payload '{...}'`
 - `create_company(payload: dict) -> dict` — POST /v1/companies — create a company. Required: `company_name`.
 - `create_contact(payload: dict) -> dict` — POST /v1/contacts — create a contact. Required: `first_name`, `last_name`.
 - `create_job(payload: dict) -> dict` — POST /v1/jobs — create a job. Required: name, number_of_openings, company_slug,
-- `delete_candidate(slug: str) -> Any` — DELETE /v1/candidates/{slug}.
-- `delete_company(slug: str) -> Any`
-- `delete_contact(slug: str) -> Any`
-- `delete_job(slug: str) -> Any`
 - `get_candidate(slug: str) -> dict` — GET /v1/candidates/{slug} — single candidate by slug.
 - `get_candidate_hiring_pipelines() -> Any` — GET /v1/hiring-pipelines — pipelines + stage IDs (needed for hiring-stage moves).
 - `get_candidate_hiring_stages(slug: str) -> Any` — GET /v1/candidates/{slug}/hiring-stages — all jobs+stages for the candidate.

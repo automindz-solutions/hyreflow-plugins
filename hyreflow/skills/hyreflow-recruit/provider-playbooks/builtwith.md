@@ -1,5 +1,9 @@
 # BuiltWith Guidance
 
+BuiltWith is **BYOK-only** in Hyreflow. If the workspace has no BuiltWith key configured, BuiltWith
+tools are unavailable/skipped with `no_key`. Do not assume a Hyreflow-managed BuiltWith key exists for
+user workspaces.
+
 - Use `builtwith_domain_lookup` when you already know the domain and need live/current technographics. The handler defaults `live_only` to true; set `live_only=false` only when historical detections matter.
 - Use `builtwith_vector_search` to discover the exact BuiltWith technology label before `builtwith_lists` or `builtwith_trends`. Free-text tech guesses often miss if the BuiltWith canonical name differs.
 - Use `builtwith_bulk_domain_lookup` for row-heavy domain work. It auto-polls queued jobs by default and normalizes both sync and async paths to the same `results[]` shape.

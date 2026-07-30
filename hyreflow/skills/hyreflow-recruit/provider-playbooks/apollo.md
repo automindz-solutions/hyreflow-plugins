@@ -10,26 +10,23 @@ Company vs CRM split:
 
 - `apollo_company_search` maps to Apollo Organization Search (`organizations/search`).
 - Use `apollo_company_search` when you want Apollo's broad company database, including companies that are not in your team's CRM yet.
-- `crm_search_for_accounts` maps to Apollo CRM Account Search (`accounts/search`).
-- Use `crm_search_for_accounts` only when you specifically want accounts your team already added to Apollo CRM.
+- `apollo_search_accounts` maps to Apollo CRM Account Search (`accounts/search`).
+- Use `apollo_search_accounts` only when you specifically want accounts your team already added to Apollo CRM.
 - If the task is "find companies," "resolve a company," or "search non-CRM companies," use `apollo_company_search`.
-- If the task is "search my Apollo accounts" or depends on CRM stages/ownership/workflow state, use `crm_search_for_accounts`.
+- If the task is "search my Apollo accounts" or depends on CRM stages/ownership/workflow state, use `apollo_search_accounts`.
 
 People search split:
 
-- `apollo_search_people` maps to Apollo `mixed_people/api_search` (preview, no Apollo credits, obfuscated names/contact gaps).
-- `apollo_people_search_paid` maps to Apollo `mixed_people/search` (paid, billed per request in Hyreflow).
-- `apollo_people_search` remains supported as a legacy alias to the paid search path for compatibility.
-- `apollo_search_people_with_match` remains supported as a convenience helper over free search + paid enrichment.
+- `apollo_search_people` maps to Apollo `mixed_people/api_search` (preview, no Apollo credits, obfuscated names/contact gaps) — this is the only people-search flat tool the engine currently exposes for Apollo.
+- There is no paid/full `mixed_people/search` flat tool on this engine yet (`apollo_people_search_paid` is registered but returns 501 "not available on this engine yet" — do not tell users it works). `apollo_people_search` and `apollo_search_people_with_match` are not registered tool names at all and will 404.
 - Use `people_search` first for discovery and shortlist building; switch to `apollo_search_people` only for an Apollo-only/provider-native override after confirming Apollo BYOK is configured.
-- `apollo_enrich_company`, `apollo_enrich_person`, and `apollo_reveal_person` remain valid compatibility aliases alongside the V2-canonical names.
-- `apollo_people_search_paid` is intentionally supported even though `mixed_people/search` is not represented in the current Apollo OpenAPI snapshot.
+- `apollo_enrich_person` and `apollo_enrich_organization` are the real Apollo enrichment methods (note: `enrich_organization`, not `enrich_company` — there is no `apollo_enrich_company`/`apollo_reveal_person` tool).
 - `q_keywords` is useful for broad text discovery, but it is not the only way to search non-CRM companies or people. If you already know the company, prefer `q_organization_domains_list` or `organization_ids`.
 
 - Keep `include_similar_titles=true` unless the user explicitly asks for strict title matching.
 - For broad discovery, start with `person_seniorities` + `q_keywords` and only tighten after you inspect totals.
 - Prefer keyword-style constraints in `q_keywords` and `q_organization_name` over overly narrow exact strings.
-- Use `apollo_company_search` to resolve account identity first; when running company-targeted `apollo_people_search`, pass `q_organization_domains_list` or `organization_ids` (avoid name-only keyword targeting).
+- Use `apollo_company_search` to resolve account identity first; when running company-targeted `apollo_search_people`, pass `q_organization_domains_list` or `organization_ids` (avoid name-only keyword targeting).
 - Use low `per_page` for pilot checks, then scale once payload shape and match quality are confirmed.
 - For changed-company email recovery specifically, do not force Apollo first; prefer the scenario default order from the GTM meta skill.
 

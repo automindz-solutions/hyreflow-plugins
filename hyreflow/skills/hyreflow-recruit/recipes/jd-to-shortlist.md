@@ -76,7 +76,7 @@ Docs this leans on: [`finding-people.md`](../finding-people.md) (search), [`enri
 |---|---|
 | 1 parse | AI tokens |
 | 2 competitors | exa.answer (~) |
-| 3 search (both legs) | aiark ~0.07 per leg/competitor (first source that hits) |
+| 3 search (both legs) | aiark ~3.0 per leg/competitor (first source that hits; current costs in cost-card.json) |
 | 4 qualify | AI tokens |
 | 5 enrich | per-hit (personal-email providers) |
 Free: dedup, ranking, the location/channel rules.

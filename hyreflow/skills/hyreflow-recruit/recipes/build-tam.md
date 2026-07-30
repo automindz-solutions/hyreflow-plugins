@@ -79,11 +79,11 @@ many survive to the *paid* steps). Walk the funnel with the current per-op credi
 (`reference/tool-registry.json`; firms up with the price card):
 ```
 TAM_total (free count)
-  → sourcing pulls           : cheap (a few calls × ~0.07; lookalikes extra)
+  → sourcing pulls           : cheap (a few calls × ~3.0; lookalikes extra)
   → hard + Model-A qualify    : FREE (Step 3 T1/T2)
-  → web verification (T3)     : verify_N × (serper ~0.02 + firecrawl ~0.02 + agent)  ≈ ~0.04/company
-  → [opt] people per company  : people_search ~0.07/company
-  → [opt] enrich per person   : work email ~0.55/hit · personal-email waterfall varies
+  → web verification (T3)     : verify_N × (serper free + firecrawl ~0.5 + agent)  ≈ ~0.5/company
+  → [opt] people per company  : people_search ~3.0/company
+  → [opt] enrich per person   : work email ~0.5–3.0/hit · personal-email waterfall varies
 ```
 So **est. credits ≈ web-verify(verify_N) + [people_search × companies] + [enrich × people]**, where
 `verify_N` = the count that passes the free hard+LLM filters (assume a pass-rate band, e.g. 30–60% of the

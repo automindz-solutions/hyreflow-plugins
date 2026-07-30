@@ -101,12 +101,12 @@ Enrichment layer (**work email**): shortlist → Prospeo for work emails/phones 
     suggestion names** (live-verified 2026-07-02: C-Suite + `"San Francisco, California"` → 16,155 matches).
   - **⚠️ Can't search with `exclude`-only — need ≥1 positive filter.**
 - **🎯 RADIUS trick:** for "within ~X km of a city," use the **ZONE** suggestion (e.g. `"Greater Munich Metropolitan Area, Germany"`) — it covers the metro in ONE value, no town enumeration (unlike AI Ark `contact.location` / Lemlist which need city lists). Confirmed: Steuerfachwirt + Munich ZONE → 66 matches.
-- **Credits — two billing systems, don't conflate:** on Hyreflow-managed keys, `search_person` meters at
-  **0.55 credits per result** (the price users pay). The VENDOR-side billing (only relevant for BYOK keys):
-  `search_suggestions` = **FREE** (15 req/s); `search_person` = **1 vendor credit per page of 25** that
-  returns ≥1 result, **dedup: same filters+page within 30 days returns `"free":true`** (no charge);
-  `enrich_person` = 1 credit/email; **`enrich_mobile:true` = 10 credits** — gate to explicit phone asks.
-  `account_information` = free pilot.
+- **Credits — two billing systems, don't conflate:** on Hyreflow-managed keys, Prospeo methods are
+  **0 credits** under current pricing (free-to-us on the partner plan). The VENDOR-side billing (only relevant
+  for BYOK keys): `search_suggestions` = **FREE** (15 req/s); `search_person` = **1 vendor credit per
+  page of 25** that returns ≥1 result, **dedup: same filters+page within 30 days returns `"free":true`**
+  (no charge); `enrich_person` = 1 vendor credit/email; **`enrich_mobile:true` = 10 vendor credits** —
+  gate to explicit phone asks. `account_information` = free pilot.
 - **Do NOT use Prospeo for job-change detection/filters** — `person_job_change` has live schema drift; use FullEnrich for job-change workflows.
 - **⚠️ WORK email only** (search/enrich return professional emails) — for candidate personal email use FullEnrich/LeadMagic/Wiza.
 
