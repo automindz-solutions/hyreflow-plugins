@@ -10,7 +10,7 @@ HOW in `lib/recruiterflow.py`.
 ## Auth & config
 - **Base URL:** `https://recruiterflow.com/api/external` · **Auth:** header `RF-Api-Key` (env `RECRUITERFLOW_API_KEY`; never hardcode). `get_info()` = safe read-only pilot.
 - **ALL paths CONFIRMED** from the official Swagger spec (api.recruiterflow.com, 2026-06-01 — pasted by user). Full endpoint index: `reference/docs/recruiterflow/raw/endpoints.md`. RF terminology: **client = company**, plus candidate/contact/job/deal/placement.
-- **Bugs fixed this pass:** `get_account`→`get_info` (POST /info; no /account exists); `get_candidate` is `/candidate/get` (not `/candidate`); `get_job` param is `job_id` (not `id`); job statuses is `/job-status/list` (hyphen); `parse_resume` removed (`/resume/parse` not in spec).
+- **Paths & params (exact):** account info is `get_info()` → `POST /info` (there is no `/account`); candidate read is `get_candidate()` → `GET /candidate/get`; `get_job`'s param is `job_id` (not `id`); job statuses is `GET /job-status/list` (hyphenated); there is no resume-parse method (`/resume/parse` is not in the spec).
 
 ## Operations (36 methods; long tail via `request()`)
 Candidates: `list/get/search/add/update_candidate`, `add_candidate_to_job`, `move_candidate_to_stage`, `disqualify_candidate`, `add_candidate_note`. Jobs: `list/get/search/create/update_job`, `close_job`, `open_job`, `get_job_pipeline`, `list_job_statuses`. Clients(companies): `list/get/add/update/search_clients`. Contacts: `list/get/add/update/search_contacts`, `add_contact_note`. Campaigns: `list_campaigns`, `add_to_campaign`, `remove_from_campaign`. Also `get_info`, `list_users`, `get_user`, `create_placement`. Everything else (activities, calls, emails, tasks, custom-fields, files, deals, placements, reference lists, locations, tags) → `request()`; all listed in the cached index.
@@ -35,7 +35,7 @@ Run via the CLI: `hyreflow tools execute recruiterflow <method> --payload '{...}
 - `create_job(payload: dict) -> Any` — POST /job/create — {about_position, client_company_id, created_by, department_id, employment_type_id, locations[], title, ...}.
 - `create_placement(payload: dict) -> Any` — POST /placement-record/create — {user_id, placements:[{job,prospect,...}]}. See cached index for engagement-type variants.
 - `disqualify_candidate(payload: dict) -> Any` — POST /candidate/disqualify — body {id, job_id, reason, user_id}.
-- `get_candidate(candidate_id: str | int) -> Any` — GET /candidate/get?id= (was wrongly 'candidate' — fixed).
+- `get_candidate(candidate_id: str | int) -> Any` — GET /candidate/get?id= — read one candidate by id.
 - `get_client(client_id: int) -> Any` — GET /client/get?id=.
 - `get_contact(contact_id: str | int) -> Any` — GET /contact/get?id=.
 - `get_info() -> Any` — POST /info — external-API display-name info (safe read-only pilot). (There is no /account.)
@@ -46,7 +46,7 @@ Run via the CLI: `hyreflow tools execute recruiterflow <method> --payload '{...}
 - `list_candidates(**params) -> Any` — GET /candidate/list (items_per_page, current_page, include_files, include_notes, include_count).
 - `list_clients(**params) -> Any` — GET /client/list — client companies.
 - `list_contacts(**params) -> Any` — GET /contact/list (include_files, include_notes, include_count).
-- `list_job_statuses(**params) -> Any` — GET /job-status/list (hyphenated — was wrongly 'job/status/list').
+- `list_job_statuses(**params) -> Any` — GET /job-status/list (hyphenated).
 - `list_jobs(**params) -> Any` — GET /job/list (items_per_page, current_page, include_count, include_notes, include_description, only_open).
 - `list_users(**params) -> Any` — GET /user/list.
 - `move_candidate_to_stage(payload: dict) -> Any` — POST /candidate/move-to-stage — body {id, job_id, stage:{id,name}, user_id}.

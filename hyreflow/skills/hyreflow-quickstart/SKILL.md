@@ -1,20 +1,22 @@
 ---
 name: hyreflow-quickstart
 description: 'Run a quick Hyreflow demo recipe to show the user how Hyreflow works.'
-disable-model-invocation: false
 ---
 
 # Hyreflow Quickstart
 
+> The skill root is `$HOME/.agents/skills/hyreflow-quickstart/`; relative paths are relative to it — if a
+> relative read fails, prefix it with the root.
+
 ## Quick Start
 
 ```bash
-# Install the CLI (sandbox-safe: no-sudo prefix + quiet). In a normal terminal, plain `npm install -g hyreflow` is fine.
+# Install the CLI (sandbox-safe: user-local prefix + quiet). In a normal terminal, plain `npm install -g hyreflow` is fine.
 npm install -g hyreflow --prefix "$HOME/.local" --silent --no-fund --no-audit
 export PATH="$HOME/.local/bin:$PATH"
-# Fallbacks: blocked npmjs.com → add `--registry https://recruit.hyreflow.ai/api/v2/npm/`; no Node → `curl -fsSL https://recruit.hyreflow.ai/api/v2/cli/install | bash -s -- --no-skills`
-hyreflow auth login              # prints a browser sign-in link (relay it to the user) and returns
-hyreflow auth wait --timeout 120 # completes approval; if it says "still pending", relay the link & re-run this
+# Fallbacks: blocked npmjs.com → add `--registry https://recruit.hyreflow.ai/api/v2/npm/`; no Node → https://hyreflow.ai/docs/quickstart
+hyreflow setup                   # installs skills + signs in; relay the link it prints, then re-run
+                                 # this to resume (it continues the same sign-in, so the link stays valid)
 hyreflow auth status             # confirm you're connected
 hyreflow -h                      # see available commands
 ```

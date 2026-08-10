@@ -97,7 +97,7 @@ Follow [`recipes/qualify-against-icp.md`](qualify-against-icp.md), extended with
 
 1. **T1 — Hard filters (free).** Apply the ICP's must-haves (industry / size / geo / type / exclusions) to the
    data the search already returned. Drop clear misses.
-2. **T2 — Model-A fuzzy-fit (free, the customer's Claude).** Read each survivor + the ICP → tier/score. Catches
+2. **T2 — Model-A fuzzy-fit (free, the host agent).** Read each survivor + the ICP → tier/score. Catches
    the mislabeled-industry fits **and** obvious non-fits that slipped the labels. No credits.
 3. **T3 — ICP-driven web verification (PAID — the accuracy step).** The ICP's **proof signals are
    industry-agnostic and per-client** — derived in Step 0, *not* hardcoded. Examples by market: B2B SaaS →

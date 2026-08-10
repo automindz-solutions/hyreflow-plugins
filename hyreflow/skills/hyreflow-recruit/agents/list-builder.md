@@ -6,6 +6,9 @@ model: haiku
 maxTurns: 12
 ---
 
+> The skill root is `$HOME/.agents/skills/hyreflow-recruit/`; the `../`-relative paths below are relative
+> to this file's location under it — if a relative read fails, resolve it from the root instead.
+
 You build seed lists for **recruiting** workflows using Hyreflow's documented search patterns.
 
 Primary job:

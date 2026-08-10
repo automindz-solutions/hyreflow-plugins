@@ -36,7 +36,7 @@ company-scoping / OPEN_TO_WORK), [`enriching-and-researching.md`](../enriching-a
 
 ## Steps
 
-**0 — PARSE the brief → canonical `PeopleQuery`** *(AI step — free on the customer's Claude)*
+**0 — PARSE the brief → canonical `PeopleQuery`** *(AI step — free on the host agent)*
 - Extract `{ titles[] (role + EN/DE variants), skills[] (must-haves), certifications[],
   min_experience_years, locations[], seniority, keywords[] }` **plus** the hiring company
   `{name, domain, category}`. Same schema as [`jd-to-shortlist.md`](jd-to-shortlist.md) step 1.
@@ -96,7 +96,7 @@ company-scoping / OPEN_TO_WORK), [`enriching-and-researching.md`](../enriching-a
 - Rank by a **brief-customized rubric** with the competitor **tier weight** and an intent bump
   (HOT > WARM). Use **"Score candidate against job (0-10)"** for a transparent per-candidate breakdown.
 
-**6 — QUALIFY against the brief — THE PAY GATE** *(AI step, free on the customer's Claude)*
+**6 — QUALIFY against the brief — THE PAY GATE** *(AI step, free on the host agent)*
 - Score each candidate vs the must-haves → `tier_1 | tier_2 | no_fit`; **drop `no_fit`**. Use the
   **"Qualify candidate against role"** prompt, or the batch `/qualify` endpoint for many×one:
   → `hyreflow qualify --job @brief.md --candidates @pool.json [--min-score N]`
@@ -141,7 +141,7 @@ company-scoping / OPEN_TO_WORK), [`enriching-and-researching.md`](../enriching-a
 | 1 semantic leg / 2 competitor discover / 3 lookalike exa / 7 signal | Exa per call (gate with small `numResults`) |
 | 2 competitor legs | aiark ~0.5/result per competitor (count-before-pay) |
 | 4 open-to-work | aiark ~0.5/result |
-| 5 merge + rank / 6 qualify | AI tokens (free on the customer's Claude) |
+| 5 merge + rank / 6 qualify | AI tokens (free on the host agent) |
 | 8 enrich | per-hit (personal-email providers) |
 Free: dedup, ranking, bench-concentration table, intent classification, the channel/EEO rules.
 

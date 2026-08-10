@@ -46,8 +46,8 @@ download résumé (`recruit-crm`/`bullhorn` candidate get) → `cv.pdf` + `candi
   summary}`, where `summary` describes what they actually did/owned there, grounded in the CV. These
   per-station blurbs feed the spec-out narrative and sharpen the job↔CV match in Step 5.
 - **Text-layer check:** if extracted text `< ~200 chars` (Canva exports & scanned PDFs have no text
-  layer) → **multimodal fallback: read the PDF as an image** (the Read tool / `hyreflow_agent` vision)
-  and extract fields from the image. Never abort on a no-text PDF.
+  layer) → **multimodal fallback: read the PDF as an image** (your harness's file/vision read, or
+  `hyreflow_agent` vision) and extract fields from the image. Never abort on a no-text PDF.
 
 → save `cv-analysis.json`. Show the profile, confirm before searching.
 
@@ -101,7 +101,8 @@ url = https://www.stepstone.de/jobs/<slug1>-or-<slug2>/in-<plz>?radius=<km>
 
 **Keep limits modest.** Start at `limit`/`maxItems` ≈ **50–100** per actor — that's plenty of fresh
 postings for one candidate's region; scale only if coverage comes back thin. Apify bills per result, so
-modest limits keep the run cheap. *(No separate payload-approval step — this recipe just runs.)*
+modest limits keep the run cheap — that spend is on the client's own Apify account (Apify is BYOK-only;
+Hyreflow charges 0 credits). *(No separate payload-approval step — this recipe just runs.)*
 
 ## STEP 4 — Normalize + filter
 
@@ -163,7 +164,9 @@ deliverable is the message.
 ## Gates & caveats (honest)
 - **Public-postings-only:** the Apify trio captures *advertised* roles; agency-run / unposted hires are
   invisible. Add an internal leg (your own ATS open mandates) if you also want to place on live jobs first.
-- **Apify spend:** 3 actors bill per result (StepStone ~$1/1k) → keep `limit`/`maxItems` modest (50–100).
+- **Apify is BYOK-only:** the client must have their own Apify token connected in Integrations, or all 3
+  actors return `no_key` and this recipe has no job source. Their account is billed per result
+  (StepStone ~$1/1k) → keep `limit`/`maxItems` modest (50–100). Hyreflow charges 0 credits.
 - **`removeAgency:false`** on LinkedIn is deliberate — we filter agencies in Step 4, not server-side.
 - **Hiring-manager coverage:** excellent when the posting names the reporting line or the company is
   well-indexed; thin at tiny firms (the size hierarchy's "< 100 → GF" branch is the fallback for that).

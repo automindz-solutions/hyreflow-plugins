@@ -5,11 +5,10 @@ description: "Read from and write to Recruit CRM (candidates, companies, contact
 
 # Recruit CRM — Integration Meta Skill
 
-> **Sweep status (2026-06-01):** highest-confidence CRM — the adapter was built directly from 182
-> Firecrawl-scraped live doc pages (cache: `reference/docs/recruitcrm/raw/`, 20 endpoint groups). Base
-> `https://api.recruitcrm.io/v1`, Bearer. Paths considered confirmed-from-scrape.
+> **Confidence: highest of the CRMs** — every path is taken straight from Recruit CRM's own live docs
+> (20 endpoint groups; cache: `reference/docs/recruitcrm/raw/`). Base `https://api.recruitcrm.io/v1`, Bearer.
 
-> 🔴 **PLAN-GATED (live-tested 2026-06-01):** the Open API requires a **Business or Enterprise** Recruit CRM
+> 🔴 **PLAN-GATED:** the Open API requires a **Business or Enterprise** Recruit CRM
 > plan. On lower plans **every** endpoint (list/search/**create**) returns `401 INSUFFICIENT_ACCESS — "Please
 > Upgrade Your Plan…"` even with a valid key. If you hit that, it's the **account plan, not the key** — stop and
 > tell the user; fall back to CSV export or another ATS (loxo/vincere/recruiterflow/bullhorn). See `references/field-notes.md`.

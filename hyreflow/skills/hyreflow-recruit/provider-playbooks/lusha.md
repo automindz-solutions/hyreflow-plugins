@@ -2,7 +2,7 @@
 
 ## When to use
 
-Lusha for B2B email + direct dial enrichment. Strong North American and European coverage with intent signal data. Good for sales prospecting workflows where direct dials matter. Flat 3 credits per revealed record, same as Hyreflow's other standard-tier enrichers.
+Lusha for B2B email + direct dial enrichment. Strong North American and European coverage with intent signal data. Good for sales prospecting workflows where direct dials matter. Flat rate per revealed record — check `hyreflow tools get lusha enrich_person` for the live cost.
 
 **Key strength**: Direct dials (not just HQ numbers). Lusha often surfaces mobile and desk direct numbers that other providers miss.
 
@@ -10,7 +10,7 @@ Lusha for B2B email + direct dial enrichment. Strong North American and European
 
 - **Input required**: LinkedIn URL (best), email, or first_name+last_name+(company_name or company_domain)
 - **Geographic coverage**: Global, strongest in North America + Europe
-- **Credit cost**: flat 3 credits per revealed record (person enrich, company enrich, or contact from search); a handful of filter/catalog/usage lookups are free
+- **Credit cost**: flat rate per revealed record (person enrich, company enrich, or contact from search); a handful of filter/catalog/usage lookups are free
 - **LinkedIn URL requirement**: Must contain "linkedin.com/in/". Sales Navigator URLs not supported.
 
 ## Key operations

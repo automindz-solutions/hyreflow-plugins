@@ -56,7 +56,7 @@ Docs this leans on: [`finding-people.md`](../finding-people.md) (search), [`enri
     `POST /qualify {"job_spec": <JD text>, "candidates": [Person, …], "min_score": <0-10 optional>}` →
     returns `{candidates:[{…, qualify:{score:0-10, summary, strengths[], gaps[]}}], scored, count}`. Use this
     for *many candidates × one job*; use `infer` + the "Score job against CV" prompt for the *inverse*
-    (one candidate × many jobs, e.g. `cv-to-jobs`). Interactive scoring stays free on the customer's Claude (Model A).
+    (one candidate × many jobs, e.g. `cv-to-jobs`). Interactive scoring stays free on the host agent (Model A).
 
 **5 — ENRICH (candidate channel)** *(`enriching.md`)*
 - **Personal email + LinkedIn — NEVER work email** (candidates). `personal_email` waterfall (`fullenrich → leadmagic → wiza`),

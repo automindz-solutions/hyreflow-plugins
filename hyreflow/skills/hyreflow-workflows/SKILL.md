@@ -1,10 +1,12 @@
 ---
 name: hyreflow-workflows
 description: 'Build, run, and oversee recruiting/GTM workflows with Hyreflow — native cloud workflows (Hyreflow-executed, metered, cron/webhook) or n8n workflows (built in the user''s own n8n, linked out). Use when the user asks to automate, schedule, or wire a multi-step pipeline.'
-disable-model-invocation: false
 ---
 
 # Hyreflow Workflows
+
+> The skill root is `$HOME/.agents/skills/hyreflow-workflows/`; relative paths are relative to it — if a
+> relative read fails, prefix it with the root.
 
 A **workflow** is a persisted, trigger-bound pipeline. Hyreflow supports two engines behind ONE unified
 surface (the dashboard list + `hyreflow workflows …`):
@@ -29,14 +31,14 @@ marketplace, not the CLI installer), install it + sign in:
 ```bash
 npm install -g hyreflow --prefix "$HOME/.local" --silent --no-fund --no-audit  # sandbox-safe; plain `npm install -g hyreflow` in a normal terminal
 export PATH="$HOME/.local/bin:$PATH"
-# blocked npmjs.com → add `--registry https://recruit.hyreflow.ai/api/v2/npm/`; no Node → `curl -fsSL https://recruit.hyreflow.ai/api/v2/cli/install | bash -s -- --no-skills`
-hyreflow auth login              # prints a sign-in link (relay it to the user) and returns
-hyreflow auth wait --timeout 120 # completes approval; if it says "still pending", relay the link & re-run this
+# blocked npmjs.com → add `--registry https://recruit.hyreflow.ai/api/v2/npm/`; no Node → https://hyreflow.ai/docs/quickstart
+hyreflow setup                   # installs skills + signs in; relay the link it prints, then re-run
+                                 # this to resume (it continues the same sign-in, so the link stays valid)
 hyreflow auth status             # confirm you're connected
 hyreflow -h                      # see available commands
 ```
 
-npm ships the CLI only (no duplicate skills copy — you already have them via the plugin). Once connected, continue.
+The npm install brings the skills with it, and skips any package your agent already provides. Once connected, continue.
 
 Then run `hyreflow update --check --json`.
 - On error (older CLI without `--check`), fall back to `hyreflow auth status` and read its
@@ -61,8 +63,10 @@ Read `references/native-workflows.md`. Author with the Python SDK builder or a d
    URL + API key (Settings → n8n API). Do not ask for the key in chat — it lives in the dashboard.
 2. Read `references/n8n-setup.md` (prerequisites + validation) and `references/base-n8n-nodes.md` (the
    nodes you compose — Hyreflow is called via the **HTTP Request** node).
-3. Spawn the **workflow-builder** sub-agent (`agents/workflow-builder.md`) to author the n8n workflow
-   JSON, create it (`hyreflow n8n create --file flow.json`), and return the editor + webhook URLs.
+3. Delegate to the **workflow-builder** subagent brief (`agents/workflow-builder.md`) with your harness's
+   subagent tool. It starts with **no** conversation history, so pass the absolute path of the brief AND
+   the user's goal + trigger choice. It authors the n8n workflow JSON, creates it
+   (`hyreflow n8n create --file flow.json`), and returns the editor + webhook URLs.
 4. The created workflow appears in the unified dashboard list (source = n8n) and via
    `hyreflow workflows list`. Manage it there: `hyreflow workflows enable|disable|delete <id>` proxy to
    n8n.

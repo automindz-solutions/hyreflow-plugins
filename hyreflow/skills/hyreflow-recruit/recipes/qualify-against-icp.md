@@ -6,7 +6,7 @@ only ICP-fit companies pass downstream. This is the `qualify` stage of the pipel
 `source → qualify(ICP) → enrich → sequence → CRM`.
 
 ## Where this runs (Model A)
-Qualification is **reasoning done by the customer's own Claude** (the agent running this skill), reading
+Qualification is **reasoning done by the host agent** (the agent running this skill), reading
 the client's local `ICP.md`. **No hyreflow server call, no OpenRouter, no credits for the judgment itself**
 — credits are only spent on the optional firmographic lookups in Step 1 and on enriching the *passes*.
 
@@ -28,7 +28,7 @@ explicit exclusions) and apply them to the data you **already have** from the so
   Batch where the adapter supports it.
 - Output: survivors → Step 2; dropped → log with the failing rule.
 
-## Step 2 — Fuzzy fit (LLM judgment = the customer's Claude, free)
+## Step 2 — Fuzzy fit (LLM judgment = the host agent, free)
 For survivors, judge qualitative fit against `ICP.md`'s signals (mission, product, buyer, "what good
 looks like"). Pick the path by scale:
 - **Inline (small N):** you (the agent) read each company's site/description + `ICP.md` and assign a fit
@@ -54,7 +54,7 @@ enrich or sequence non-fits.
 
 ## Cost discipline (three nested funnels)
 1. Hard filters (free, on data you already have) shrink the set.
-2. LLM fuzzy-fit runs only on survivors (free — customer's Claude).
+2. LLM fuzzy-fit runs only on survivors (free — host agent).
 3. Enrichment runs only on the passes (credits).
 Keeps both LLM and API/credit cost minimal.
 

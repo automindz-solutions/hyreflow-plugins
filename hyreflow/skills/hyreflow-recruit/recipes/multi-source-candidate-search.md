@@ -22,8 +22,10 @@ profile data only (no contact info until the shortlist). Hard-won gotchas from t
 3. **Count-peek BEFORE paying.** All 3 return a total, nested under the `result` envelope every
    `tools execute` returns (`{ _meta, result }`): AI Ark `result.totalElements`, Lemlist `result.total`,
    Prospeo `result.pagination.total_count` (a top-level read returns `None`). Do a `size:1`/`page:1` call to read it cheaply, then decide depth.
-   Billing: **Prospeo 1 cr/page(≤25), 30-day dedup → re-runs `free:true`**; **AI Ark ~0.5/result (size-capped)**;
-   **Lemlist credit-metered per search**. Surface "N total ≈ X credits to pull all — proceed?".
+   Billing: **Prospeo `search_person` is free** (masked preview; 30-day dedup on repeat calls); **AI Ark
+   bills per result (size-capped)**; **Lemlist is credit-metered per search**. Check
+   `hyreflow tools get <tool> <method>` for the live rate on each. Surface "N total ≈ X credits to pull
+   all — proceed?".
 4. **Paginate** only as deep as needed (cap pages; log if you stop early).
 5. **Dedupe across sources** — by **LinkedIn slug** (`/in/<slug>`) where present: AI Ark `link.linkedin`,
    Lemlist `lead_linkedin_url`, Prospeo `person.linkedin_url`. **Xing/external have NO LinkedIn → dedupe by
@@ -38,9 +40,9 @@ profile data only (no contact info until the shortlist). Hard-won gotchas from t
 ## Per-provider quick ref
 | Provider | Title filter | Location filter | Total field | Bill |
 |---|---|---|---|---|
-| **AI Ark** | `experience.current.title` mode SMART (full words) | `contact.location` str[] superset (geoLocation=ACCOUNT only) | `result.totalElements` | ~0.5/result |
+| **AI Ark** | `experience.current.title` mode SMART (full words) | `contact.location` str[] superset (geoLocation=ACCOUNT only) | `result.totalElements` | per result — check live rate |
 | **Lemlist** | `currentTitle` in[] (full words; each filter needs `in`+`out`) | `location` in[] superset | `total` | per-search credits |
-| **Prospeo** | `person_job_title` include[]+`match_mode:CONTAINS` (stem ok) | `person_location_search` include[] = canonical from `search_suggestions` (ZONE=radius) | `pagination.total_count` | 1cr/page, 30d dedup free |
+| **Prospeo** | `person_job_title` include[]+`match_mode:CONTAINS` (stem ok) | `person_location_search` include[] = canonical from `search_suggestions` (ZONE=radius) | `pagination.total_count` | free (30d dedup on repeat calls) |
 
 ## Field shapes for qualification text
 - AI Ark: `profile.headline`/`.summary`, `skills[]`, `position_groups[].profile_positions[].title/description`.

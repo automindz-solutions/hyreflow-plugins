@@ -4,6 +4,21 @@ All notable changes to the Hyreflow plugin are documented here. Versions track
 the plugin, kept in lockstep across the marketplace manifests and the plugin's
 own `plugin.json` files.
 
+## 0.1.6 — 2026-08-10
+
+First skills sync since 0.1.5 (2026-07-30).
+
+**Fixed**
+- `people_search` no longer silently drops filters or bills for out-of-filter results.
+- Prospeo reveal pricing now reflects what the customer is actually charged.
+- The setup skill no longer prompts for install method, verifies the CLI install, and
+  the recruit-skill fallback path is fixed.
+
+**Changed**
+- Every endpoint's price now derives from vendor cost at a 70% margin floor.
+- Apify moved to BYOK-only billing.
+- Agent skills are installable by any harness, Hermes first.
+
 ## 0.1.5 — 2026-07-30
 
 First skills sync since 0.1.4 (2026-07-14), so this covers two weeks of engine changes.

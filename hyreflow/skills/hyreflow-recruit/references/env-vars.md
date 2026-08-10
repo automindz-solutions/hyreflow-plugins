@@ -13,7 +13,7 @@ commit one.** The engine operator sets these in the server's secrets manager / e
 |---|---|---|---|
 | aiark | `AIARK_API_KEY` | header `X-TOKEN` | paths inferred from doc slugs — verify on first pilot |
 | aircall | `AIRCALL_API_ID`, `AIRCALL_API_TOKEN` | HTTP Basic (id:token) | partner multi-co apps use OAuth (not in adapter) |
-| apify | `APIFY_API_KEY` | Bearer | actorId = `username~actorname` |
+| apify | `APIFY_API_KEY` | Bearer | BYOK-only for user workspaces; no managed fallback for workspace calls; actorId = `username~actorname` |
 | apollo | `APOLLO_API_KEY` | header `x-api-key` | BYOK-only for user workspaces; no managed fallback for workspace calls; page/per_page |
 | atlas | `ATLAS_API_KEY` | `Authorization: Bearer` | AI-native ATS/CRM; 25 methods; long tail via `request()` |
 | bettercontact | `BETTERCONTACT_API_KEY` | header `X-API-Key` | async: start job → poll |
@@ -35,7 +35,7 @@ commit one.** The engine operator sets these in the server's secrets manager / e
 | recruiterflow | `RECRUITERFLOW_API_KEY` | header `RF-Api-Key` | |
 | serper | `SERPER_API_KEY` | header `X-API-KEY` | google.serper.dev + scrape.serper.dev |
 | smartlead | `SMARTLEAD_API_KEY` | **query param** `api_key` | not a header |
-| theirstack | `THEIRSTACK_API_KEY` | `Authorization: Bearer` | credits: jobs 3/result, companies 3/result; blur_company_data=free preview |
+| theirstack | `THEIRSTACK_API_KEY` | `Authorization: Bearer` | credits: jobs + companies billed per result (check `hyreflow tools get theirstack <method>` for the live rate); blur_company_data=free preview |
 | predictleads | `PREDICTLEADS_API_KEY`, `PREDICTLEADS_API_TOKEN` | headers `X-Api-Key` + `X-Api-Token` (**inferred — verify**) | funding/hiring discovery; JSON:API; base `/api/v3`; company endpoints per-request (≤1000), discover per-result; paths/auth flagged verify-on-pilot |
 | shovels | `SHOVELS_API_KEY` | header `X-API-Key` | BYOK-only for user workspaces; no managed fallback for workspace calls; US building permits + contractors; cursor pagination; searches need geo_id+permit_from/to |
 | github | `GITHUB_TOKEN` | `Authorization: Bearer` (PAT) | dev sourcing; REST 5k/hr, Search 30/min + 1000 cap; emails public-only → enrich downstream |

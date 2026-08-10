@@ -46,7 +46,7 @@ People search body = `{account, contact, lists, page, size}`; **`page` (0-based)
 > `tools execute people_search --payload '{"providers":["aiark"],"skills":["Python","FastAPI"],"titles":["Backend Engineer"],"locations":["Berlin"]}'`.
 > Only hand-build the raw `aiark people_search` payload when you need a filter the canonical query can't express.
 
-**Canonical waterfall fields → AI Ark filter (ENG-160).** Beyond the portable fields (`titles`, `locations`,
+**Canonical waterfall fields → AI Ark filter.** Beyond the portable fields (`titles`, `locations`,
 `seniority`, `skills`, `certifications`, `min_experience_years`, `company_names/domains/linkedin_urls`), the
 waterfall now maps these **AI-Ark-only** fields — passing any of them **pins the chain to AI Ark** (the other
 providers can't honor them, so they're skipped rather than silently returning non-matching people):
@@ -66,10 +66,12 @@ providers can't honor them, so they're skipped rather than silently returning no
 Tenure is expressed in **months** and split into `{year, month}` (e.g. 18 → `{"year":1,"month":6}`). Enum
 values (`profile_badges`, `departments`, `company_funding_types`) are passed through verbatim — invalid enums
 are silently ignored by AI Ark (not a 400), so use the exact catalog values.
-- **Field-name corrections vs an earlier inferred note:** the contact location field is **`contact.location`** (not `contactLocation`); company filters live under `contact.company.{latest,current,previous}` by UUID; titles/durations live under `contact.experience.{latest,current,previous}`; degree filters live under `contact.education.degree`.
+- **Field names:** the contact location field is **`contact.location`** (not `contactLocation`); titles/durations live under `contact.experience.{latest,current,previous}`; degree filters live under `contact.education.degree`.
+- **⚠️ Scope a people search to a company via `account.domain` / `account.linkedin` / `account.name` — NOT `contact.company`.** `contact.company.{latest,current,previous}` takes AI Ark company UUIDs, and even given a company's own correct UUID a live A/B returned an **unrelated company inside the top 3 rows**, where `account.domain` returned 3/3 correct. Pass root domains (`acme.com`, not `https://www.acme.com/about`). Verified live 2026-08-04.
+- **⚠️ `totalElements` ≈ 414,000,000 means your filters were IGNORED, not that you matched a lot.** That's the entire database. AI Ark drops a filter key it doesn't recognise, answers 200, and serves unfiltered rows — so peek `totalElements` (with `size:1`) whenever a filter shape is new to you: add a filter and the count must drop. On the `people_search` waterfall an exact company scope is checked for you: a database-scale count comes back as `outcome: "filter_not_bound"`, unbilled, instead of strangers.
 - **Candidate signal — `contact.profileBadge` (OPEN_TO_WORK):** source candidates flagged *open to work* with `{"contact":{"profileBadge":{"any":{"include":["OPEN_TO_WORK"]}}}}`. **AI Ark is the only DB in the stack with this badge filter, so route any "open to work" candidate request here.** (`ProfileBadgeEnum` also has VERIFIED/INFLUENCER/CREATOR; `HIRING` is a company/BD signal, not a candidate one — don't use it for candidate sourcing.) Pair it with a title/location/skill — `OPEN_TO_WORK` alone matches a ~24M global pool.
 - Enum lists (SeniorityLevel, DepartmentAndFunction, Industry, CompanyType, ProfileBadge, Language, TimeFrame) are in the cached spec.
-- **⚠️ Location is an EXACT-string filter — enumerate the whole metro, not just the headline city.** `contact.location` (and `geoLocation` aside) matches the strings you pass; "San Francisco Bay Area" does NOT auto-include its cities. When targeting **the Bay Area, always include**: `["San Francisco", "San Francisco Bay Area", "Menlo Park", "Palo Alto", "Mountain View", "Sunnyvale", "Cupertino", "Santa Clara", "Redwood City", "Oakland", "Berkeley", "San Jose"]` (Palo Alto especially — it's where a lot of Big-Tech HQs/staff sit and was missed by an SF-only list). Same principle for any metro (NYC → add Brooklyn/Jersey City; London → add Greater London etc.). **⚠️ `geoLocation` (lat/lng+radius) is an ACCOUNT (company-HQ) filter, NOT a contact filter** (LIVE-confirmed: putting it under `contact` is silently ignored → nationwide results; under `account` it filters by the person's COMPANY location within the radius). **To filter the PERSON's location, use `contact.location` (str[] exact-string, NO radius)** — enumerate the metro's city strings. Use `account.geoLocation` only when "within X km of a point" by company HQ is acceptable.
+- **⚠️ Location is an EXACT-string filter — enumerate the whole metro, not just the headline city.** `contact.location` (and `geoLocation` aside) matches the strings you pass; "San Francisco Bay Area" does NOT auto-include its cities. When targeting **the Bay Area, always include**: `["San Francisco", "San Francisco Bay Area", "Menlo Park", "Palo Alto", "Mountain View", "Sunnyvale", "Cupertino", "Santa Clara", "Redwood City", "Oakland", "Berkeley", "San Jose"]` (Palo Alto especially — an SF-only list silently drops it, and a lot of large-employer staff sit there). Same principle for any metro (NYC → add Brooklyn/Jersey City; London → add Greater London etc.). **⚠️ `geoLocation` (lat/lng+radius) is an ACCOUNT (company-HQ) filter, NOT a contact filter** (LIVE-confirmed: putting it under `contact` is silently ignored → nationwide results; under `account` it filters by the person's COMPANY location within the radius). **To filter the PERSON's location, use `contact.location` (str[] exact-string, NO radius)** — enumerate the metro's city strings. Use `account.geoLocation` only when "within X km of a point" by company HQ is acceptable.
 
 ## Company search filters
 Company search body = `{account, page, size}`; **`page` (0-based) and `size` (≤100) are required**. Use `company_search` when account-level filters are the primary target; use the `people_search` waterfall when the end goal is candidate sourcing.
@@ -135,10 +137,10 @@ Returned `totalElements` 761,948 vs baseline 72,155,668.
 ## ⚠️ WORK EMAIL ONLY — not for candidate workflows
 AI Ark's email-finder returns **work / professional emails only — NOT personal emails.** Do **not** use AI Ark
 for personal-email or **candidate-acquisition** workflows. **Personal emails come from `fullenrich` or
-`leadmagic` only** (COO-confirmed). AI Ark is for sourcing + work-email/mobile enrichment.
+`leadmagic` only.** AI Ark is for sourcing + work-email/mobile enrichment.
 
 ## Guardrails
-- `mobile_phone_finder` is expensive (10 credits) — use only on high-confidence matches. `fetch_credit()` = safe read-only pilot. Pilot small; gate bulk export/find-emails.
+- `mobile_phone_finder` is expensive relative to email/profile lookups — use only on high-confidence matches; check `hyreflow tools get aiark mobile_phone_finder` for the live rate. `fetch_credit()` = safe read-only pilot. Pilot small; gate bulk export/find-emails.
 
 ## Handoff
 Sourcing + enrichment: company→people search → email/phone (export/find-emails or mobile finder) → ATS/sequencer. Discover companies first, then people.
@@ -148,9 +150,9 @@ Sourcing + enrichment: company→people search → email/phone (export/find-emai
 
 > **Field-shape note:** these are vendor-native operational notes describing the **raw vendor JSON** — the shape that sits **inside** the engine's `result` envelope. The vendor payload itself is not normalized (no `result.data.` re-nesting of vendor fields), but `tools execute` still wraps it as `{ _meta, result }`, so access every field under `result` (e.g. `result.content`, `result.totalElements`) — see **Response shape** above.
 
-**Base URL — RESOLVED (official OpenAPI):** server is `https://api.ai-ark.com/api/developer-portal`; the people-search path is `/v1/people`, so the full URL is `.../developer-portal/v1/people`. Our `BASE_URL` folds `/v1` in and `people_search` posts to `people` — confirmed correct. (The earlier "no /v1" ambiguity is settled: `/v1` lives in the path.)
+**Base URL:** server is `https://api.ai-ark.com/api/developer-portal`; the people-search path is `/v1/people`, so the full URL is `.../developer-portal/v1/people`. `BASE_URL` folds `/v1` in and `people_search` posts to `people`.
 
-> The filter shapes, mode enum (`SMART`/`WORD`/`STRICT`), field names, and response shape are now documented from the spec in the **Filter structure** section above — that supersedes an earlier inferred note's `FUZZY`/`contactLocation` wording, which was inaccurate.
+> The filter shapes, mode enum (`SMART`/`WORD`/`STRICT`), field names, and response shape are documented from the spec in the **Filter structure** section above.
 
 **Credit costs:** company search 3/result; people search 3/result; reverse lookup 5/req;
 **mobile phone finder 10/req** (use only after a high-confidence match); export/email-finder 3/result;

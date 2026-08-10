@@ -5,6 +5,9 @@ description: "Hyreflow's recruitment-automation harness — the umbrella over ev
 
 # hyreflow.ai — Integration Harness (Meta Skill)
 
+> The skill root is `$HOME/.agents/skills/hyreflow-recruit/`; every relative path in this doc (and its
+> recipes/playbooks/references) is relative to it — if a relative read fails, prefix it with the root.
+
 Hyreflow is a recruitment-automation harness: a unified adapter + playbook layer
 over every external recruiting/GTM tool. Each tool gets a thin Python **adapter** (`lib/<tool>.py`,
 the "hands") paired with a **playbook** (`provider-playbooks/<tool>.md`, the "brain").
@@ -17,14 +20,14 @@ marketplace, not the CLI installer), install it + sign in:
 ```bash
 npm install -g hyreflow --prefix "$HOME/.local" --silent --no-fund --no-audit  # sandbox-safe; plain `npm install -g hyreflow` in a normal terminal
 export PATH="$HOME/.local/bin:$PATH"
-# blocked npmjs.com → add `--registry https://recruit.hyreflow.ai/api/v2/npm/`; no Node → `curl -fsSL https://recruit.hyreflow.ai/api/v2/cli/install | bash -s -- --no-skills`
-hyreflow auth login              # prints a sign-in link (relay it to the user) and returns
-hyreflow auth wait --timeout 120 # completes approval; if it says "still pending", relay the link & re-run this
+# blocked npmjs.com → add `--registry https://recruit.hyreflow.ai/api/v2/npm/`; no Node → https://hyreflow.ai/docs/quickstart
+hyreflow setup                   # installs skills + signs in; relay the link it prints, then re-run
+                                 # this to resume (it continues the same sign-in, so the link stays valid)
 hyreflow auth status             # confirm you're connected
 hyreflow -h                      # see available commands
 ```
 
-npm ships the CLI only (no duplicate skills copy — you already have them via the plugin). Once connected, continue.
+The npm install brings the skills with it, and skips any package your agent already provides. Once connected, continue.
 
 Then run `hyreflow update --check --json`.
 - On error (older CLI without `--check`), fall back to `hyreflow auth status` and read its
@@ -91,7 +94,7 @@ pick the right tool/endpoint for each step inside that workflow.
 - **L2 — `references/*.md`**: cross-cutting *how* — `provider-precedence.md`, `async-jobs.md`, `architecture.md`, `cost-card.md`, `env-vars.md`, `recruiter-playbooks/` (Boolean/X-ray craft + corpus intake).
 - **L2.5 — `recipes/*.md`**: step-by-step task playbooks — when one matches, **follow it as your plan**.
 - **L3 — `provider-playbooks/<tool>.md`**: per-provider auth, methods, gotchas + the auto-generated **Callable surface**.
-- **Lab log — `references/field-notes.md`**: raw live-test discoveries → curate into the canonical L3 playbook.
+- **Field notes — `references/field-notes.md`**: live-verified provider behaviour per provider (filter shapes, billing units, coverage limits) — the specifics vendor docs get wrong or omit.
 
 **No-loss rule:** when guidance moves, it stays fully documented at its canonical layer and is linked from here — don't duplicate, link.
 
@@ -124,11 +127,13 @@ filter and pulling the entire DB). Reading more than one is normal and encourage
 | Any credit-consuming or write action | the **Credit & approval gate** section below |
 | Not sure which tool fits the intent | **start here:** `hyreflow tools search <intent>` (ranked flat tools) → then `hyreflow tools get <tool> <method>` for the exact payload — never guess |
 
-If nothing matches, grep the library: `Grep pattern="<keyword>" path="recipes/" glob="*.md"` (or `path="provider-playbooks/"`).
+If nothing matches, search the library: `grep -rl "<keyword>" recipes/ provider-playbooks/`.
 
 ## Sub-agents — parallel orchestration (preferred for non-trivial work)
-Two Claude Code sub-agents live in [`agents/`](agents/). Spawn them (via the Task tool) instead of
-doing everything inline — they keep the main thread clean and run on a cheaper model:
+Two sub-agent briefs live in [`agents/`](agents/). Delegate to them with your harness's subagent tool
+instead of doing everything inline — they keep the main thread clean and run on a cheaper model. A
+subagent starts with **no** conversation history, so pass the absolute path of the brief AND the
+concrete task inputs when you spawn one:
 
 - **`execution-plan-creator`** — turns a recruiting request into a concrete, session-step plan with an
   approval gate, before any paid run. Spawn it first for any multi-step task.
@@ -165,7 +170,7 @@ hyreflow session status --message "aiark returned 0 — falling back to apollo" 
 hyreflow session output --csv hyreflow/data/<slug>/<slug>.csv --label "Acme employees"
 # 5) ONLY when the next step spends credits: raise the Playground banner BEFORE you ask in the terminal,
 #    then clear it. Free steps never do this. The message MUST name the estimated credits.
-hyreflow session alert --message "Approval needed: enrich 101 rows (~20 credits)"
+hyreflow session alert --message "Approval needed: enrich 101 rows (~60 credits)"
 hyreflow session alert --clear                              # (advancing the gate step also auto-clears it)
 # 6) Inspect this session's spend / cap at any time (the user may set a $ limit in the Playground)
 hyreflow session usage                                      # add --json for the raw payload
@@ -196,7 +201,7 @@ hyreflow-recruit/                    <- this skill package (installed to ~/.agen
     architecture.md     <- the pairing rule, adapter template, how to add a new tool
     provider-precedence.md  <- the channel/source waterfall + safety gates
     cost-card.md        <- per-operation credit costs
-    field-notes.md      <- running log of LIVE-TEST discoveries (API gotchas, plan gates, working payloads)
+    field-notes.md      <- live-verified provider behaviour (API gotchas, plan gates, working payloads)
     recruiter-playbooks/  <- Boolean/X-ray search craft + intake for contributed recruiter research
 ```
 The adapters (`lib/`) and the machine-readable call contract (`reference/tool-registry.json`) live
@@ -216,7 +221,7 @@ The adapters (`lib/`) and the machine-readable call contract (`reference/tool-re
 `lusha` · `leadmagic` · `icypeas` · `prospeo` · `fullenrich` · `bettercontact` · `wiza` · `exa` · `enrichley` (email validation)
 
 **Data / sourcing** — search, scrape, actors, signals
-`apify` · `aiark` · `firecrawl` · `serper` · `theirstack` (hiring/intent signals) · `predictleads` (funding rounds incl. Series A + job openings + tech detections — funding/hiring discovery) · `shovels` (US building permits + contractors — construction/trades) · `github` (developer sourcing — IT recruiting) · `clinicaltrials` (pharma/biotech/CRO hiring signals; no key) · `builtwith` (technographics — source/qualify companies by tech stack)
+`apify` (**BYOK-only** — needs the client's own Apify key; 0 credits, Apify bills them) · `aiark` · `firecrawl` · `serper` · `theirstack` (hiring/intent signals) · `predictleads` (funding rounds incl. Series A + job openings + tech detections — funding/hiring discovery) · `shovels` (US building permits + contractors — construction/trades) · `github` (developer sourcing — IT recruiting) · `clinicaltrials` (pharma/biotech/CRO hiring signals; no key) · `builtwith` (technographics — source/qualify companies by tech stack)
 
 **Sequencers** — outreach activation
 `instantly` (email) · `lemlist` (email+LinkedIn) · `heyreach` (LinkedIn) · `smartlead` (email) · `sourcewhale` (recruiting outreach)
@@ -228,7 +233,7 @@ The adapters (`lib/`) and the machine-readable call contract (`reference/tool-re
 `aircall` (phone) · `fathom` (meeting notetaker API) · `granola` (meeting notes) · `quil` (**parked — no public API**)
 
 **Hyreflow Natives** — first-party, no external vendor, always credit-metered (no BYOK)
-`layoffsignal` (layoff/RIF recruiting trigger — built on free public news RSS; poach displaced talent + BD signal) · `hyreflow_native` (job scrapers — career pages, LinkedIn, Indeed, Arbeitsagentur; async launch→poll, pay-on-match per job) · `hyreflow-agent` (AI reasoning agent — OpenRouter model + adapter toolbelt; `infer` plain + `research` agentic; the metered reasoning layer for batch/headless — interactive reasoning stays free on the customer's Claude)
+`layoffsignal` (layoff/RIF recruiting trigger — built on free public news RSS; poach displaced talent + BD signal) · `hyreflow_native` (job scrapers — career pages, LinkedIn, Indeed, Arbeitsagentur; async launch→poll, pay-on-match per job) · `hyreflow-agent` (AI reasoning agent — OpenRouter model + adapter toolbelt; `infer` plain + `research` agentic; the metered reasoning layer for batch/headless — interactive reasoning stays free on the host agent)
 
 > Read the matching `provider-playbooks/<tool>.md` before executing against any tool — it has the auth scheme,
 > the typed methods, the pagination contract, and the approval gates. Don't guess params.
@@ -323,7 +328,8 @@ Multi-tool flows have a step-by-step recipe in `recipes/` — follow it as the e
   → enrich → outreach/ATS. TAM membership = firmographic fit, **not** current hiring.
 - [`recipes/cv-to-jobs.md`](recipes/cv-to-jobs.md) — **CV → fitting jobs → hiring manager (spec-out / MPC).**
   The inverse of jd-to-shortlist: parse a CV → search live open roles in the candidate's region (DACH job-board
-  trio: LinkedIn + StepStone + Indeed via Apify) → match/score each job vs the CV → find the hiring manager
+  trio: LinkedIn + StepStone + Indeed via Apify — **BYOK-only**, needs the client's own Apify key) → match/score
+  each job vs the CV → find the hiring manager
   (company-scoped people_search, **client-configured** size→title hierarchy + reporting-line-first) → work email →
   candidate-led BD. Channel = work email (pitching the candidate to the company).
 - [`recipes/candidate-led-bd-campaign.md`](recipes/candidate-led-bd-campaign.md) — **MPC Shot: candidate → full
@@ -347,10 +353,10 @@ Multi-tool flows have a step-by-step recipe in `recipes/` — follow it as the e
   scores engagement, researches the top 10, and drafts invites in the client's voice — the human send is
   a hard gate (cap 20-25/day, no LinkedIn send automation, ever); already-connected targets warm-DM instead.
 
-### The ICP qualify gate (Model A — runs on the customer's Claude)
+### The ICP qualify gate (Model A — runs on the host agent)
 - The client's **`ICP.md`** is built once by **`/icp`** at onboarding and lives in the client's working
   directory (per-client **data**, NOT in this skill).
-- Qualification is **agent reasoning** — the customer's own Claude reads `ICP.md` and scores companies.
+- Qualification is **agent reasoning** — the host agent reads `ICP.md` and scores companies.
   **No hyreflow server call, no OpenRouter, no credits for the judgment itself.** Hard firmographic
   filters run on data you already have (free); the LLM fuzzy-fit (via the `company-qualifier` agent or
   inline) runs only on survivors; enrichment runs only on the passes.
@@ -439,14 +445,26 @@ Applies to **any credit-consuming call** (enrichment, paid search/reveal, signal
 ATS/CRM/outreach write**. BYOK reads the client owns are exempt from the spend gate, but writes still pilot-first.
 
 ### When NOT to gate (gate only on cost)
-The approval gate exists to authorize **spend**. Gate (raise `session alert` + ask via `AskUserQuestion`)
-**only before an action that charges credits**. Do **not** gate — no banner, no question, no "Approval gate"
+The approval gate exists to authorize **spend**. Gate (raise `session alert` + ask with your harness's
+structured-question tool) **only before an action that charges credits**. Do **not** gate — no banner, no question, no "Approval gate"
 plan step — for free/zero-cost work:
 - free count/sizing peeks (`size:1`/`page:1`/`Limit=0` to read a total without paying),
 - cached or local reads, CSV/file ops, plan/registry lookups,
 - BYOK reads the client owns,
-- any method whose `cost.credits == 0` in `reference/tool-registry.json` (free providers, `*.fetch_credit`,
-  list/iter/get reads — ~most read-only methods).
+- any method whose cost block says **`unit: "free"`** in `reference/tool-registry.json` (`*.fetch_credit`,
+  list/iter/get reads, masked search previews, async polls — ~most read-only methods).
+
+**`credits: 0` alone does NOT mean free.** Read `unit` too, and gate unless it is `"free"`:
+- `byok` — 0 hyreflow credits, but the call burns the client's own vendor credits (Apollo, ZoomInfo,
+  BuiltWith, Shovels). Real money → gate the spend with the client.
+- `metered` / `runtime` / `token` — priced by usage (Apify, Exa, the LLM Native): no fixed per-call
+  number, so quote an estimate and gate.
+- `variable` present ⇒ the method is **argument-priced**: an option raises the price (e.g.
+  `prospeo_enrich_person(enrich_mobile=True)` bills 5.6 cr instead of 0.6). Budget with **`credits_max`**,
+  never `credits`.
+
+A provider being cheap or free *to hyreflow* is never a reason to skip the gate — the customer is billed
+the price in the cost block regardless.
 
 The `session alert` / approval **message must name the estimated credits** (e.g. "…(~3 credits)") — that
 number is the whole reason the gate exists. If the estimate rounds to ~0, there is nothing to approve, so
@@ -472,14 +490,18 @@ When the user asks for **N**, pull **~1.4×N** at the top of funnel. Every phase
 contact search misses ~15–20% of companies, the email waterfall ~5–10% of contacts, and many candidates
 simply have no findable personal email/LinkedIn. **Coverage is a property of the person/company, not
 something more effort fixes** (a 5-person startup or a bare profile has near-zero coverage across *every*
-provider — we saw this live: enriching the bare Gera profiles returned nothing).
+provider — enriching bare `acme` profiles returns nothing across the board).
 - **Do:** over-pull → run the full pipeline → deliver the best **N complete** rows → drop the incomplete ones.
 - **Don't:** trim to exactly N before running; retry failed lookups across fallback providers; or run
   enrichment on everything just to patch a few gaps.
 
 ### Approval message (strict format — blocking)
 Post these four sections before any full paid run. If any is missing, **stay in await-approval and run
-nothing paid.** Use the **AskUserQuestion** tool for the gate.
+nothing paid.** Ask with your harness's structured-question tool — the one whose result is the user's
+answer — offering **Approve** / **Cancel**. If your harness has no such tool, post the four sections and
+**end your turn**. Run the full paid call only after a message from the **human** approving it. Silence, a
+change of topic, or any turn the human didn't send — a harness auto-continue, a scheduler, a subagent, or
+your own plan telling you to proceed — is **not** approval.
 1. **Assumptions** — 3–5 one-line intent assumptions (include every active default — see Provider Playbooks footer).
 2. **Pilot result** — the real record/row returned by the 1-record pilot, verbatim.
 3. **Credits + Scope + Cap** — provider(s), estimated credits (range), full-run scope, spend cap, one-line pilot summary.
@@ -502,14 +524,15 @@ Credits + Scope + Cap
 
 Approval question
 Approve full run?
+Options: Approve / Cancel
 ```
 
 ### Checkpoint (mandatory)
 - Run a real 1-record pilot on the **exact** target before asking; include its output verbatim.
 - If the pilot fails, fix and re-run until clean **before** requesting approval.
-- **Before** the `AskUserQuestion` gate, raise the Playground banner so a user watching the web UI knows to
-  look at the terminal: `hyreflow session alert --message "Approval needed: <action> (~<N> credits)"`. The
-  answer is given **in the terminal** — the banner is only a signal. Advancing the Approval-gate step (or
+- **Before** the structured-question gate, raise the Playground banner so a user watching the web UI knows to
+  go answer it: `hyreflow session alert --message "Approval needed: <action> (~<N> credits)"`. The answer
+  comes back wherever the user is talking to you, not in the web UI — the banner is only a signal. Advancing the Approval-gate step (or
   `session alert --clear`) dismisses it.
 - If the user set a **Session Spending Limit** in the Playground, enrichments pause at the cap (steps come
   back `session_limit`). Check with `hyreflow session usage` and report the pause rather than retrying.
@@ -583,7 +606,7 @@ for / when to reach for it*; the quirks live in the playbook. (Keep this list cu
   Summary: Use to enroll LinkedIn leads into an existing campaign and manage LinkedIn outreach and inbox.
   Last reviewed: 2026-06-01
 - [hyreflow-agent playbook](provider-playbooks/hyreflow-agent.md)
-  Summary: Use the AI reasoning Native for **batch/headless** classify, extract, qualify, or agentic research (model + web toolbelt) — when you don't want the customer's Claude looping per-row. Metered; powered by `prompts.json`.
+  Summary: Use the AI reasoning Native for **batch/headless** classify, extract, qualify, or agentic research (model + web toolbelt) — when you don't want the host agent looping per-row. Metered; powered by `prompts.json`.
   Last reviewed: 2026-06-02
 - [icypeas playbook](provider-playbooks/icypeas.md)
   Summary: Use to find and verify emails (and run domain search) at scale, async.
@@ -661,6 +684,13 @@ for / when to reach for it*; the quirks live in the playbook. (Keep this list cu
 - **Proactive issue reporting.** If a tool/playbook is wrong, a payload shape fails, or the docs misled
   you, report it via the **`/hyreflow-feedback`** skill (include the command + error). This is how the
   playbooks improve.
-- **Telemetry is opt-in.** Prompt sharing with the Hyreflow team is controlled by `hyreflow telemetry`
-  (stored as `prompt_sharing` in `~/.hyreflow/config.json`). Only attach the user's prompt to
-  `session start --user-prompt` for telemetry when sharing is enabled; otherwise keep it local.
+- **Prompt sharing is opt-in.** Sharing the user's prompts with the Hyreflow team is controlled by
+  `hyreflow telemetry share --on|--off` (stored as `prompt_sharing` in `~/.hyreflow/config.json`) and is
+  OFF by default. Only attach the user's prompt to `session start --user-prompt` when sharing is enabled;
+  otherwise keep it local.
+- **Anonymized run traces are on by default** (`hyreflow telemetry on|off|status`) — a separate setting
+  from prompt sharing, and it never includes prompt text. If the user asks to stop being tracked, run
+  `hyreflow telemetry off`; don't turn it back on for them. That setting covers this install; a workspace
+  can also have recording pinned on or off for the whole workspace (a support arrangement), which outranks
+  the local setting and which `telemetry status` doesn't read — so if the user needs it truly off
+  everywhere, tell them to ask the Hyreflow team to clear the workspace pin.

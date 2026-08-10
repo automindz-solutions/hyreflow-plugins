@@ -36,10 +36,11 @@
 
 ## Cost Awareness
 
-- Company search: 3 credits per company returned. Use `limit: 10` for exploration.
-- Job search: 3 credits per job returned. Safe to use with `limit: 25`.
-- Technographics: 3 credits per company lookup (regardless of result count).
+- Company search: per company returned. Use `limit: 10` for exploration.
+- Job search: per job returned. Safe to use with `limit: 25`.
+- Technographics: per company lookup (regardless of result count).
 - Catalog keywords and credit balance: free.
+- Check `hyreflow tools get theirstack <method>` for the live rate before scaling up `limit`.
 
 ## Common Mistakes
 

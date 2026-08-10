@@ -1,12 +1,14 @@
 ---
 name: hyreflow-feedback
 description: 'Send feedback or a bug report to the Hyreflow team, including environment info and the current session.'
-disable-model-invocation: false
 ---
 
 # Hyreflow Feedback
 
-Send feedback or a bug report to the Hyreflow team. It files a **Linear issue** (via the engine) with
+> The skill root is `$HOME/.agents/skills/hyreflow-feedback/`; relative paths are relative to it — if a
+> relative read fails, prefix it with the root.
+
+Send feedback or a bug report to the Hyreflow team. It files a **tracked issue** (via the engine) with
 everything needed to reproduce — so debugging is smooth.
 
 ## Steps
@@ -17,7 +19,7 @@ everything needed to reproduce — so debugging is smooth.
 ```bash
 npm install -g hyreflow --prefix "$HOME/.local" --silent --no-fund --no-audit  # sandbox-safe; plain `npm install -g hyreflow` in a normal terminal
 export PATH="$HOME/.local/bin:$PATH"
-hyreflow auth login && hyreflow auth wait --timeout 120   # sign-in link (relay it); re-run `auth wait` if it says "still pending"
+hyreflow setup   # installs skills + signs in; relay the link it prints, then re-run this to resume
 hyreflow auth status                                      # confirm you're connected
 ```
 
@@ -27,15 +29,16 @@ hyreflow auth status                                      # confirm you're conne
    - Also capture the **originating command** that triggered the report — the `/hyreflow-recruit <query>`
      (or other CLI call) the user ran. If the issue surfaced in this session you already have it in
      scope; otherwise ask "What did you run when it broke?". Pass it as `--repro-query`.
-   - **Images (up to 5).** If the user attached screenshots/images (the prompt shows them as `[Image #N]`,
-     each with a real file path on disk), collect those paths — a screenshot of the bug is the fastest
-     repro signal. Pass each as a separate `--image <path>` (extras beyond 5 are dropped). Don't invent
-     paths; only attach files the user actually provided.
+   - **Images (up to 5).** If the user attached screenshots/images (each arrives with a real file path on
+     disk — in Claude Code shown inline as `[Image #N]`), collect those paths — a screenshot of the bug is
+     the fastest repro signal. Pass each as a separate `--image <path>` (extras beyond 5 are dropped).
+     Don't invent paths; only attach files the user actually provided.
 
 2. **Pin down a vague report (triage).** Reports are often vague — _"prospeo doesn't work"_, _"the
    CLI is broken"_, _"enrichment is bad"_. A vague report makes a useless issue. If you can't already
-   answer **all three** of these from the message + session context, ask the user — via **AskUserQuestion**,
-   **at most 3 questions, one round** — to fill the gaps:
+   answer **all three** of these from the message + session context, ask the user with your harness's
+   structured-question tool (batch them in one round if it takes several fields at once, otherwise ask
+   them one at a time) — **at most 3 questions total** — to fill the gaps:
    - **Which exactly?** the specific tool / provider / CLI command / waterfall (e.g. `prospeo`,
      `people_search`, `hyreflow enrich`) — not the general area.
    - **What went wrong?** the concrete symptom: the exact error text, an empty/wrong result, a bad
@@ -80,9 +83,12 @@ hyreflow auth status                                      # confirm you're conne
    the engine pulls the full session snapshot (steps, events, outputs, last alert) into the issue
    itself. Account details (workspace, balance, user email) are added server-side from your login.
 
-5. **Confirm.** Use AskUserQuestion:
+5. **Confirm.** Ask with your harness's structured-question tool — the one whose result is the user's
+   answer — offering the two options below. If your harness has no such tool, post the summary and **end
+   your turn**; file the report only after a message from the **human** approving it. Silence, a change of
+   topic, or any turn the human didn't send is not approval.
 
-   > This report will file a Linear issue including:
+   > This report will file an issue with the Hyreflow team, including:
    > - Your feedback: {feedback text}
    > - Reproduction: `/hyreflow-recruit {repro query}` (if any)
    > - Environment (CLI version, api_url)
@@ -99,4 +105,4 @@ hyreflow auth status                                      # confirm you're conne
    hyreflow feedback --message "{feedback text}" [--bug] [--session {id}] [--repro-query "/hyreflow-recruit {query}"] [--image {path} …]
    ```
    Add `--bug` for a bug report (it also gets the `Bug` label; otherwise just `feedback`). The CLI
-   prints the filed Linear issue URL — share it with the user. If cancelled, do nothing.
+   prints the filed issue's URL — share it with the user. If cancelled, do nothing.

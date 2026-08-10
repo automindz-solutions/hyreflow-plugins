@@ -3,10 +3,10 @@
 ## Key patterns
 
 - **Async submit + async fetch.** `fullenrich_start_bulk_enrichment` and `fullenrich_start_reverse_email` start background jobs and return an `enrichment_id`. Poll with `fullenrich_get_bulk_enrichment` or `fullenrich_get_reverse_email` for terminal data.
-- **Use `enrich_fields`** to control what's enriched: `contact.emails`, `contact.phones`, `contact.personal_emails` — every revealed record bills the same flat 3 credits regardless of which field(s) matched.
+- **Use `enrich_fields`** to control what's enriched: `contact.emails`, `contact.phones`, `contact.personal_emails` — every revealed record bills the same flat rate regardless of which field(s) matched. Check `hyreflow tools get fullenrich enrich_bulk` for the live rate.
 - **LinkedIn URL** improves accuracy significantly (5-20% for emails, 10-60% for phones).
 - **Email status hierarchy:** DELIVERABLE > HIGH_PROBABILITY > CATCH_ALL > INVALID. Use `most_probable_work_email` field for the best result.
-- **Phone billing is the same flat 3 credits as email** -- no cost penalty, but still fine to gate behind explicit need since it's a slower/less-reliable match.
+- **Phone billing is the same flat rate as email** -- no cost penalty, but still fine to gate behind explicit need since it's a slower/less-reliable match.
 - **Search is synchronous** -- use `fullenrich_search_company` for company prospecting (there's no people-search method on this adapter — for person-level search use the `people_search` waterfall).
 - Use `fullenrich_get_bulk_enrichment` / `fullenrich_get_reverse_email` after every async submit when you need terminal data.
 - **`forceResults=true`** query param on get-result returns partial results if enrichment is still running.

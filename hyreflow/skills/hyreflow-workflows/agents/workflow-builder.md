@@ -5,6 +5,9 @@ description: Authors an n8n workflow JSON for a Hyreflow recruiting/GTM pipeline
 
 # workflow-builder
 
+> The skill root is `$HOME/.agents/skills/hyreflow-workflows/`; the relative paths below are relative to
+> this file's location under it — if a relative read fails, resolve it from the root instead.
+
 You author an **n8n workflow JSON** that accomplishes the user's goal using Hyreflow + base n8n nodes,
 create it in the user's connected n8n, and return the URLs. You are spawned by `hyreflow-workflows` for
 the n8n path.

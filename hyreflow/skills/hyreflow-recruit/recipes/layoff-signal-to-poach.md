@@ -12,7 +12,7 @@ sourcing pipeline. The native is **credit-metered, no BYOK** (see `references/pr
 are exempt from the waterfall).
 
 ## Where this runs (Model A)
-The **extraction + dedupe + qualification is reasoning done by the customer's own Claude** — free, no
+The **extraction + dedupe + qualification is reasoning done by the host agent** — free, no
 OpenRouter. Credits are spent on the native (the feed pull) and on the downstream enrichment of *passes only*.
 
 ## Inputs
@@ -35,7 +35,7 @@ For each item, get the real article text. `firecrawl` follows the redirector and
 (more reliable than `resolve_link()` for the encoded Google News links). Skip paywalled fetches; keep the
 headline+source as the minimal signal.
 
-## Step 3 — Extract structured rows (Claude, free — Model A)
+## Step 3 — Extract structured rows (host agent, free — Model A)
 From each article, the agent extracts:
 `{company, headcount, pct, date, location, function/dept (if stated), source_url, source_publisher}`.
 Articles are often vague ("hundreds") — record the raw phrasing; don't fabricate a precise number.
@@ -58,7 +58,7 @@ specific headcount and the best source. Output one row per layoff event.
 > default is **LinkedIn + personal email ONLY — never work email** (you're recruiting them *away* from
 > that employer; their work inbox is wrong and often dead post-layoff). Prompt: *"Personal email +
 > LinkedIn only (recruiting default), or also include work email?"* The answer picks the waterfall:
-> - **personal (default)** → **`fullenrich`** (`contact.personal_emails`) → **`leadmagic`** (`personal_email_finder`) — the two personal-email providers (COO-confirmed) + GitHub `find_user_emails` for engineers. ⚠️ do NOT use prospeo/aiark/bettercontact for personal (work email only).
+> - **personal (default)** → **`fullenrich`** (`contact.personal_emails`) → **`leadmagic`** (`personal_email_finder`) — the only two personal-email providers + GitHub `find_user_emails` for engineers. ⚠️ do NOT use prospeo/aiark/bettercontact for personal (work email only).
 > - work (only if user opts in, e.g. BD) → `email_enrichment` (work) order.
 >
 > **LinkedIn is the first/primary touchpoint** — we almost always already have it from people-search, so
@@ -75,7 +75,7 @@ Standard tail: personal-email/phone **waterfall** (per the channel decision abov
 
 ## Pipeline
 ```
-layoffsignal (native) → fetch (firecrawl) → extract (Claude) → dedupe
+layoffsignal (native) → fetch (firecrawl) → extract (host agent) → dedupe
    → [qualify vs ICP, if BD] → source (github | apollo/aiark) → enrich → verify → sequence → ATS
 ```
 

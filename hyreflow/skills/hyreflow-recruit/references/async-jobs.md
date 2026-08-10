@@ -27,11 +27,11 @@ TERMINAL[(tool, fetch_method)] -> predicate      # per-endpoint "is it done?"  (
 | Context | How it drives await_job | Notes |
 |---|---|---|
 | **Local test** | `cli.py <tool> <start> ... --await <fetch> [--poll-interval N --poll-timeout N]` | injects `time.sleep` (blocking loop). Proven on BetterContact. |
-| **Server — background runner** | same `await_job`, inject an async sleeper (`asyncio.sleep`) or drive from a queue tick | **do NOT block a request worker** — return the job id to the orchestrator (Claude) and resolve via a `get_status`/`get_result` tool, or run the poll in a background task. |
-| **Server — push-only providers** | webhook receiver resolves the job; no poll | AI Ark email-finder is **webhook-mandatory** (no poll endpoint). Server hosts a receiver, stores results by id; Claude reads the local store. Persistent server CAN do this (a stateless agent can't). |
+| **Server — background runner** | same `await_job`, inject an async sleeper (`asyncio.sleep`) or drive from a queue tick | **do NOT block a request worker** — return the job id to the orchestrator (the host agent) and resolve via a `get_status`/`get_result` tool, or run the poll in a background task. |
+| **Server — push-only providers** | webhook receiver resolves the job; no poll | AI Ark email-finder is **webhook-mandatory** (no poll endpoint). Server hosts a receiver, stores results by id; the host agent reads the local store. Persistent server CAN do this (a stateless agent can't). |
 
 ## Async endpoints today (terminal states LIVE-confirmed where noted)
-- **bettercontact** `start_enrichment` → `get_enrichment`; statuses `not_started` → `in progress` → **`terminated`** (✅ live). Both pre-terminal states count as not-done (caught a bug where only "in progress" was checked).
+- **bettercontact** `start_enrichment` → `get_enrichment`; statuses `not_started` → `in progress` → **`terminated`** (✅ live). Only `terminated` is terminal — **every** pre-terminal state counts as not-done, `not_started` included.
 - **aiark** `export_people`/`find_emails` → `export_statistics`/`email_finder_statistics`; terminal `state: DONE`. find_emails is **webhook-required** (push-only) — needs the server receiver.
 - **apify** `run_actor` → `get_run`; terminal `data.status ∈ {SUCCEEDED, FAILED, ABORTED, TIMED-OUT}`. (`run_actor_sync` is the blocking convenience for short runs.)
 

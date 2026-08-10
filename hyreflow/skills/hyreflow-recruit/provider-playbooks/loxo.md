@@ -28,7 +28,7 @@ ATS write target: enriched candidates → `create_person` / `apply_to_job` (assi
 Run via the CLI: `hyreflow tools execute loxo <method> --payload '{...}'` — method names + params are in the **Callable surface** block above; preview with `--dry-run`. (any unwrapped endpoint is reachable through the tool's generic `request` passthrough.)
 - `apply_to_job(job_id: str, *, email: str, name: str, phone: str, resume: tuple | None = None, **fields) -> Any` — POST /jobs/{job_id}/apply — add a candidate to a job (CONFIRMED).
 - `create_job(payload: dict) -> Any` — POST /jobs — create a job (form-encoded, job[...] params). CONFIRMED.
-- `create_job_candidate(job_id: str, payload: dict) -> Any` — DEPRECATED name → apply_to_job (path was wrong: it's /jobs/{id}/apply, multipart).
+- `create_job_candidate(job_id: str, payload: dict) -> Any` — DEPRECATED alias → apply_to_job (POST /jobs/{id}/apply, multipart).
 - `create_person(payload: dict, *, resume: tuple | None = None, document: tuple | None = None) -> Any` — POST /people — create a person (multipart, person[...] params). CONFIRMED.
 - `get_job(job_id: str) -> Any` — GET /jobs/{id}. CONFIRMED.
 - `get_person(person_id: str) -> Any` — GET /people/{id}. CONFIRMED.

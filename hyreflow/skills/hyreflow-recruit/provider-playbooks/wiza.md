@@ -8,9 +8,10 @@ Wiza for LinkedIn → email/phone enrichment. Key advantage over ContactOut: **a
 
 - **Input required**: LinkedIn URL (including Sales Nav), email, or name+company
 - **Geographic coverage**: Global
-- **Credit cost**: flat 3 credits per revealed record, regardless of enrichment level (email, phone, or both)
+- **Credit cost**: flat rate per revealed record, regardless of enrichment level (email, phone, or both) —
+  check `hyreflow tools get wiza enrich_person` for the live rate
 - **Enrichment levels**: `none` (profile only), `partial` (email), `phone`, `full` (email+phone) — the level only
-  controls what's returned, not the price; every non-`none` reveal bills the same 3 credits
+  controls what's returned, not the price; every non-`none` reveal bills the same rate
 - **Async**: reveals are queued and processed — the handler polls until finished
 
 ## Key operations
@@ -71,18 +72,18 @@ Typical flow: search → get LinkedIn URLs → feed into `wiza_start_individual_
 
 ## Enrichment levels
 
-| Level     | Returns             | Cost       |
-| --------- | ------------------- | ---------- |
-| `none`    | Profile data only   | 3 credits  |
-| `partial` | Emails only         | 3 credits  |
-| `phone`   | Phone numbers only  | 3 credits  |
-| `full`    | Emails + phones     | 3 credits  |
+| Level     | Returns             | Cost           |
+| --------- | ------------------- | -------------- |
+| `none`    | Profile data only   | same flat rate |
+| `partial` | Emails only         | same flat rate |
+| `phone`   | Phone numbers only  | same flat rate |
+| `full`    | Emails + phones     | same flat rate |
 
 Pricing is per call to `start_individual_reveal`, not per field returned — the `enrichment_level` you request
-does not change the credit cost.
+does not change the credit cost. Check `hyreflow tools get wiza enrich_person` for the live rate.
 
 ## Anti-patterns
 
-- Don't over-request `enrichment_level: "full"` reflexively — it costs the same as `partial`, but a phone match takes longer/is less reliable, so only ask for it when the workflow actually needs a phone number
+- Don't over-request `enrichment_level: "full"` reflexively — it costs the same rate as `partial`, but a phone match takes longer/is less reliable, so only ask for it when the workflow actually needs a phone number
 - Don't skip polling — reveals are async, status starts as "queued"
 - Don't expect more than 30 results from search per call

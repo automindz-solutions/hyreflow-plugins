@@ -8,18 +8,18 @@ description: "Email & phone finding + people/company data via the Prospeo API �
 HOW in `lib/prospeo.py`. Docs cached at `reference/docs/prospeo/raw/`.
 
 ## Auth & config
-- **Base URL:** `https://api.prospeo.io` · **Auth:** header `X-KEY` (env `PROSPEO_API_KEY`; never hardcode). All endpoints POST + JSON; consume credits on a found result.
+- **Base URL:** `https://api.prospeo.io` · **Auth:** header `X-KEY` (env `PROSPEO_API_KEY`; never hardcode). All endpoints POST + JSON; charged on a found result (see Credits below).
 
 ## Operations (ALL CONFIRMED from prospeo.io/api-docs, 2026-06-01)
 **Live:** `enrich_person` (`/enrich-person` — `data{first_name,last_name,full_name,linkedin_url,email,company_name,company_website,company_linkedin_url,person_id}` + `only_verified_email`/`enrich_mobile`/`only_verified_mobile`), `bulk_enrich_person` (≤50), `enrich_company`, `bulk_enrich_company` (≤50), `search_person` (200M+ contacts, 30+ filters), `search_company` (30M+), `search_suggestions`, `account_information` (safe pilot). Endpoint index: `reference/docs/prospeo/raw/endpoints.md`.
 
 ## ⚠️ Deprecation
-`email_finder`, `domain_search`, `mobile_finder`, `social_url_enrichment`, `email_verifier`, `linkedin_email_finder` are **deprecated (sunset 2026-03-01)** — kept as thin wrappers but **migrate to `enrich_person`/`search_person`**. `enrich_person(enrich_mobile=True)` = 10 credits (vs 1 for email).
+`email_finder`, `domain_search`, `mobile_finder`, `social_url_enrichment`, `email_verifier`, `linkedin_email_finder` are **deprecated (sunset 2026-03-01)** — kept as thin wrappers but **migrate to `enrich_person`/`search_person`**. `enrich_person(enrich_mobile=True)` bills the higher mobile-reveal rate (vs the email-reveal rate for a plain email); the legacy `mobile_finder` wrapper is priced the same. Check `hyreflow tools get prospeo enrich_person` for the live rates.
 
 ## ⚠️ WORK EMAIL ONLY — not for candidate workflows
 Prospeo returns **work / professional emails only — it does NOT find personal emails.** Do **not** use it
 in personal-email or **candidate-acquisition** workflows (recruiting candidates → personal email + LinkedIn).
-**Personal emails come from `fullenrich` or `leadmagic` only** (COO-confirmed). Prospeo is for BD / work-email use.
+**Personal emails come from `fullenrich` or `leadmagic` only.** Prospeo is for BD / work-email use.
 
 ## Handoff
 Enrichment layer (**work email**): shortlist → Prospeo for work emails/phones → validate → ATS/sequencer.
@@ -101,9 +101,13 @@ Enrichment layer (**work email**): shortlist → Prospeo for work emails/phones 
     suggestion names** (live-verified 2026-07-02: C-Suite + `"San Francisco, California"` → 16,155 matches).
   - **⚠️ Can't search with `exclude`-only — need ≥1 positive filter.**
 - **🎯 RADIUS trick:** for "within ~X km of a city," use the **ZONE** suggestion (e.g. `"Greater Munich Metropolitan Area, Germany"`) — it covers the metro in ONE value, no town enumeration (unlike AI Ark `contact.location` / Lemlist which need city lists). Confirmed: Steuerfachwirt + Munich ZONE → 66 matches.
-- **Credits — two billing systems, don't conflate:** on Hyreflow-managed keys, Prospeo methods are
-  **0 credits** under current pricing (free-to-us on the partner plan). The VENDOR-side billing (only relevant
-  for BYOK keys): `search_suggestions` = **FREE** (15 req/s); `search_person` = **1 vendor credit per
+- **Credits — two billing systems, don't conflate:** what the CUSTOMER pays is the `cost` block in
+  `reference/tool-registry.json`: every reveal bills per result (`enrich_person`, `bulk_enrich_person`,
+  `enrich_company`, `bulk_enrich_company`, `search_company` + the deprecated wrappers), a higher rate with
+  `enrich_mobile=True` (`cost.credits_max`); free = `search_person` (masked preview), `search_suggestions`,
+  `account_information`. Check `hyreflow tools get prospeo enrich_person` for the live rates. The
+  VENDOR-side billing (what Prospeo charges the key owner, so it only shows up on a BYOK key):
+  `search_suggestions` = **FREE** (15 req/s); `search_person` = **1 vendor credit per
   page of 25** that returns ≥1 result, **dedup: same filters+page within 30 days returns `"free":true`**
   (no charge); `enrich_person` = 1 vendor credit/email; **`enrich_mobile:true` = 10 vendor credits** —
   gate to explicit phone asks. `account_information` = free pilot.

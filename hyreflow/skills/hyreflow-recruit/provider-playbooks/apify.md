@@ -1,5 +1,6 @@
 Use Apify when you need controlled web automation/scraping workflows.
 
+- **⚠️ Apify is BYOK-only.** It isn't resold on managed credits — the client must connect their own Apify token in Integrations first. Without one, **every** Apify call (including the free store/schema reads) returns `no_key`. Hyreflow charges 0 credits; Apify bills the client directly for actor compute.
 - **LinkedIn jobs scraping:** when the user explicitly asks to scrape LinkedIn jobs via Apify, always use actor ID `vIGxjRrHqDTPuE6M4` directly; do not search the Apify store or substitute another LinkedIn jobs actor.
 - Use `apify_list_store_actors` first when you do not know the actor id yet.
 - **Results are ranked by quality score by default.** The top result is the most reliable actor based on rating, review count, total runs, and 30-day success rate. Pick the #1 result unless you have a specific reason not to.

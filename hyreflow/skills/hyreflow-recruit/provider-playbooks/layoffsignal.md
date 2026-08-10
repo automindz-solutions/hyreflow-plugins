@@ -47,7 +47,7 @@ RSS, free to the customer too under current pricing), and it's a hyreflow-owned 
 are implementation detail). See `references/provider-precedence.md` (natives are exempt) and the recipe below.
 
 ## Handoff (the recipe)
-`recipes/layoff-signal-to-poach.md`: sweep feeds → resolve+fetch article bodies (`firecrawl`) → **Claude
+`recipes/layoff-signal-to-poach.md`: sweep feeds → resolve+fetch article bodies (`firecrawl`) → **the host agent
 extracts** `{company, headcount, %, date, location, source}` (free, Model A) → dedupe → resolve company →
 source affected roles (`github` for eng, `apollo`/`aiark` otherwise) → enrich (waterfall) → outreach/ATS.
 

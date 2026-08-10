@@ -64,7 +64,8 @@ CV/MPC-flag → PARSE (candidate profile, + selection gate)
 (`prompts.json → "Parse CV to candidate profile"`), then apply the evergreen/pitchable gate above before
 continuing. → `cv-analysis.json`.
 
-**2a — Search live open roles** *(metered; Apify)* — the same job-board-trio approach as
+**2a — Search live open roles** *(Apify — BYOK-only: needs the client's own key, billed on their Apify
+account, 0 Hyreflow credits)* — the same job-board-trio approach as
 `cv-to-jobs.md` Step 3 (swap in the client's market boards), title × geo × radius, default a **14-day**
 recency window (vs. `cv-to-jobs.md`'s 7-day default — this play tolerates slightly older postings since
 it's fanning wider).
@@ -159,7 +160,7 @@ a currently callable tool; route replies to the human manually until it does.
 | Step | Metered? |
 |---|---|
 | 1 parse + gate | AI tokens (free, Model A interactive) |
-| 2a job-board search | metered (Apify, per result) |
+| 2a job-board search | 0 credits (Apify BYOK-only — client's own account, per result) |
 | 2b lookalike / AI-generate fallback | metered (waterfall) / AI tokens |
 | 3 dedup | free |
 | 4 fit-match | free (Model A) / metered at scale |

@@ -94,7 +94,7 @@ CRM history"** (not the plain "Score candidate against job (0-10)" — that one 
 anything beyond the profile). This is the step that makes CRM matching different from a cold search:
 prior interview outcomes and past-job history move the score, not just the resume.
 - → `hyreflow_agent.infer(prompt, schema=SCORE_SCHEMA)` per candidate — interactive scoring stays free
-  on the customer's Claude (Model A); use the metered batch path only at scale.
+  on the host agent (Model A); use the metered batch path only at scale.
 
 **5 — Optional: MERGE with net-new sourcing**
 If the user also wants active net-new sourcing (the default combinable case), run

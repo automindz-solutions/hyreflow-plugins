@@ -42,7 +42,7 @@ funding raised →  ICP check    →     hiring managers   →    work email    
 - Fallbacks (funding-discovery order): zoominfo scoops → `leadmagic` company_funding (enrich-only) → exa/serper news.
 - **Count-before-pay:** peek how many companies match the window before pulling the full set.
 
-**2 — QUALIFY: ICP gate** *(FREE — Model A, runs on the customer's own Claude; the strategic gate)*
+**2 — QUALIFY: ICP gate** *(FREE — Model A, runs on the host agent; the strategic gate)*
 - Hard firmographic filters on data you already have from the signal (industry/size/geo) — free.
 - Then LLM fuzzy-fit of survivors vs `ICP.md` (the `company-qualifier` agent / inline reasoning). **No credits.**
 - **Gate BEFORE enrichment** — never pay to find contacts at companies that don't fit. See

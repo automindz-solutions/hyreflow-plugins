@@ -10,7 +10,8 @@
 
 ## Pricing
 
-- Hyreflow bills a flat 3 credits per revealed record — email or mobile phone, no surcharge either way.
+- Hyreflow bills a flat rate per revealed record — email or mobile phone, no surcharge either way. Check
+  `hyreflow tools get bettercontact start_enrichment` for the live rate.
 - `bettercontact_get_enrichment` returns the vendor's own `credits_consumed` field, but that's BetterContact's internal accounting and does not change what Hyreflow bills.
 - Enabling `enrich_phone_number: true` does not cost more than email-only enrichment.
 

@@ -9,7 +9,7 @@ HOW in `lib/atlas.py`.
 
 ## Auth & config
 - **Base URL:** `https://api.recruitwithatlas.com/api/v1` · **Auth:** header `Authorization: Bearer <JWT>` (env `ATLAS_API_KEY`; never hardcode). `list_projects()` = safe read-only pilot.
-- **ALL paths CONFIRMED** from the official OpenAPI 3.1 spec (recruitwithatlas.com, pasted by user in the ENG-229 Linear thread, 2026-07-14). Full endpoint index: `reference/docs/atlas/raw/endpoints.md`.
+- **ALL paths CONFIRMED** from the official OpenAPI 3.1 spec (recruitwithatlas.com, pasted by the user on 2026-07-14). Full endpoint index: `reference/docs/atlas/raw/endpoints.md`.
 - Atlas terminology: **person** (one record, many roles — candidate/contact/lead), **company**, **contact** (= a `company_contacts` junction, at most one live per person), **project** (= job), **candidate** (= a person's candidacy within a project's pipeline), **opportunity** (= deal), **placement**.
 
 ## Operations (25 methods; long tail via `request()`)
