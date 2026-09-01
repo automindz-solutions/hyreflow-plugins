@@ -4,6 +4,21 @@ All notable changes to the Hyreflow plugin are documented here. Versions track
 the plugin, kept in lockstep across the marketplace manifests and the plugin's
 own `plugin.json` files.
 
+## 1.1.8 — 2026-09-01
+
+Packaging release — the skills are unchanged from 0.1.7.
+
+**Added**
+- Every version is now a git tag and a GitHub release carrying
+  `hyreflow-claude-plugin-<version>.zip` — the plugin as an installable bundle, for anyone
+  who would rather download it than add the marketplace.
+- `hyreflow/skills/.version` holds a content hash of the shipped skills, so "same skills,
+  new number" is distinguishable from a real change without diffing the tree.
+
+**Changed**
+- Versions are a `1.1.<N>` counter that moves once per sync, replacing the `0.1.x` line.
+- Syncs are automated off the engine repo instead of run by hand.
+
 ## 0.1.7 — 2026-09-01
 
 First skills sync since 0.1.6 (2026-08-10).
