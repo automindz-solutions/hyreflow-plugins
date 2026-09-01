@@ -17,7 +17,7 @@ hyreflow tools execute people_search --payload '{...}' --dry-run   # preview the
 
 Canonical query fields (all optional, combine what you have):
 `titles`, `skills`, `locations` (or `person_locations`), `company_names`, `company_domains`,
-`company_linkedin_urls`, `seniority`, `certifications`, `min_experience_years`, `limit`,
+`company_linkedin_urls`, `seniority`, `certifications`, `keywords`, `min_experience_years`, `limit`,
 `coverage` (`single` = stop once `limit` people are collected, the default · `max` = exhaustive deduped
 union across every provider),
 `providers` (optional allowlist — **pin the waterfall to a subset**, house order preserved, e.g.
@@ -29,17 +29,47 @@ union across every provider),
 > off-target rows). E.g. Python/FastAPI backend engineers → pass `"skills": ["Python","FastAPI"]`
 > alongside the title rather than relying on the title alone.
 
-The engine walks the **house provider order — `aiark → prospeo → lemlist → apollo`** (configured in
-`reference/waterfalls.json`), maps your canonical query to each provider's native shape, dedups, pages,
+The engine walks the **house provider order** (configured in `reference/waterfalls.json` — never restate
+the order here), maps your canonical query to each provider's native shape, dedups, pages,
 and **stops at the first source(s) that fill `limit`** (a "hit"); thin/empty providers fall through to top
 up. Only the providers that actually return rows are billed. **The engine owns the loop** — you don't
 hand-write per-provider filters or manage dedup/paging.
 
-**No-result retry rule:** if a narrow `people_search` returns 0 rows, broaden the canonical query and call
-`people_search` again. Expand `titles[]`, use `seniority` + function keywords, loosen location if allowed,
-or remove overly strict company filters. Do **not** switch to `apollo_search_people` for a broader-title
-retry unless the user explicitly requested Apollo-only/provider-native control and Apollo BYOK is configured.
-Do not bypass the waterfall just because the first canonical query missed.
+**Company-scoped queries also reach the public web.** The last steps of the chain search the open web
+(structured people search first, LinkedIn profile search second) and run **only** for a query that names a
+company — and, under the default `coverage:"single"`, only once the people databases have failed to fill
+`limit`. That's the coverage case they exist for: a seed-stage company the databases hold no rows for at
+all. You don't reach for them by hand inside a company-scoped search — one `people_search` call already
+covers it. (`coverage:"max"` is exhaustive by definition, so it runs them alongside everything else.)
+- A row is kept only if the person's current company matches the company you asked for **as a whole
+  name**, so name collisions (people at unrelated companies that share the search term) never reach you —
+  a query for `acme` against `GoAcme` or `Acmeteer` is a different company and its people are dropped, while
+  a truncation of the same name (`Acme Corp` matching `Acme Corporation`) or a spelling variant (`Acme
+  Inc`, `ACME-Inc`, a domain brand like `acmelabs` for `Acme Labs`) can still match. When a web step
+  returned rows but none could be verified as at the requested company, that step reports `outcome:
+  "company_mismatch"` with `verify_dropped` (how many rows were dropped) — distinguishing a leg that
+  contributed nothing from one that found nobody at all.
+- These steps read the company anchor plus `titles`, `locations`, `seniority`, `keywords`,
+  `min_experience_years`. A query carrying `skills`, a tenure window, `departments` or firmographics stops
+  at the databases — a web result can't prove those, so it isn't asked to.
+- A row with **`verification_required: true`** came from a profile *search result*, not a profile record:
+  confirm the company and title on the profile before you ship or contact it. `_meta.warnings` counts them.
+- A web search is charged per request whether or not it finds anyone (a people-DB miss stays free).
+
+**No-result retry rule:** if a narrow `people_search` returns 0 rows (or too few), broaden the canonical
+query and call `people_search` again — **on a company-scoped retry, the title filter is a precision lever:
+widen it, never remove it.** Expand `titles[]` with more role variants (paste from the canonical lists in
+§Title handling below), and/or add `seniority` and `skills`. Loosen location if allowed.
+**Never drop `titles[]` entirely** to
+"broaden" a company-scoped search — on a `company_domains`/`company_names`-scoped query, an empty `titles[]`
+returns the WHOLE roster (every function: sales, talent, policy, partnerships, leadership …) plus
+self-declared-employer noise (people who merely list the company on LinkedIn — open-to-work profiles,
+unrelated professions), which you then have to guess-filter client-side from freeform headlines. That's
+slower, less precise, and — on a large company — an expensive, unbounded pull. Server-side title filtering
+is cheaper and more precise than a broad pull + client-side filter. Do **not** switch to
+`apollo_search_people` for a broader-title retry unless the user explicitly requested Apollo-only/
+provider-native control and Apollo BYOK is configured. Do not bypass the waterfall just because the first
+canonical query missed.
 
 ```
 hyreflow tools execute people_search --payload '{
@@ -94,6 +124,12 @@ company scope applied), you used the wrong native field — fix the payload, don
 ## Run discipline (YOU own these now — the credits depend on it)
 - **One provider, then top up.** Call your first choice; if it returns **< N**, call the next provider
   and dedup the union. Stop the instant you have N. Don't fan out to every provider by default.
+- **A job-scrape shortfall is a BOARD gap, not a title gap.** The retry ladder in this doc (widen
+  `titles[]`, add `seniority`/`skills`) belongs to `people_search`. When an open-roles scrape returns
+  **< N**, add the next **board** and dedup the union — a Germany-scoped run adds `arbeitsagentur_jobs`
+  (the German federal board), which indexes roles the global boards don't carry. Re-running the same
+  board with a different title spends credits on the same index. Boards and payload shapes:
+  [`provider-playbooks/hyreflow_native.md`](provider-playbooks/hyreflow_native.md).
 - **Count-before-pay.** Every people-DB returns a total (apollo `total_entries`, aiark `totalElements`,
   prospeo `pagination.total_count`, lemlist `total`). `--dry-run` or peek the count before pulling
   depth — never blind-paginate a paid source. The count sits under the `result` envelope every
@@ -121,9 +157,10 @@ company scope applied), you used the wrong native field — fix the payload, don
   Route any *open-to-work* request to aiark. Pair it with title/location/skill — `OPEN_TO_WORK` alone matches a ~24M global pool.
   Open-to-work is one of several **recruitability signals** (with tenure, job-change cadence, seniority band) —
   see [`recruiter-craft.md`](recruiter-craft.md) §A for when to reframe a search around them.
-- **prospeo** — strong DB, but **location must be pre-resolved**: first call
-  `prospeo_search_person`'s sibling `prospeo.search_suggestions` (free) with the raw location, take the
-  top suggestion's `name`, then pass THAT (raw strings → `INVALID_FILTERS`). A **title+company combo that
+- **prospeo** — strong DB. Pass `locations` as raw names on the canonical `people_search` query (`"United
+  States"`, `"munich"`) — the engine resolves them to Prospeo's canonical tokens for you. Only the **flat**
+  `prospeo_search_person` tool needs pre-resolution by hand: call `prospeo search_suggestions` (free) with
+  the raw location and pass the top suggestion's `name` (raw strings → `INVALID_FILTERS`). A **title+company combo that
   matches nobody** (tiny/new co, or a title spelled differently than the company stores it) is a **clean
   miss** — the waterfall just falls through to the next provider; not an outage. Widen with the title rule
   below before assuming there's no coverage.
@@ -131,6 +168,52 @@ company scope applied), you used the wrong native field — fix the payload, don
   `experiences[0]`, which can be a past role). `currentTitle` accepts free text.
 - **apollo** — free net-new preview but **obfuscates PII** (no LinkedIn/last name until you enrich); scopes by
   **domain only**. Good as a coverage fallback, weaker as a primary for company-targeted.
+
+## No coverage in the people-DBs → X-ray the public web (`serper`)
+Some targets are absent from every people-DB, not thinly covered: pre-revenue startups, niche verticals,
+non-US markets, and local/SMB businesses (trades, clinics, single-site agencies). A **company-scoped**
+`people_search` already ends on the public web for exactly this case (see the waterfall section above), so
+run the broadened retry first and read its `exa` / `serper` steps before searching by hand. Drive the web
+yourself for what the waterfall deliberately doesn't cover: an **open** query with no company anchor, a
+segment that needs `serper maps`, a Boolean string you want full control over, or URL recovery.
+
+- **Scoped `site:` X-ray** — `serper search` with the Boolean string from
+  [`references/recruiter-playbooks/boolean-search.md`](references/recruiter-playbooks/boolean-search.md).
+  `site:` plus quoted phrases is what makes it precise; keyword soup without `site:` returns noise.
+- **Local / SMB** — `serper maps` for storefront and service-area businesses. It returns phone, address,
+  website and rating, which is exactly the data the people-DBs don't hold for this segment.
+
+```
+hyreflow tools execute serper search --payload '{"query":"site:linkedin.com/in (\"data engineer\" OR \"analytics engineer\") (spark OR airflow) \"San Francisco\"","num":10}'
+hyreflow tools execute serper maps --payload '{"query":"HVAC contractors Leverkusen","gl":"de","hl":"de"}'
+```
+
+- **The payload key is `query`, not `q`.** Optional: `num` (depth), `gl` / `hl` (country / language —
+  results default to US English, so set both for any other market), `location`, `page`.
+- **0.1 credits per call, charged whether or not the query finds anything** — it's a real search, so budget
+  per query, not per usable hit. A pilot query first, then depth.
+- **X-ray hits are leads, not a list.** A public profile carries no verified email or phone and its title
+  may be stale. Feed the names back into a company-scoped `people_search` (or enrichment) to get canonical
+  records before you ship or sequence them.
+- Need the content behind a hit? `serper scrape` returns one page as text; prefer `firecrawl` for
+  JS-rendered pages.
+
+## URL recovery — you know who, you need the URL
+Enrichment tools want a LinkedIn URL (lusha rejects anything that isn't `linkedin.com/in/…`). When you have
+a name plus company and need that URL, search for it instead of guessing:
+
+```
+# person — always include company + role context
+hyreflow tools execute serper search --payload '{"query":"\"Jane Smith\" \"Acme\" \"sales ops\" site:linkedin.com/in","num":5}'
+# company
+hyreflow tools execute serper search --payload '{"query":"\"Acme\" site:linkedin.com/company","num":3}'
+```
+
+- A bare name matches the wrong person constantly — company and role context are what make the hit real.
+- **Take the URL only when the hit is unambiguous; otherwise leave it null.** A wrong LinkedIn URL poisons
+  every enrichment downstream of it, and a null is cheap to fill later.
+- For *identity* questions ("who is the {title} at {company}?"), `exa.answer` is metered (0 credits) — ask
+  it first. Reach for `serper` when you already know the string and want the deterministic URL lookup.
 
 ## Location handling — search the commutable AREA, not just the city (UNIVERSAL RULE)
 For **on-site / hybrid / local** roles, expand the stated location to its **commutable metro / neighbouring cities**
@@ -159,6 +242,22 @@ strings that name the same job, and pass them all in `titles[]`** (the engine de
   `recipes/multi-source-candidate-search.md`. The engine also fuzz-expands per provider (Prospeo `SIMILAR`,
   Apollo similar-titles, aiark `SMART`), but that's a backstop — **lead with an explicit expanded list.**
 
+### Canonical role-family variant lists — paste directly into `titles[]` on a retry
+Individual-contributor roles don't have a VP-style rank ladder to widen along — widen the LABEL instead.
+These are starting sets to expand; add JD-specific variants on top, and keep at least one title-family
+term in `titles[]` (never retry with an empty title list on a company-scoped search — see the retry rule above).
+- **Software / ML engineer:** `Software Engineer, Senior Software Engineer, Staff Software Engineer,
+  Member of Technical Staff, Research Engineer, ML Engineer, Machine Learning Engineer, Infrastructure
+  Engineer, Platform Engineer, Backend Engineer, Frontend Engineer, Fullstack Engineer, Applied AI
+  Engineer, SDE, Software Development Engineer`.
+- **Data:** `Data Engineer, Data Scientist, Analytics Engineer, ML Ops Engineer, MLOps Engineer, Data
+  Platform Engineer`.
+- **Product:** `Product Manager, Senior Product Manager, Group Product Manager, Technical Product
+  Manager, Associate Product Manager, APM`.
+- **Design:** `Product Designer, UX Designer, UI Designer, Interaction Designer, UX Researcher`.
+- **Sales/GTM ICs:** `Account Executive, AE, Sales Development Representative, SDR, Business Development
+  Representative, BDR, Customer Success Manager, CSM`.
+
 ## Hiring-manager identification — reporting-line first (UNIVERSAL RULE)
 When the task is "find the hiring manager for this role" (BD, competitor-intel, or any JD-driven search):
 
@@ -173,7 +272,8 @@ Watch for: *"you will report directly to the {Head of Sales / VP Engineering / �
   Great for BD: own the direct manager, but **multi-thread** the account by referencing the VP/SVP above.
 
 1. **Extract `reports_to`** during JD parsing (the named manager role).
-2. **exa FIRST** — `exa.answer("Who is the {reports_to} at {company}?")` (or `exa.search`) → the specific person + LinkedIn.
+2. **exa FIRST** — `exa.answer("Who is the {reports_to} at {company}?")` (or `exa.search`) → the specific person + LinkedIn. Each request is charged whether or not it lands, so ask once with a named role rather than re-running variations.
+   Got the name but no URL? Recover it with the `serper` `site:linkedin.com/in` lookup above.
 3. **Verify** with a targeted company-scoped flat search (e.g. `apollo_search_people` with that title +
    `q_organization_domains_list`) → canonical record + LinkedIn.
 4. **Fallback only if no reporting line is named** (or the person isn't found): the broad leadership sweep (search the
@@ -183,9 +283,11 @@ This is more precise and cheaper than sweeping all leadership — the JD usually
 
 ## Gates
 - **EEO:** never filter candidates on gender/age/marital status/children/income. Hard rule.
-- **ICP qualify BEFORE enrichment** (next stage) — don't pay to enrich non-fit people. See
-  [`recipes/qualify-against-icp.md`](recipes/qualify-against-icp.md).
+- **ICP qualify BEFORE contact enrichment** (next stage) — don't pay to enrich non-fit people's contact
+  details. Enrich `linkedin_profile` (dated work history) first if the pool is thin — qualify needs it to
+  score on more than title/employer/location. See [`recipes/qualify-against-icp.md`](recipes/qualify-against-icp.md).
 - **Credit & approval gate** for any sizable paid run (pilot → approval → full). See SKILL.md.
 
 ## Hand-off
-Sourced list → **[`enriching.md`](enriching.md)** (add email/phone/LinkedIn) → qualify → outreach.
+Sourced list → enrich `linkedin_profile` (work history, if thin) → qualify → **[`enriching.md`](enriching.md)**
+(add email/phone/LinkedIn) → outreach.

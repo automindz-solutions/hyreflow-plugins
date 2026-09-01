@@ -20,7 +20,7 @@ agent composes from existing capabilities — **no new engine primitives**.
 Brief → PARSE (AI) → [ STRUCTURED people_search  +  SEMANTIC exa_search ]  (angle 1, parallel)
       → COMPETITOR talent map (tiered, angle 2) → LOOKALIKE expansion (angle 3)
       → PASSIVE-INTENT mine (aiark OPEN_TO_WORK + pool signals, angle 4)
-      → MERGE + dedup (linkedin_url) + RANK → QUALIFY (AI, free)  ← the pay gate
+      → MERGE + dedup (linkedin_url) + RANK → ENRICH PROFILES (work history) → QUALIFY (AI, free)  ← the pay gate
       → SIGNAL scan (exa, survivors only) → ENRICH (personal email + LinkedIn) → DELIVER (+ blind MPC one-pager)
 ```
 Docs this leans on: [`finding-companies-and-contacts.md`](../finding-companies-and-contacts.md) (search /
@@ -96,11 +96,26 @@ company-scoping / OPEN_TO_WORK), [`enriching-and-researching.md`](../enriching-a
 - Rank by a **brief-customized rubric** with the competitor **tier weight** and an intent bump
   (HOT > WARM). Use **"Score candidate against job (0-10)"** for a transparent per-candidate breakdown.
 
-**6 — QUALIFY against the brief — THE PAY GATE** *(AI step, free on the host agent)*
-- Score each candidate vs the must-haves → `tier_1 | tier_2 | no_fit`; **drop `no_fit`**. Use the
-  **"Qualify candidate against role"** prompt, or the batch `/qualify` endpoint for many×one:
+**6a — ENRICH PROFILES (work history) — the input the gate scores on** *(metered per hit; the cheapest
+per-row step, and the one that makes the gate mean something)*
+- `hyreflow tools execute linkedin_profile --payload '{"linkedin_url":"…"}'` per candidate (bulk:
+  `POST /enrich/linkedin_profile {"rows":[…]}`) → a normalized `profile` with
+  `experience[{company, title, start, end, is_current, duration_months?, description?}]`, newest first.
+  A row that comes back without employment history is a miss and costs nothing.
+- **Cap it** to the ranked pool you actually intend to shortlist (~1.4×N), and skip rows that already carry
+  history (CRM/ATS records, `atlas.get_person`). `about`/`skills`/`certifications` depend on which provider
+  answered — often empty, so read an absence as unknown, not as a gap.
+
+**6b — QUALIFY against the brief — THE PAY GATE** *(AI step, free on the host agent)*
+- Score each candidate **on the dated work history from 6a**, not on the current title → `tier_1 | tier_2 |
+  no_fit`; **drop `no_fit`**. Use the **"Qualify candidate against role"** prompt, or the batch `/qualify`
+  endpoint for many×one:
   → `hyreflow qualify --job @brief.md --candidates @pool.json [--min-score N]`
-- **Everything below this line spends per-row credits** — so it runs on survivors only.
+  `/qualify` reports `qualify.basis` (`work_history` | `title_only`) per candidate and **refuses a batch in
+  which no row carries history** (422 `no_work_history`) — run 6a, or pass `allow_thin_profiles: true` to
+  accept a title-only ranking knowingly.
+- **Everything below this line spends the EXPENSIVE per-row credits** (signal scans, contact reveals) — so it
+  runs on survivors only.
 
 **7 — ANGLE 2-signal · proof-of-work scan** *(metered; survivors only; capped)*
 - For the top-N `tier_1`/`tier_2` only (honor the `signal_scan` cap), run an Exa proof-of-work scan
@@ -111,7 +126,7 @@ company-scoping / OPEN_TO_WORK), [`enriching-and-researching.md`](../enriching-a
 
 **8 — ENRICH (candidate channel)** *(`enriching-and-researching.md`; gated)*
 - **Personal email + LinkedIn — NEVER work email** (candidates). `personal_email` waterfall
-  (`fullenrich → leadmagic → wiza`), first-hit, verify deliverability.
+  (order in `reference/waterfalls.json`), first-hit, verify deliverability.
   → `hyreflow enrich --input <ds_id|csv> --with '{"alias":"personal_email","tool":"personal_email","payload":{...}}'`
 
 **9 — DELIVER**
@@ -141,7 +156,8 @@ company-scoping / OPEN_TO_WORK), [`enriching-and-researching.md`](../enriching-a
 | 1 semantic leg / 2 competitor discover / 3 lookalike exa / 7 signal | Exa per call (gate with small `numResults`) |
 | 2 competitor legs | aiark ~0.5/result per competitor (count-before-pay) |
 | 4 open-to-work | aiark ~0.5/result |
-| 5 merge + rank / 6 qualify | AI tokens (free on the host agent) |
+| 5 merge + rank / 6b qualify | AI tokens (free on the host agent) |
+| 6a profile enrich | per-hit (`linkedin_profile` providers; a miss costs 0) — cap to the ranked pool |
 | 8 enrich | per-hit (personal-email providers) |
 Free: dedup, ranking, bench-concentration table, intent classification, the channel/EEO rules.
 
@@ -152,14 +168,17 @@ artifact, ready for a personalized candidate sequence. Plus an optional **compet
 (bench-concentration / raid-targets) and a **blind MPC one-pager** per spotlight candidate.
 
 ## Notes from live runs
-- **Run the cheap angles, qualify, THEN spend.** The expensive per-row work (signal scans, enrich) is
-  step 7–8 on purpose — surviving the free qualify is the gate.
+- **Run the cheap angles, enrich the profiles, qualify, THEN spend.** The expensive per-row work (signal
+  scans, contact enrich) is step 7–8 on purpose — surviving the qualify gate is what earns it.
+- **A title snapshot ranks the wrong people.** Sourcing output shows the current role only, so recent joiners
+  at strong employers float up and specialists behind a generic title sink. The dated history from 6a is what
+  makes tier_1 mean tier_1.
 - **Exa tool names are `exa_search` / `exa_contents` / `exa_answer`** (underscore), and `category:"people"`
   for candidates — `exa search` / `get_contents` are not callable names. Validate with
   `hyreflow tools get exa_search`.
-- **OPEN_TO_WORK rides the flat aiark path, not the `people_search` waterfall** (the canonical query has
-  no `profileBadge` field) — and `include` is a bare enum array. Pair it with title/location or you'll
-  pull the ~24M global pool.
+- **OPEN_TO_WORK rides the canonical `people_search` waterfall** — pass `profile_badges:["OPEN_TO_WORK"]`
+  (it maps to `contact.profileBadge` and pins the chain to aiark, the only DB with this signal). Pair it
+  with title/location or you'll pull the ~24M global pool.
 - **Phase-1 honesty:** the semantic merge/dedup is **agent-side** (the engine doesn't own an Exa sourcing
   arm yet), and bench-concentration + the blind MPC one-pager are **agent-rendered**, not engine outputs.
   Those become first-class in later phases — until then this recipe gets you the coverage by composition.

@@ -60,18 +60,35 @@ building against a provider.
   work-email only.
 
 ### Via the `people_search` waterfall
-- **Write the query where the endpoint reads it: `body["query"]`.**
+- **Both a nested `query` and a flat top-level body work — write whichever reads cleaner.**
   ```json
   {"query": {"company_domains": ["acme.com"], "titles": ["Engineering Manager"]}, "limit": 5}
   ```
-  A recognized filter key at the body top level is folded in for you, and an explicit `query` always wins,
-  so the nested form is the one to write.
+  ```json
+  {"company_domains": ["acme.com"], "titles": ["Engineering Manager"], "limit": 5}
+  ```
+  A recognized filter key at the body top level is folded into the query for you. When a field is named
+  both ways, the nested `query` wins for that field, under every spelling — a top-level alias never
+  outranks the nested canonical. The flat form is what the CLI examples elsewhere in this skill use, so
+  either shape is fine; pick nested when you're merging filters programmatically, flat for a quick
+  one-off call.
 - **Check `_meta.ignored_query_keys` on every search.** A non-empty list means a key you passed matched no
   known filter and narrowed nothing — usually a typo or a provider-native name (`persn_locations`,
   `person_skills`). Treat a wide result set with a non-empty list as unfiltered, not as a big market.
+- **A payload where nothing binds is rejected outright, not run unfiltered.** Whether that's because every
+  key you passed matched no known filter, or because you passed no filter key at all (an empty query, or
+  only `limit`), the call comes back `400` — naming any keys it couldn't place and listing the canonical
+  filter keys — a typo or an empty payload costs you an error, not a database-wide sweep billed to your
+  workspace. This only fires when *nothing* binds; if some keys bind and others don't, the search still
+  runs and the unrecognized ones land in `_meta.ignored_query_keys` as above.
 - **`_meta.total_available` ≈ 414,000,000 means no filter applied** — the same tell as above. For an exact
   company scope (domain / company LinkedIn) the step returns `outcome: "filter_not_bound"` instead: the
   rows are discarded, **nothing is charged**, and the waterfall moves to the next provider.
+- **A miss can cost more than a hit.** The waterfall stops at the first provider that fills the quota, so
+  a well-indexed company settles on one cheap step. A company with thin coverage walks the whole chain
+  instead, and the web-search fallbacks at the end of it bill per request for running the search at all,
+  regardless of what comes back. Budget a sizing sweep over long-tail or sparsely-indexed companies at
+  several times the per-hit rate, not at it.
 
 ## Apify
 - **Apify is BYOK-only** — the client connects their own Apify token in Integrations. Without one, every
@@ -137,13 +154,18 @@ building against a provider.
   practice) — use it; `catch_all_not_safe` should be avoided. BetterContact's multi-provider waterfall can
   out-cover a single-source lookup on catch-all domains. These remain **work** emails — BD use, not
   personal-email candidate acquisition (that's FullEnrich/LeadMagic).
-- Billing: charged per revealed record (email or phone), same rate either way — check
-  `hyreflow tools get bettercontact start_enrichment` for the live rate.
+- Billing: charged once, when the retrieved result carries data — 0.5 credits for an email reveal, 4.8
+  for a phone reveal (email included) — check `hyreflow tools get bettercontact start_enrichment` for
+  the live rate.
 
 ## Exa
 - Auth is `x-api-key`. `search(query, num_results=N)` returns real results plus `costDollars` in the
-  response itself (e.g. $0.007 for a neural search) along with `resolvedSearchType`/`requestId` — cost is
-  self-reported per call, which makes it easy to meter.
+  response itself (e.g. $0.007 for a neural search) along with `resolvedSearchType`/`requestId` — every
+  search/contents/answer request reports what it cost, and that reported figure is what the call is billed
+  at, so a request that asks for more (results past 10, summaries, extra content types, a deeper `type`)
+  costs proportionally more than the base card price.
+- A request that matches nothing is still a charged request — Exa prices the request it accepted. Narrow
+  the query rather than re-running the same broad one.
 
 ## GitHub
 - `"<full name>" <org>` (quoted name + free-text org) returns close to zero useful hits — most profiles
@@ -219,13 +241,16 @@ building against a provider.
   current API version before trusting a spec-built adapter; vendor docs can move a full major version ahead
   of what an older integration was built against.
 - Flow: `search_*` returns a preview (`has` + `canReveal`; `credits:0` means already revealed/free) →
-  `enrich_*` reveals by id, or `search_and_enrich_*` does both in one call. Convenience `enrich_person`/
-  `enrich_company` wrap a single-target search-and-enrich. Also available: prospecting, lookalikes,
+  `enrich_contact_{emails,phones}` reveals by id, or `search_and_enrich_contact_{emails,phones}` does both
+  in one call. Convenience `enrich_person_email`/`enrich_person_phone`/`enrich_company` wrap a
+  single-target search-and-enrich. Also available: prospecting, lookalikes,
   signals, filter-discovery, `get_usage`.
-- **Billing is per matched result, flat regardless of which fields are revealed** — a reveal (email
-  and/or phone) costs the same either way; check `hyreflow tools get lusha enrich_person` for the live
-  rate. A 0-result search costs 0. `canReveal` in the search response tells you whether a field is
-  revealable before you spend credits on it.
+- **Billing is per matched result, at the price of the field the method reveals** — an `*_email` method
+  bills the base rate, its `*_phone` twin several times more; check
+  `hyreflow tools get lusha enrich_person_email` for the live rate. There is no field argument, so an
+  email-only play never pays for a phone reveal. Lusha bills per call regardless of outcome — a 0-result search still costs the listed
+  rate. `canReveal` in the search response tells you whether a field is revealable before you spend
+  credits on it.
 - `get_usage.used` reflects transient holds that settle, not real spend — the authoritative number per
   call is the response's `billing.creditsCharged`. Reconcile total spend via `get_usage` only after
   holds settle, not mid-session.

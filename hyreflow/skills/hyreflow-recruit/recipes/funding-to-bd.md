@@ -50,12 +50,12 @@ funding raised →  ICP check    →     hiring managers   →    work email    
 
 **3 — SOURCE: find the hiring managers** *(metered; the `people_search` waterfall)*
 - Run the **people-search waterfall** scoped per qualified company (`company_domains`/`company_names`) +
-  the BD persona titles. Order `aiark → prospeo → lemlist → apollo` is handled *inside* the waterfall.
+  the BD persona titles. Provider order is handled *inside* the waterfall (`reference/waterfalls.json`).
 - **Single-source default / stop-at-target:** take the first source that yields enough contacts per company;
   don't fan out unless coverage is short (`--max`). Over-provision ~1.4× the contacts you actually want.
 
 **4 — ENRICH: work email** *(metered; the `email_enrichment` waterfall)*
-- Run the **email-enrichment waterfall** (`prospeo → bettercontact → fullenrich → lusha → wiza`), first-hit.
+- Run the **email-enrichment waterfall** (order in `reference/waterfalls.json`), first-hit.
 - **Optional verify:** `enrichley.validate_email` before sending — `catch_all_safe` is usable; drop undeliverable.
 
 **5 — PERSONALIZE: BD first-line off the funding hook** *(metered AI — `hyreflow-agent`)*

@@ -14,7 +14,9 @@ first real result.
 ```
 Person = { linkedin_url, first_name, last_name, full_name, company_name, company_domain, email, phone }
 ```
-Run it: `POST /enrich/email_enrichment` (engine) — body `{rows:[Person, …]}`.
+Run it: `POST /enrich/email_enrichment` (engine) — body `{rows:[Person, …]}`. On this capability the
+output row also carries `company_match` (whether the returned address checked out against the employer)
+and `company_match_basis` (`company_domain` or `company_name` — which one it was judged on).
 
 **Identifier rule:** `linkedin_url` alone works, OR `first_name + last_name + company_domain` (no
 LinkedIn needed). Common aliases are folded in automatically — `domain`→`company_domain`,
@@ -23,9 +25,24 @@ If a row truly lacks a usable identifier the step returns `no_identifier` with a
 missing fields.
 
 ## Pick the channel FIRST (this decides the waterfall)
-- **Candidate acquisition → `personal_email` + LinkedIn. NEVER work email.** (`fullenrich → leadmagic → wiza`.)
-- **BD / selling to companies → work email.** (`email_enrichment`: `prospeo → bettercontact → fullenrich → lusha → wiza`.)
-- ⚠️ prospeo / aiark / bettercontact / lusha are **work-email only** — never use them for candidate/personal flows.
+- **Candidate acquisition → `personal_email` + LinkedIn. NEVER work email.**
+- **BD / selling to companies → work email → `email_enrichment`.**
+- **Employment history — past employers, "has worked at a startup", anything you're about to SCORE on →
+  `linkedin_profile`.**
+  `POST /enrich/linkedin_profile` / `hyreflow tools execute linkedin_profile --payload '{"linkedin_url":"…"}'` —
+  one row per profile, answer lands in `profile` (`experience[]` = company/title/start/end/is_current, plus
+  `duration_months`/`description` and `headline`/`about`/`skills`/`certifications`/`education` from the
+  providers that carry them, newest first) instead of `email`. **This is the step that runs BEFORE
+  qualification/scoring**, not after: a sourcing row carries only the current title, employer and location, and
+  `/qualify` refuses a batch in which no row has work history. A provider answer with no employment history
+  counts as a miss — it costs nothing and the waterfall moves on. **Enrich each profile once and carry it on the
+  row:** a step that also serves the work-email chain charges its per-result rate on both capabilities, so
+  re-running `linkedin_profile` over rows that already hold a `profile` pays for it twice.
+  ⚠️ Never hand-pick a raw scraper actor for this: Apify is BYOK-only
+  and its spend is invisible to your credits, the spend cap and the approval gate.
+- ⚠️ prospeo / aiark / lusha are **work-email only** — never use them for candidate/personal *email* flows.
+  (Their *profile* answers carry no contact detail, so `linkedin_profile` is safe for candidates.)
+- House order for every waterfall lives in `reference/waterfalls.json` — never restate it here.
 
 ## Per-provider input is auto-mapped (the canonicalization)
 Each provider wants the identifier in a different field/shape — the waterfall translates one `Person` to all of them:
@@ -34,7 +51,6 @@ Each provider wants the identifier in a different field/shape — the waterfall 
 | prospeo | `data:{linkedin_url}` | sync |
 | lusha | `linkedin_url=` (kwarg) | sync |
 | wiza | **`profile_url`** (not linkedin_url) | async (start→poll) |
-| bettercontact | `data:[{first,last,company_domain,linkedin_url}]` (batch) | async (start→poll, ~30–40s) |
 | fullenrich | `datas:[{…}]` (batch) | async |
 → You just provide whatever `Person` fields you have; pass **linkedin_url** when you can (highest hit-rate).
 
@@ -52,8 +68,9 @@ Each provider wants the identifier in a different field/shape — the waterfall 
   are unusable. Drop those; keep verified + catch_all_safe.
 
 ## Provider quirks (rest in each `provider-playbooks/<tool>.md`)
-- **BetterContact** — batch + async; ~30–40s to terminate; email at `data[].contact_email_address`
-  (+ `_status:"deliverable"`). Strong waterfall coverage.
+- **BetterContact** — not part of the `email_enrichment`/`personal_email` waterfalls; call it directly
+  (`bettercontact_start_enrichment`) when single-provider finders miss. Batch + async; ~30–40s to
+  terminate; email at `data[].contact_email_address` (+ `_status:"deliverable"`).
 - **Prospeo** — sync, fast; returns `person.email.{email,status}`; status `UNAVAILABLE` = real miss → fall through.
 - **Wiza** — async (`data.status` finished/failed); consumes **api_credits** (separate from email_credits — keep topped up).
 - **FullEnrich** — async batch; needs `FULLENRICH_API_KEY`. **Personal-email** channel.

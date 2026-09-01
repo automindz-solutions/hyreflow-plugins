@@ -17,7 +17,7 @@ BD → **work email** end to end (`email_enrichment` waterfall). Not a candidate
 
 ## Output dir (set up first)
 `clients/<client-slug>/runs/tradeshow-<event-slug>/` (or `<cwd>/hyreflow-runs/tradeshow-<event-slug>/`).
-Never write to `%TEMP%` or inside the skill. Outputs UTF-8 (BOM for Excel).
+Never write to `%TEMP%` or inside the skill. Outputs plain UTF-8.
 
 ## Capability chain
 ```

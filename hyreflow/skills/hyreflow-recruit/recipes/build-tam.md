@@ -19,7 +19,7 @@ people** in those companies (hiring managers and/or candidates), enriched and pu
 - Channel only matters in Step 5: hiring managers → **work email**; candidates → **personal email + LinkedIn**.
 
 ## Output dir
-`clients/<client-slug>/runs/tam-<icp-slug>/` (or `<cwd>/hyreflow-runs/tam-<icp-slug>/`). UTF-8 (BOM for Excel).
+`clients/<client-slug>/runs/tam-<icp-slug>/` (or `<cwd>/hyreflow-runs/tam-<icp-slug>/`). Plain UTF-8.
 
 ## Capability chain
 ```
@@ -74,6 +74,11 @@ Prospeo `result.pagination.total_count`, Apollo `result.total_entries`, Lusha `r
 The count lives under the `result` envelope every `tools execute` returns (`{ _meta, result }`) — a top-level
 read returns `None`. That number **is the TAM size estimate** — report it up front.
 
+⚠️ **An empty page is not automatically a zero-match.** If `_meta.provider_unavailable` is set (or a
+`provider_unavailable` entry appears in `_meta.warnings`), that provider couldn't serve the request — **stop,
+say so, and switch sources or re-run later.** Never fold that empty page into the TAM count or the merge:
+it silently under-counts the market and ships a short list that looks complete.
+
 **Then project the full-run cost from it** (the free count is the top of the funnel; cost is driven by how
 many survive to the *paid* steps). Walk the funnel with the current per-op credit costs from the registry
 (`reference/tool-registry.json`; firms up with the price card):
@@ -81,7 +86,7 @@ many survive to the *paid* steps). Walk the funnel with the current per-op credi
 TAM_total (free count)
   → sourcing pulls           : cheap (a few calls × ~3.0; lookalikes extra)
   → hard + Model-A qualify    : FREE (Step 3 T1/T2)
-  → web verification (T3)     : verify_N × (serper free + firecrawl ~0.5 + agent)  ≈ ~0.5/company
+  → web verification (T3)     : verify_N × (serper ~0.1 + firecrawl ~0.5 + agent)  ≈ ~0.6/company
   → [opt] people per company  : people_search ~3.0/company
   → [opt] enrich per person   : work email ~0.5–3.0/hit · personal-email waterfall varies
 ```
@@ -112,7 +117,9 @@ Follow [`recipes/qualify-against-icp.md`](qualify-against-icp.md), extended with
 ## STEP 4 — Deliver (the core output)
 The ICP-fit company list: `name · domain · employee_size · industry · geo · _source · fit_tier · evidence`,
 plus the **TAM size estimate** (Step 2) and a one-line "how to narrow (tighten filters) / expand (add a DB or
-lookalikes)". Report the path + counts, not pasted rows.
+lookalikes)". Report the path + counts, not pasted rows. Keep the `fit_tier`/`evidence` column names — the
+Playground renders any dataset with a `fit_tier` column as a visual shortlist (fit-tier badge + evidence per
+row, not a raw grid) and can export it as a standalone HTML shortlist.
 
 ## STEP 5 — OPTIONAL (opt-in): the relevant people
 Ask **which people**: hiring managers, candidates, or both. Then per ICP-fit company:

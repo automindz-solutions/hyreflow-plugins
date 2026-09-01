@@ -23,7 +23,7 @@ candidate shortlist with a rich dossier. A pattern the agent composes; not a har
 ```
 IT JD/role → PARSE (AI) →  ┌─ GitHub leg:    search_users → candidate_dossier/user_dossier (or GraphQL dossier) → [Firecrawl+AI deep context]
                            └─ people-DB leg: people_search (aiark → … )
-           → MERGE + dedup (prioritise GitHub-sourced) → QUALIFY 0-10 → shortlist (LinkedIn-first + personal email)
+           → MERGE + dedup (GitHub wins a tie) → QUALIFY 0-10 → shortlist (LinkedIn-first + personal email)
 ```
 Docs: [`provider-playbooks/github.md`](../provider-playbooks/github.md) (the dossier + email rules), [`finding-people.md`](../finding-people.md),
 [`enriching.md`](../enriching.md), [`references/provider-precedence.md`](../references/provider-precedence.md).
@@ -33,7 +33,8 @@ Docs: [`provider-playbooks/github.md`](../provider-playbooks/github.md) (the dos
 **1 — PARSE (if from a JD)** *(AI step)* — extract the IT `PeopleQuery`: `titles`, **`skills`/languages** (e.g. Java, Python),
 `certifications`, `min_experience_years`, `locations`, `seniority`, + `reports_to` if a manager is named. (See `jd-to-shortlist`.)
 
-**2 — GitHub leg** *(free, ground-truth; the prioritised source)*
+**2 — GitHub leg** *(free, ground-truth; primary for code-writing roles — for infra/sysadmin/network/IT-support,
+skip this leg entirely and run step 3 alone, per the role rule above)*
 - **Fast batch path — first-class helpers** (prefer these over agent-authored local scripts for candidate rows
   coming out of people-DB/JD sourcing):
   - `search_profile_match` — `full_name + company/location/linkedin_url → ranked GitHub matches`.
@@ -103,11 +104,20 @@ dotted. Placeholders `{{col}}` pull from the input row; `extract_js` flattens th
 - Add verified-tooling columns to the shortlist when relevant, e.g. `verified_ruff`, `verified_mypy`,
   `verified_pytest`, `verified_frameworks`, `verified_ci_quality_gates`, plus short evidence notes/counts.
 
-**3 — People-DB leg** *(breadth — the devs not on GitHub)*
+**3 — People-DB leg** *(breadth — the devs not on GitHub; runs on every IT role, not just the infra ones)*
+- **Target: at least `1.5×N` people-DB rows before you merge** (N = the count the user asked for). This leg is
+  volume-matched to the GitHub pool, not a spot check — a handful of rows is an under-run, not a completed step.
+  `limit` is the lever: `people_search` bills **per result** (aiark 0.1 cr/row — current rates in `cost-card.json`),
+  so `limit: 15` for N=10 is ~1.5 cr. The leg is cheap; the missed candidates are not.
+- **Under-target → widen and re-query before merging.** Drop the narrowest filter first (`min_experience_years`,
+  then `seniority`, then extra `skills`), and search **city variants** the way you do for GitHub
+  (`Germany` / `Berlin` / `Munich`). Only continue to step 4 once you hit the target or you have run out of
+  sensible widenings — and say which, in the run notes.
 - `people_search` waterfall (aiark → …) with the JD's **canonical** query keys: `titles`, `skills`,
   `locations`, `seniority`, `min_experience_years`, `company_domains`, `limit`. ⚠️ Use these exact names —
   provider-native keys like `person_locations`/`person_titles` are auto-aliased but anything unrecognized is
-  **dropped and reported in `_meta.ignored_query_keys`** (a mistyped filter silently widens the search).
+  **dropped and reported in `_meta.ignored_query_keys`** (a mistyped filter silently widens the search), and
+  if NO key ends up binding a filter at all the call is refused with a `400` rather than run unscoped.
   Tag `_source=people_db`.
 - ⚠️ **`skills` ≫ `title` as the precision lever for IT roles.** `skills` pushes down to aiark
   `contact.skill` and prefilters at the source — a title-only pull (e.g. "Backend Engineer") drags in
@@ -118,16 +128,30 @@ dotted. Placeholders `{{col}}` pull from the input row; `extract_js` flattens th
   `person_locations` precisely — but Apollo is **BYOK-only**. Without a workspace Apollo key it is
   unavailable/skipped with `no_key`. Treat Apollo as an optional override, not the default leg.
 
-**4 — MERGE + dedup** — by `linkedin_url` (fallback GitHub login / name+company). **Prioritise GitHub-sourced** candidates
-(real skill proof beats self-reported); people-DB rows fill the rest. Over-provision ~1.4×N.
+**4 — MERGE + dedup** — by `linkedin_url` (fallback GitHub login / name+company). When the same person arrives
+from both legs, **keep the GitHub row** (real skill proof beats self-reported) — that is a dedup tiebreak, not a
+quota: the merged pool is meant to carry real volume from both legs. **~1.4×N is a floor on the survivors
+after dedup, not a cap on either leg's pull** — the two legs together fetch far more than that, and if dedup
+leaves you under the floor, source more rather than qualifying a thin pool.
+- **Leg-balance check before you qualify.** On a code-writing role, a merged pool that is **>70% GitHub-sourced**
+  means step 3 under-ran — go back and widen it. On an infra/sysadmin role the pool is people-DB-only by design.
 
 **5 — DEEP CONTEXT (optional; gate to the SHORTLIST only — it's per-candidate cost)**
 - `firecrawl.scrape(personal_website)` → `hyreflow_agent.infer` → `{summary, notable_projects[], tech[], talks_or_content[]}`
   (grounded in the scraped text). Enriches both qualify and personalization. Don't run it on the raw pool — only the finalists.
 
-**6 — QUALIFY 0-10 vs the JD** *(`/qualify`)* — score each candidate's dossier (skills + impact tier + deep context),
-then **deliver exactly the top N** the user asked for (rank by score, cut the rest). The precision step (search =
-recall). GitHub-sourced usually score high (evidence-backed). Don't hand back the whole pool — N is the deliverable.
+**5b — ENRICH the employment history for the people-DB leg** — a `people_search` row is a snapshot (current
+title, employer, location) and cannot show how many years of the stack the person actually has. Run
+`linkedin_profile` on those rows before scoring → `profile.experience[{company, title, start, end,
+duration_months?, description?}]`. GitHub-sourced rows carry their own evidence (the dossier), so the history
+matters most for the people-DB leg. `/qualify` reports `qualify.basis` (`work_history` | `title_only`) per
+candidate and **refuses a batch in which no row carries work history** (422 `no_work_history`) — enrich first,
+or pass `allow_thin_profiles: true` when the dossier is the evidence you're deliberately scoring on.
+
+**6 — QUALIFY 0-10 vs the JD** *(`/qualify`)* — score each candidate's dossier (skills + impact tier + deep
+context) **plus the dated employment history from 5b**, then **deliver exactly the top N** the user asked for
+(rank by score, cut the rest). The precision step (search = recall). GitHub-sourced usually score high
+(evidence-backed). Don't hand back the whole pool — N is the deliverable.
 
 **7 — OUTREACH handoff** — candidate channel = **LinkedIn-first → personal email** (GDPR-aware; harvested emails are
 unconsented). See `writing-outreach.md`.
@@ -137,15 +161,18 @@ unconsented). See `writing-outreach.md`.
 - **GDPR / LinkedIn-first** for commit-harvested personal emails (mostly EU devs).
 - **EEO:** never filter on age/gender/etc.
 - **Qualify before spend**; **gate deep-context to the shortlist**; over-provision then filter; count-before-pay on the people-DB leg.
+- **Both legs carry volume** (code-writing roles): people-DB ≥ `1.5×N` rows and ≤70% of the merged pool GitHub-sourced.
+  A GitHub-only pool reaches only OSS-active devs — most of the market writes no public code.
 
 ## Cost shape
 | Step | Metered? |
 |---|---|
 | GitHub leg (search, dossier, email) | **free** (token; ~$0) |
-| people-DB leg | metered (e.g. aiark people_search ~3.0; current costs in cost-card.json) |
+| people-DB leg | metered **per result** (aiark people_search 0.1 cr/row → ~1.5 cr for a 15-row pull; current costs in cost-card.json) |
 | deep context (Firecrawl + AI) | metered — **gate to finalists** |
 | qualify (AI) | metered (tokens) |
-So GitHub sourcing + emails are free margin; you meter the people-DB breadth + the Firecrawl/AI enrichment.
+So GitHub sourcing + emails are free margin; you meter the people-DB breadth + the Firecrawl/AI enrichment. Free
+does not mean preferred — the per-result people-DB rows are cheap enough that breadth is never the thing to cut.
 
 ## Output
 A ranked IT shortlist, GitHub-sourced first, each with: **GitHub URL · website · LinkedIn (+ socials) · impact tier
@@ -158,4 +185,6 @@ A ranked IT shortlist, GitHub-sourced first, each with: **GitHub URL · website 
   the GraphQL dossier when a finalist's impact tier hinges on an org-owned flagship.
 - `find_user_emails` returns **work + personal** → keep personal (gmail/personal-domain), drop employer (`@google.com`…).
 - `lib/github.py` `graphql()` returns the **unwrapped** data (top-level `user`).
-- GitHub coverage skews **OSS-active** → always run the people-DB leg too for breadth.
+- GitHub coverage skews **OSS-active** → run the people-DB leg to its `1.5×N` target on every code-writing role.
+  Strong closed-source engineers have no public GitHub at all, so a GitHub-heavy pool is a recall failure that
+  looks like a full shortlist.

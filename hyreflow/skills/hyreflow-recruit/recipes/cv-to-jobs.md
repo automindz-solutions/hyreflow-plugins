@@ -15,7 +15,7 @@ visibly hiring that profile.
 
 ## Capability chain
 ```
-CV/slug → PARSE (AI, multimodal fallback) → SEARCH JOBS (3 Apify actors ‖) → NORMALIZE+FILTER
+CV/slug → PARSE (AI, multimodal fallback) → SEARCH JOBS (native scrapes ‖ + optional StepStone via Apify) → NORMALIZE+FILTER
         → MATCH/SCORE each job ↔ CV (AI 0-10) → FIND HIRING MANAGER (company-scoped people_search,
           size-adaptive title hierarchy + reporting-line-first) → ENRICH work email (waterfall)
         → output: ranked target companies + job + fit + hiring manager + spec-out outreach message
@@ -29,7 +29,7 @@ The candidate is *yours* (consented) — no candidate-channel concern. See
 ## Output dir (set up first)
 `clients/<client-slug>/runs/cv-to-jobs-<candidate-slug>/` (or `<cwd>/hyreflow-runs/...` ad-hoc).
 Candidate slug: lowercase first+last, umlauts folded (ä→ae ö→oe ü→ue ß→ss), no spaces. Never write to
-`%TEMP%` or inside the skill. Outputs UTF-8 (BOM for Excel).
+`%TEMP%` or inside the skill. Outputs plain UTF-8.
 
 ---
 
@@ -64,12 +64,18 @@ download résumé (`recruit-crm`/`bullhorn` candidate get) → `cv.pdf` + `candi
 - `size_buckets` (optional, soft-rank). **Hard floor: drop companies < 20 employees** *only when size is
   known* (StepStone never has it → keep). One bucket → LinkedIn hard-filter; multiple/empty → soft-rank only.
 
-## STEP 3 — Job search: 3 Apify actors in parallel (German trio)
+## STEP 3 — Job search: native scrapes (default) + StepStone via Apify (additive DACH leg)
 
-> Why three: LinkedIn + **StepStone** (essential for DACH) + Indeed together cover the German market a
-> single source misses. Run all three concurrently (`apify.run_actor`), then merge.
+> **Default source, no key required:** `linkedin_jobs`, `indeed_jobs` and `arbeitsagentur_jobs` (the
+> German federal job board) — Hyreflow's first-party job scrapers, run in parallel, credit-metered, always
+> available. **Additive leg:** StepStone via Apify widens DACH coverage further **when the client has
+> their own Apify key connected** — StepStone has no native equivalent, so it's the one board worth
+> keeping the BYOK leg for. The native LinkedIn and Indeed scrapes cover the same ground as their Apify
+> actors below; reach for an Apify actor only when you need that actor's specific fields/filters. Run
+> whichever legs apply concurrently, then merge.
 
-**LinkedIn** — actor `vIGxjRrHqDTPuE6M4`:
+**LinkedIn (Apify actor, optional — the native `linkedin_jobs` scrape already covers this board)** —
+actor `vIGxjRrHqDTPuE6M4`:
 ```json
 { "titleSearch": ["<t1>","<t2>"], "locationSearch": ["Munich","München","Bavaria"],
   "timeRange": "7d", "limit": 50, "removeAgency": false, "includeAi": true }
@@ -79,8 +85,9 @@ download résumé (`recruit-crm`/`bullhorn` candidate get) → `cv.pdf` + `candi
 - `removeAgency: false` — the server filter is too aggressive; we strip agencies ourselves (Step 4).
 - One size bucket → add `organizationEmployeesGte` / `organizationEmployeesLte`.
 
-**StepStone** — actor `pIVhuvHZkW2Llfjrr` (pure-HTTP vs. the unified-resultlist JSON API, ~$1/1k,
-Residential proxy). Build the URL from titles + plz + radius:
+**StepStone (Apify actor, the reason to run this leg — no native equivalent)** — actor
+`pIVhuvHZkW2Llfjrr` (pure-HTTP vs. the unified-resultlist JSON API, ~$1/1k, Residential proxy). Build the
+URL from titles + plz + radius:
 ```
 slug(title): lowercase, ä→ae ö→oe ü→ue ß→ss, drop (...), non-alnum→'-'
 url = https://www.stepstone.de/jobs/<slug1>-or-<slug2>/in-<plz>?radius=<km>
@@ -93,20 +100,21 @@ url = https://www.stepstone.de/jobs/<slug1>-or-<slug2>/in-<plz>?radius=<km>
 - **Do not** use the old Puppeteer actor `o6JjyowF7532cPwan` — blocked by Cloudflare/HTTP-2 bot detection.
   `pIVhuvHZkW2Llfjrr` bypasses it via residential proxy + JSON API.
 
-**Indeed** — actor `MXLpngmVpE8WTESQr` (takes structured params, no URL build):
+**Indeed (Apify actor, optional — the native `indeed_jobs` scrape already covers this board)** — actor
+`MXLpngmVpE8WTESQr` (takes structured params, no URL build):
 ```json
 { "query": "(<t1> OR <t2>)", "country": "de", "location": "<city_de>", "maxItems": 100, "fromDays": "14" }
 ```
 - `country` must be **lowercase ISO-2** (`"de"`); `fromDays` must be a **string** (`"14"`).
 
-**Keep limits modest.** Start at `limit`/`maxItems` ≈ **50–100** per actor — that's plenty of fresh
-postings for one candidate's region; scale only if coverage comes back thin. Apify bills per result, so
-modest limits keep the run cheap — that spend is on the client's own Apify account (Apify is BYOK-only;
-Hyreflow charges 0 credits). *(No separate payload-approval step — this recipe just runs.)*
+**Keep limits modest.** If running the Apify leg, start at `limit`/`maxItems` ≈ **50–100** per actor —
+that's plenty of fresh postings for one candidate's region; scale only if coverage comes back thin. Apify
+bills per result, so modest limits keep the run cheap — that spend is on the client's own Apify account
+(Hyreflow charges 0 credits). *(No separate payload-approval step — this recipe just runs.)*
 
 ## STEP 4 — Normalize + filter
 
-- **Dedup** across the 3 sources (company + title + location key).
+- **Dedup** across whichever sources ran (company + title + location key).
 - **Strip agencies:** denylist + LinkedIn agency flag (we keep `removeAgency:false`, so filter here).
 - **Size floor:** drop `< 20` employees when known; keep when unknown.
 - **Location verify:** confirm each job sits in the candidate's region / commute belt (geocode).
@@ -145,7 +153,7 @@ title hierarchy** (ported from mpc's `prospeo-search-strategy`, generalised by `
 - **Reporting-line-first** (`finding-companies-and-contacts.md`): if a posting names the reporting line / interview
   panel, find that person directly (`exa` + verify) before falling back to the title hierarchy.
 - Pick the best match (most senior in-function at the scoped company); then **email_enrichment waterfall**
-  for the **work email** (BD channel) — `prospeo→bettercontact→fullenrich→…` per `provider-precedence`.
+  for the **work email** (BD channel) — order in `reference/waterfalls.json`.
 
 ## STEP 7 — Output: the spec-out outreach message
 
@@ -162,11 +170,14 @@ deliverable is the message.
 ---
 
 ## Gates & caveats (honest)
-- **Public-postings-only:** the Apify trio captures *advertised* roles; agency-run / unposted hires are
-  invisible. Add an internal leg (your own ATS open mandates) if you also want to place on live jobs first.
-- **Apify is BYOK-only:** the client must have their own Apify token connected in Integrations, or all 3
-  actors return `no_key` and this recipe has no job source. Their account is billed per result
-  (StepStone ~$1/1k) → keep `limit`/`maxItems` modest (50–100). Hyreflow charges 0 credits.
+- **Public-postings-only:** both the native scrapes and the Apify leg capture *advertised* roles;
+  agency-run / unposted hires are invisible. Add an internal leg (your own ATS open mandates) if you also
+  want to place on live jobs first.
+- **Apify is BYOK-only:** without the client's own Apify token connected in Integrations, the Apify leg
+  returns `no_key` — the recipe still has a job source (the native `linkedin_jobs`/`indeed_jobs`/
+  `arbeitsagentur_jobs` scrapes, no key required), what's lost is StepStone coverage. Once connected, the
+  client's account is billed per result (StepStone ~$1/1k) → keep `limit`/`maxItems` modest (50–100).
+  Hyreflow charges 0 credits.
 - **`removeAgency:false`** on LinkedIn is deliberate — we filter agencies in Step 4, not server-side.
 - **Hiring-manager coverage:** excellent when the posting names the reporting line or the company is
   well-indexed; thin at tiny firms (the size hierarchy's "< 100 → GF" branch is the fallback for that).
@@ -178,6 +189,7 @@ deliverable is the message.
 - `score-job-vs-cv` — inverse of `score-candidate-vs-job`: one candidate × one job → 0-10 + gaps.
 
 ## Reusable asset
-The **German job-board trio** (LinkedIn `vIGxjRrHqDTPuE6M4` + StepStone `pIVhuvHZkW2Llfjrr` + Indeed
-`MXLpngmVpE8WTESQr`, with the payload quirks above) is reusable for *any* DACH sourcing — consider
-promoting it into `provider-playbooks/apify.md` as the canonical German job-search actor set.
+The **Apify actor set** (LinkedIn `vIGxjRrHqDTPuE6M4` + StepStone `pIVhuvHZkW2Llfjrr` + Indeed
+`MXLpngmVpE8WTESQr`, with the payload quirks above) is reusable for *any* DACH sourcing that wants
+StepStone coverage or an Apify actor's specific fields — consider promoting it into
+`provider-playbooks/apify.md` as the canonical German job-search actor set.

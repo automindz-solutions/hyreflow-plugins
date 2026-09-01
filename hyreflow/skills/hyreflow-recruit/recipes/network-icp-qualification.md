@@ -63,7 +63,7 @@ titles, either judge inline (small N, interactive) or dispatch `hyreflow_agent.i
 of rows, headless) — same free-vs-metered split as [`qualify-against-icp.md`](qualify-against-icp.md) Step 2.
 
 **2 — ENRICH: candidate → full profile** *(metered; the `email_enrichment` waterfall)*
-Run the **email-enrichment waterfall** (`prospeo → bettercontact → fullenrich → lusha → wiza`) scoped by
+Run the **email-enrichment waterfall** (order in `reference/waterfalls.json`) scoped by
 whatever identifier the row carries — `linkedin_url` if the export includes it (preferred: Lusha/Prospeo
 both accept it directly), else `first_name`+`last_name`+`company_name` (Lusha's documented fallback shape).
 This fills in the fields the raw CSV lacks (current title/company if stale, LinkedIn URL, verified
@@ -85,7 +85,7 @@ and API key (BYOK). If a client wants a first-class adapter, note the gap; don't
 ## Part 2 — Dream 100 build (one-shot + idempotent refresh)
 A **`people_search` waterfall** run, layered by the network-ICP doc's sub-segment definitions (e.g. run one
 pass per segment: PE operators, CEO/hiring-manager, podcast guests — whatever the doc defines), same
-`aiark → prospeo → lemlist → apollo` order the waterfall already walks. **Cross-layer dedupe on
+provider order the waterfall already walks (`reference/waterfalls.json`). **Cross-layer dedupe on
 `profile_url`** so a contact matching two segments doesn't get two rows. For every target, **cross-reference
 `connection_status` against the "LinkedIn Network" table from Part 1** — a target who's already a
 1st-degree connection gets `connection_status = already_connected` (and, per Part 3, routes to the warm-DM
@@ -114,7 +114,7 @@ needed here (this is glue, not judgment; keep it free).
 
 **3 — TOP-10 shortlist.** Rank by `engagement_score`, take the top 10.
 
-**4 — RESEARCH: news/funding on the shortlist** *(metered — Exa)*
+**4 — RESEARCH: news/funding on the shortlist** *(paid — Exa, per request)*
 For each of the 10, run [`provider-playbooks/exa.md`](../provider-playbooks/exa.md)'s research agent for
 recent news/funding/company-signal context — the hook the invite draft will reference.
 
@@ -164,7 +164,7 @@ connection to send). Instead it routes to a **warm DM through the connected cons
 | Part 2 Dream 100 build | metered (people_search waterfall, per layer) |
 | Part 3.0 suppress / 3.2 score / 3.3 rank | free (deterministic glue) |
 | Part 3.1 refresh | metered (email_enrichment waterfall) |
-| Part 3.4 research | metered (Exa) |
+| Part 3.4 research | paid (Exa, per request — a broader ask costs more) |
 | Part 3.5 draft | metered (hyreflow-agent tokens) |
 | Part 3.6-8 stage/send/suppress | free (Airtable + human action) |
 

@@ -40,7 +40,7 @@ bettercontact, exa, fullenrich, serper, instantly, heyreach, icypeas, prospeo.
 
 ## Cheapest-doc-source hierarchy (use in order)
 1. **OpenAPI/Swagger JSON** — fetch once, parse paths/schemas (e.g. Instantly, Apollo).
-2. **llms.txt / static `.md`** (Mintlify/ReadMe) — plain HTTP discovery (most enrichment tools, Smartlead, Lemlist).
+2. **llms.txt / static `.md`** (Mintlify/ReadMe) — plain HTTP discovery (most enrichment tools, Smartlead, Lemlist, SendKit).
 3. **JS-rendered SPA** — Firecrawl `/v2/map` to list URLs → `/v2/scrape` each as markdown (e.g. Recruit CRM/Stoplight).
 4. **Hand-paste** — only if docs are gated/absent → flag and park (e.g. quil).
 

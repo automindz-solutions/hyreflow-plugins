@@ -8,20 +8,36 @@ description: 'Send feedback or a bug report to the Hyreflow team, including envi
 > The skill root is `$HOME/.agents/skills/hyreflow-feedback/`; relative paths are relative to it — if a
 > relative read fails, prefix it with the root.
 
+> **No shell? You're on the MCP connection.** Everything below that installs or runs the `hyreflow`
+> CLI does not apply — this connection is already authorized, and the skill documents are served to
+> you directly. Skip to the steps and use the `hyreflow_*` tools your client lists.
+
 Send feedback or a bug report to the Hyreflow team. It files a **tracked issue** (via the engine) with
 everything needed to reproduce — so debugging is smooth.
 
 ## Steps
 
-> **CLI required.** This skill files the report through the `hyreflow` CLI. If it isn't installed
-> (`hyreflow` → "command not found"), install it + sign in first:
+> **On the CLI.** Check you're connected first (MCP callers skip this and go straight to the
+> `hyreflow_feedback` tool):
 
 ```bash
-npm install -g hyreflow --prefix "$HOME/.local" --silent --no-fund --no-audit  # sandbox-safe; plain `npm install -g hyreflow` in a normal terminal
-export PATH="$HOME/.local/bin:$PATH"
-hyreflow setup   # installs skills + signs in; relay the link it prints, then re-run this to resume
-hyreflow auth status                                      # confirm you're connected
+hyreflow auth status                   # connected? continue below
+hyreflow -h                            # see available commands
 ```
+
+**Not connected, or `hyreflow` not found?**
+
+```bash
+npm install -g hyreflow
+# Fallback for secure sandboxes: npm install -g hyreflow --prefix "$HOME/.local" --registry https://recruit.hyreflow.ai/api/v2/npm/ && export PATH="$HOME/.local/bin:$PATH"
+hyreflow auth login --wait auto
+hyreflow auth wait --timeout 120       # completes the browser approval; no-op if already connected
+hyreflow auth status
+```
+
+**CLI resolution.** Run `hyreflow` when available. If the shell reports the command is missing, use
+`<workspace-root>/.hyreflow/runtime/bin/hyreflow` or the npm-created `.cmd` shim on Windows. If neither
+exists, follow `https://recruit.hyreflow.ai/SKILL.md` to set up Hyreflow.
 
 1. **Get feedback text + the repro command.**
    - Use the argument if provided (e.g. `/hyreflow-feedback the waterfall broke`). Otherwise ask the
@@ -79,6 +95,9 @@ hyreflow auth status                                      # confirm you're conne
    ```
    If the check reports `cli_stale`/`skills_stale` (a stale CLI is a common root cause), say so in one line
    and fold it into the report's environment notes — then continue filing (don't block the report to update).
+
+   **On an MCP connection, skip this step.** There is no CLI to version-check, and the workspace,
+   balance and account details are resolved server-side from your authorization.
    If a live session is active, note its id (`hyreflow session show`) and pass it as `--session <id>` —
    the engine pulls the full session snapshot (steps, events, outputs, last alert) into the issue
    itself. Account details (workspace, balance, user email) are added server-side from your login.
@@ -100,9 +119,16 @@ hyreflow auth status                                      # confirm you're conne
 
    Options: "Send it" / "Cancel".
 
-6. **If confirmed**, file it:
+6. **If confirmed**, file it.
+
+   On the CLI:
    ```bash
    hyreflow feedback --message "{feedback text}" [--bug] [--session {id}] [--repro-query "/hyreflow-recruit {query}"] [--image {path} …]
    ```
-   Add `--bug` for a bug report (it also gets the `Bug` label; otherwise just `feedback`). The CLI
-   prints the filed issue's URL — share it with the user. If cancelled, do nothing.
+
+   On an MCP connection, call `hyreflow_feedback` with `message`, `kind: "bug"` for a bug, and
+   `repro_query` if you have one. The session is attached for you, and images are not available —
+   describe the screenshot in the message instead.
+
+   Either way the report comes back with the filed issue's URL — share it with the user. If cancelled,
+   do nothing.

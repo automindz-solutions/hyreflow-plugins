@@ -4,31 +4,239 @@
     "SKILL.md": {
       "kind": "entrypoint",
       "title": "Hyreflow Recruit Meta Skill",
-      "tags": ["recruiting", "router"],
+      "tags": [
+        "recruiting",
+        "router"
+      ],
       "providers": []
     },
     "recruiter-craft.md": {
       "kind": "guide",
       "title": "Recruiter Craft — Voice and Full-Funnel Behaviour",
-      "tags": ["recruiting", "voice", "funnel"],
+      "tags": [
+        "recruiting",
+        "voice",
+        "funnel"
+      ],
       "providers": []
     },
     "finding-companies-and-contacts.md": {
       "kind": "guide",
       "title": "Finding Companies and Contacts",
-      "tags": ["sourcing", "search", "discovery"],
+      "tags": [
+        "sourcing",
+        "search",
+        "discovery"
+      ],
       "providers": []
     },
     "enriching-and-researching.md": {
       "kind": "guide",
       "title": "Enriching and Researching",
-      "tags": ["enrichment", "waterfall", "signals"],
+      "tags": [
+        "enrichment",
+        "waterfall",
+        "signals"
+      ],
       "providers": []
     },
     "writing-outreach.md": {
       "kind": "guide",
       "title": "Writing Outreach",
-      "tags": ["qualification", "outreach", "sequencing"],
+      "tags": [
+        "qualification",
+        "outreach",
+        "sequencing"
+      ],
+      "providers": []
+    },
+    "recipes/build-tam.md": {
+      "kind": "specialized-workflow",
+      "title": "Build TAM — ICP → addressable company list",
+      "tags": [
+        "tam",
+        "icp",
+        "addressable market",
+        "target accounts",
+        "account list",
+        "territory"
+      ],
+      "providers": []
+    },
+    "recipes/campaign-plays.md": {
+      "kind": "specialized-workflow",
+      "title": "Campaign Plays",
+      "tags": [
+        "cadence",
+        "sequence",
+        "campaign",
+        "outreach steps",
+        "follow up",
+        "drip"
+      ],
+      "providers": []
+    },
+    "recipes/candidate-led-bd-campaign.md": {
+      "kind": "specialized-workflow",
+      "title": "Candidate-led BD Campaign (MPC Shot)",
+      "tags": [
+        "mpc",
+        "candidate led",
+        "spec out",
+        "marketing a candidate",
+        "frontsheet",
+        "bd campaign"
+      ],
+      "providers": []
+    },
+    "recipes/crm-matching.md": {
+      "kind": "specialized-workflow",
+      "title": "CRM Matching — your own candidate base against a job",
+      "tags": [
+        "crm",
+        "ats",
+        "my candidates",
+        "candidate base",
+        "match candidates",
+        "my database",
+        "existing candidates",
+        "own database",
+        "rematch",
+        "re-engage",
+        "redeploy"
+      ],
+      "providers": []
+    },
+    "recipes/cv-to-jobs.md": {
+      "kind": "specialized-workflow",
+      "title": "CV → Fitting Jobs → Hiring Manager",
+      "tags": [
+        "cv",
+        "resume",
+        "spec out",
+        "mpc",
+        "reverse search",
+        "place a candidate"
+      ],
+      "providers": []
+    },
+    "recipes/funding-to-bd.md": {
+      "kind": "specialized-workflow",
+      "title": "Funding → BD",
+      "tags": [
+        "funding",
+        "raised",
+        "investment",
+        "series a",
+        "funding round",
+        "new money"
+      ],
+      "providers": []
+    },
+    "recipes/it-sourcing.md": {
+      "kind": "specialized-workflow",
+      "title": "IT / Developer Sourcing",
+      "tags": [
+        "developer",
+        "software engineer",
+        "github",
+        "technical role",
+        "programmer",
+        "backend engineer"
+      ],
+      "providers": []
+    },
+    "recipes/jd-to-shortlist.md": {
+      "kind": "specialized-workflow",
+      "title": "JD → Shortlist",
+      "tags": [
+        "jd",
+        "job description",
+        "job spec",
+        "shortlist",
+        "vacancy",
+        "competitor poach"
+      ],
+      "providers": []
+    },
+    "recipes/layoff-signal-to-poach.md": {
+      "kind": "specialized-workflow",
+      "title": "Layoff Signal → Poach",
+      "tags": [
+        "layoff",
+        "laid off",
+        "redundancy",
+        "displaced",
+        "downsizing",
+        "job cuts"
+      ],
+      "providers": []
+    },
+    "recipes/multi-source-candidate-search.md": {
+      "kind": "specialized-workflow",
+      "title": "Multi-source Candidate Search",
+      "tags": [
+        "multi source",
+        "several databases",
+        "cross database",
+        "dedupe",
+        "required skills"
+      ],
+      "providers": []
+    },
+    "recipes/multi-strategy-sourcing.md": {
+      "kind": "specialized-workflow",
+      "title": "Multi-strategy Sourcing (5 angles + talent map)",
+      "tags": [
+        "talent map",
+        "market map",
+        "five angles",
+        "lookalike",
+        "wide coverage",
+        "exhaustive sourcing"
+      ],
+      "providers": []
+    },
+    "recipes/network-icp-qualification.md": {
+      "kind": "specialized-workflow",
+      "title": "Network ICP Qualification (Dream 100)",
+      "tags": [
+        "dream 100",
+        "linkedin network",
+        "connections",
+        "own network",
+        "prospect database",
+        "weekly sweep"
+      ],
+      "providers": []
+    },
+    "recipes/qualify-against-icp.md": {
+      "kind": "specialized-workflow",
+      "title": "Qualify Against ICP",
+      "tags": [
+        "icp",
+        "icp fit",
+        "qualify",
+        "disqualify",
+        "good fit",
+        "qualification gate",
+        "screen companies",
+        "filter list"
+      ],
+      "providers": []
+    },
+    "recipes/tradeshow-to-bd.md": {
+      "kind": "specialized-workflow",
+      "title": "Tradeshow Exhibitors → BD",
+      "tags": [
+        "tradeshow",
+        "trade show",
+        "conference",
+        "exhibitor",
+        "speaker list",
+        "event attendees",
+        "expo"
+      ],
       "providers": []
     }
   },
@@ -36,19 +244,25 @@
     "provider-playbooks/": {
       "kind": "provider-playbook",
       "title": "Provider Playbook",
-      "tags": ["provider"],
+      "tags": [
+        "provider"
+      ],
       "providers": []
     },
     "recipes/": {
       "kind": "specialized-workflow",
       "title": "Recipe",
-      "tags": ["recipe"],
+      "tags": [
+        "recipe"
+      ],
       "providers": []
     },
     "references/": {
       "kind": "reference",
       "title": "Reference",
-      "tags": ["reference"],
+      "tags": [
+        "reference"
+      ],
       "providers": []
     }
   },

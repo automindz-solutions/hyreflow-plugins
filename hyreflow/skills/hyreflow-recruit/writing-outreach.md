@@ -16,7 +16,7 @@ client's `ICP.md` when present).
 ## 2) Confirm the cadence before building a sequence
 
 The cadence shape is the **client's call**, never an assumption. Always show a few example plays and
-**confirm with the user before building** anything in a sequencer (Lemlist, Instantly, Smartlead, …).
+**confirm with the user before building** anything in a sequencer (Lemlist, Instantly, Smartlead, SendKit, …).
 
 → Follow [`recipes/campaign-plays.md`](recipes/campaign-plays.md) for the cadence templates and the
 "confirm cadence first" rule.

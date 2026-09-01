@@ -21,6 +21,13 @@ Prospeo returns **work / professional emails only — it does NOT find personal 
 in personal-email or **candidate-acquisition** workflows (recruiting candidates → personal email + LinkedIn).
 **Personal emails come from `fullenrich` or `leadmagic` only.** Prospeo is for BD / work-email use.
 
+**`enrich_person` also answers the `linkedin_profile` capability** — the same call returns dated job
+history, not contact detail, so this is the one candidate-workflow use that's fine: pulling work history
+via Prospeo doesn't touch personal-email/candidate-contact territory at all. **Double-charge risk:**
+calling `enrich_person` again on the same person to pull `linkedin_profile` after already calling it for
+work email (or vice versa) bills as two separate reveals even though it's the same underlying result row
+— reuse the first response instead of re-enriching for the second capability.
+
 ## Handoff
 Enrichment layer (**work email**): shortlist → Prospeo for work emails/phones → validate → ATS/sequencer.
 
@@ -29,11 +36,11 @@ Enrichment layer (**work email**): shortlist → Prospeo for work emails/phones 
 
 > **Field-shape note:** these are vendor-native operational notes. The client returns the **raw vendor JSON** and uses the method names in this file — read field shapes accordingly (no normalized-wrapper / `result.data.` prefix).
 
-- **Flow (LIVE-CONFIRMED 2026-06-02):** `search_suggestions` (FREE) to resolve canonical filter values → `search_person`/`search_company` to build lists → `enrich_person`/`enrich_company` for email/mobile. Search results **never include email/mobile** — enrich the `person_id`s afterward (`bulk_enrich_person` ≤50).
+- **Flow (LIVE-CONFIRMED 2026-06-02):** `search_suggestions` (FREE) to resolve canonical filter values → `search_person`/`search_company` to build lists → `enrich_person`/`enrich_company` for email/mobile. Search results **never include email/mobile** — enrich the `person_id`s afterward (`bulk_enrich_person` ≤50, body `{"data":[{"identifier": "...", "person_id": "..."}]}` — `identifier` (your own row id) is required per item, and `bulk_enrich_company` mirrors it (`{"data":[{"identifier": "...", "company_website": "..."}]}`)).
 - **Company lookalikes (LIVE-CONFIRMED 2026-06):** the right flow is **enrich → verify → lookalike**:
   1. `enrich_company` to resolve a seed to its `company_id` — **payload needs the `data` wrapper**: `{"data":{"company_website":"acme.com"}}` (top-level fields → `400 Field required`). Prefer `company_linkedin_url` (most unique) or a clean own-domain; see `reference/docs/prospeo/raw/enrich-company.md`.
-  2. **VERIFY the resolved seed** — confirm the returned `company.name`/`domain` is the company you meant. ⚠️ Bare shared-SaaS domains (`personio.com`/`.de`) match the *wrong* company (they appear in many firms' records → resolved to *Aion Bank* / *kiutra* live). A unique domain works: `automindz-solutions.com` → *Automindz Solutions* ✅.
-  3. `search_company` with `{"filters":{"company_lookalike":{"company_oids":["<company_id>"],"same_language":false,"minimum_tier":"T1|T2|T3"}},"page":1}`. **`minimum_tier`** is a threshold: **T1** almost-identical (smallest pool) · **T2** similar · **T3** broader (largest). It grows the *total* pool, not the most-similar page-1 order (LIVE: Aion 1968→2552→2872; AutoMindz T1=T2=2170). Returns companies (then people_search + enrich each as usual). Quality is high (Stripe→payments peers; AutoMindz→AI-recruiting peers).
+  2. **VERIFY the resolved seed** — confirm the returned `company.name`/`domain` is the company you meant. ⚠️ Bare shared-SaaS domains (`personio.com`/`.de`) match the *wrong* company (they appear in many firms' records → resolved to *Aion Bank* / *kiutra* live). A unique domain works: `acme.com` → *Acme* ✅.
+  3. `search_company` with `{"filters":{"company_lookalike":{"company_oids":["<company_id>"],"same_language":false,"minimum_tier":"T1|T2|T3"}},"page":1}`. **`minimum_tier`** is a threshold: **T1** almost-identical (smallest pool) · **T2** similar · **T3** broader (largest). It grows the *total* pool, not the most-similar page-1 order (LIVE: Aion 1968→2552→2872; Acme T1=T2=2170). Returns companies (then people_search + enrich each as usual). Quality is high (Stripe→payments peers; Acme→AI-recruiting peers).
 - **`search_person` payload:** `{"filters":{...},"page":N}`. The engine auto-corrects the common shape/enum slips before the call (bare array → `{include:[...]}` on IncludeExclude filters; a stray `{include:[...]}` off `company_headcount_range`; spelling of a real enum value like `Founder-Owner` → `Founder/Owner`) and reports them in the response `_meta.normalized` — but build the correct shapes anyway (unknown values still 400). Key filters:
   - `person_job_title`: `{include:[...], match_mode:"CONTAINS"|"EXACT"|"SIMILAR", smart_intensity:"LOOSE|NORMAL|STRICT"(SIMILAR only), boolean_search:"(CEO OR CTO) AND !intern"}`. Default to `CONTAINS`. `boolean_search` can't combine with include/exclude.
     **⚠️ SIMILAR expands only within the seed title's seniority level** — SIMILAR `"Software Engineer"` +
@@ -115,22 +122,28 @@ Enrichment layer (**work email**): shortlist → Prospeo for work emails/phones 
 - **⚠️ WORK email only** (search/enrich return professional emails) — for candidate personal email use FullEnrich/LeadMagic/Wiza.
 
 <!-- API-SURFACE:START (auto-generated by reference/_gen_api_surface.py — do not hand-edit) -->
-## Callable surface — `lib/prospeo.py`
-Import: `from lib.prospeo import Prospeo` → instantiate `Prospeo()` (reads key from env). Base: `https://api.prospeo.io`. Generic passthrough: `request(method, path, *, params, json)`.
+## Callable surface
+Call via the CLI: `hyreflow tools execute prospeo <method> --payload '{...}'` (preview with `--dry-run`; `hyreflow tools get prospeo <method>` returns the live contract + cost). Base: `https://api.prospeo.io`. Any endpoint without a typed method is reachable through the tool's generic `request` passthrough.
 
 - `account_information(payload: dict | None = None) -> dict` — POST /account-information — usage/renewal/credits (safe read-only pilot).
 - `bulk_enrich_company(payload: dict) -> dict` — POST /bulk-enrich-company — up to 50 companies per call.
+  - requires: data
+  - each `data` item requires: identifier
+  - example: `{"data":[{"identifier":"row-1","company_website":"acme.example.com"},{"identifier":"row-2","company_name":"Acme"}]}`
 - `bulk_enrich_person(payload: dict) -> dict` — POST /bulk-enrich-person — up to 50 people per call.
-- `domain_search(payload: dict) -> dict` — DEPRECATED → search_person/search_company. POST /domain-search.
-- `email_finder(payload: dict) -> dict` — DEPRECATED → enrich_person. POST /email-finder (legacy work-email finder).
-- `email_verifier(payload: dict) -> dict` — DEPRECATED. POST /email-verifier — verify an email address.
+  - requires: data
+  - each `data` item requires: identifier
+  - example: `{"data":[{"identifier":"row-1","full_name":"Jane Doe","company_website":"acme.example.com"},{"identifier":"row-2","linkedin_url":"https://www.linkedin.com/in/acme-person"}],"only_verified_email":true}`
+- `domain_search(payload: dict) -> dict` — MIGRATED → search-company (legacy /domain-search removed).
+- `email_finder(payload: dict) -> dict` — MIGRATED → enrich-person (legacy /email-finder removed).
+- `email_verifier(payload: dict) -> dict` — REMOVED by the vendor (sunset 2026-03-01) with no enrich-person equivalent.
 - `enrich_company(payload: dict) -> dict` — POST /enrich-company — company data enrichment.
 - `enrich_person(data: dict, *, only_verified_email: bool | None = None, enrich_mobile: bool | None = None, only_verified_mobile: bool | None = None) -> dict` — POST /enrich-person — enrich one person (replaces email-finder/mobile-finder/social).
-- `linkedin_email_finder(payload: dict) -> dict` — DEPRECATED → enrich_person. POST /linkedin-email-finder.
-- `mobile_finder(payload: dict) -> dict` — DEPRECATED → enrich_person(enrich_mobile=True). POST /mobile-finder.
+- `linkedin_email_finder(payload: dict) -> dict` — MIGRATED → enrich-person (vendor removed /linkedin-email-finder 2026-03-01).
+- `mobile_finder(payload: dict) -> dict` — MIGRATED → enrich-person(enrich_mobile=True) (legacy /mobile-finder removed).
 - `search_company(payload: dict) -> dict` — POST /search-company — query 30M+ companies.
 - `search_person(payload: dict) -> dict` — POST /search-person — query 200M+ contacts with 30+ filters.
 - `search_suggestions(payload: dict) -> dict` — POST /search-suggestions — canonical filter-value autocomplete before a search.
-- `social_url_enrichment(payload: dict) -> dict` — DEPRECATED → enrich_person(data={'linkedin_url': ...}). POST /social-url-enrichment.
+- `social_url_enrichment(payload: dict) -> dict` — MIGRATED → enrich-person(data={'linkedin_url': ...}) (legacy /social-url-enrichment removed).
 
 <!-- API-SURFACE:END -->

@@ -32,7 +32,7 @@ path instead (it has no such gate), or don't run a campaign at all.
 ## Capability chain
 ```
 CV/MPC-flag → PARSE (candidate profile, + selection gate)
-   ├─ (a) SEARCH live open roles (job-board trio, region-scoped, cv-to-jobs Step 3) ────┐
+   ├─ (a) SEARCH live open roles (native scrapes + optional StepStone, region-scoped, cv-to-jobs Step 3) ─┐
    └─ (b) LOOKALIKE companies (seed waterfall; AI-generate only as last resort) ────────┤
                                                                                         ▼
                                                 DEDUP (company-level) + radius filter
@@ -64,11 +64,11 @@ CV/MPC-flag → PARSE (candidate profile, + selection gate)
 (`prompts.json → "Parse CV to candidate profile"`), then apply the evergreen/pitchable gate above before
 continuing. → `cv-analysis.json`.
 
-**2a — Search live open roles** *(Apify — BYOK-only: needs the client's own key, billed on their Apify
-account, 0 Hyreflow credits)* — the same job-board-trio approach as
-`cv-to-jobs.md` Step 3 (swap in the client's market boards), title × geo × radius, default a **14-day**
-recency window (vs. `cv-to-jobs.md`'s 7-day default — this play tolerates slightly older postings since
-it's fanning wider).
+**2a — Search live open roles** *(native scrapes — no key required, credit-metered; StepStone via Apify is
+an additive DACH leg when the client has their own Apify key connected, 0 Hyreflow credits on that leg)* —
+the same approach as `cv-to-jobs.md` Step 3 (swap in the client's market boards), title × geo × radius,
+default a **14-day** recency window (vs. `cv-to-jobs.md`'s 7-day default — this play tolerates slightly
+older postings since it's fanning wider).
 
 **2b — Lookalike company fallback** *(metered)* — when board coverage is thin (or the market has weak
 board coverage generally), build the target list from the candidate's most recent employer(s) as seeds
@@ -129,7 +129,7 @@ tooling until a frontsheet module ships (see "Open gaps" below); don't claim a P
 **10 — Send** *(the client's sequencer; approval-gated)* — **this is the step with the real capability
 gap**, so read it before assuming it works end to end. The brief calls for the frontsheet PDF to ride
 along, which means an attach-capable send. Checked against every sequencer's callable surface: **none of
-the cold-outreach sequencers (`instantly`, `lemlist`, `smartlead`, `heyreach`, `sourcewhale`) support a
+the cold-outreach sequencers (`instantly`, `lemlist`, `smartlead`, `sendkit`, `heyreach`, `sourcewhale`) support a
 file attachment on a send.** The recruiting CRMs the brief names as the alternative
 (`recruit-crm` / `loxo` / `bullhorn`) don't fill the gap either — their callable surfaces are read/write
 **data** methods (candidates/companies/contacts/jobs), not an outbound-email-with-attachment endpoint.
@@ -160,7 +160,7 @@ a currently callable tool; route replies to the human manually until it does.
 | Step | Metered? |
 |---|---|
 | 1 parse + gate | AI tokens (free, Model A interactive) |
-| 2a job-board search | 0 credits (Apify BYOK-only — client's own account, per result) |
+| 2a job-board search | credit-metered (native scrapes) + 0 credits on the optional StepStone/Apify leg (client's own account, per result) |
 | 2b lookalike / AI-generate fallback | metered (waterfall) / AI tokens |
 | 3 dedup | free |
 | 4 fit-match | free (Model A) / metered at scale |

@@ -30,12 +30,25 @@ profile data only (no contact info until the shortlist). Hard-won gotchas from t
 5. **Dedupe across sources** — by **LinkedIn slug** (`/in/<slug>`) where present: AI Ark `link.linkedin`,
    Lemlist `lead_linkedin_url`, Prospeo `person.linkedin_url`. **Xing/external have NO LinkedIn → dedupe by
    normalized name** (strip umlauts/case). Expect ~40–50% cross-source overlap.
-6. **Qualify on profile text** (skills + headline/summary + experience descriptions) — keyword match per required skill.
+6. **ENRICH the profile before you qualify — search output is a snapshot.** A `search_person`/`people_search`
+   row carries the CURRENT title, employer and location; it cannot tell a 20-year specialist from a 14-month
+   career changer, and it hides relevant experience sitting behind an unrelated current title. Run the
+   `linkedin_profile` waterfall on the deduped pool first —
+   `hyreflow tools execute linkedin_profile --payload '{"linkedin_url":"…"}'` (bulk:
+   `POST /enrich/linkedin_profile {"rows":[…]}`) → a normalized `profile` with
+   `experience[{company, title, start, end, is_current, duration_months?, description?}]`, newest first;
+   a row with no employment history is a miss and costs nothing. Skip rows whose source already carried a
+   dated history (the field-shape table below) — the point is that SOMETHING dated reaches the scorer.
+7. **Qualify on the enriched profile** (dated work history first, then skills + headline/summary + role
+   descriptions) — count relevant years from the role dates, and keyword-match per required skill.
    - **Merge evidence ACROSS sources**: skill A in one DB + skill B in another → candidate has both. Multi-source raises confidence.
    - Keyword qualification is **conservative (high precision, low recall)** — absence of a keyword ≠ candidate lacks it
      (many empty-skill profiles are real fits). Tier: **must-have key skill** vs **key skill + nice-to-have**.
    - Domain note: some skills are near-universal for a role (e.g. Datev for German tax pros) — treat "key-skill-only" as likely-qualified, confirm in screening. Watch **software substitutes** (Addison ≠ Datev).
-7. **EEO / compliance:** never filter candidates on protected attributes (gender/age/marital/children/etc.) even when a source exposes them. Role/skill/location only.
+   - `/qualify` (`hyreflow qualify`) reports `qualify.basis` (`work_history` | `title_only`) per candidate and
+     **refuses a batch in which no row carries work history** (422 `no_work_history`) — enrich first, or pass
+     `allow_thin_profiles: true` to accept a title-only ranking knowingly.
+8. **EEO / compliance:** never filter candidates on protected attributes (gender/age/marital/children/etc.) even when a source exposes them. Role/skill/location only.
 
 ## Per-provider quick ref
 | Provider | Title filter | Location filter | Total field | Bill |

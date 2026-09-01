@@ -4,6 +4,37 @@ All notable changes to the Hyreflow plugin are documented here. Versions track
 the plugin, kept in lockstep across the marketplace manifests and the plugin's
 own `plugin.json` files.
 
+## 0.1.7 — 2026-09-01
+
+First skills sync since 0.1.6 (2026-08-10).
+
+**Added**
+- SendKit.ai (email sequencer) and Spott.io (recruiting CRM) playbooks — both BYOK.
+- `linkedin_profile` enrichment: employment history, plus LinkedIn post feeds as a
+  credit-metered Hyreflow Native scrape.
+- Loxo company endpoints, so target accounts are readable from Loxo.
+- `tools search` points at the recipe for an intent, not just the tool.
+
+**Fixed**
+- `people_search` keeps its nested query and `titles[]` on a no-result retry, and falls
+  back to the public web for a company no people-DB covers (verified on whole-name
+  boundaries).
+- Enrichment keeps work emails on the candidate's current employer, preserves provenance
+  in CSV exports, resolves BOM'd headers, and enriches the full profile before scoring.
+- Waterfall runs show progress instead of blocking silently; an empty managed result is
+  flagged when the provider is out of credits.
+- Skills answer in the user's language and stop mangling place names.
+- IT sourcing's people-DB leg is volume-matched; hiring signals prefer native job scrapes
+  over TheirStack; a Germany-scoped hiring query reaches the German job board.
+
+**Changed**
+- Pricing: one field, one cost per enrich method; 50% margin floor; Serper managed and
+  priced from its purchase rate; exa priced off Exa's PAYGO rate card.
+- BYOK-only for every CRM, sequencer and comms tool.
+- The n8n integration is gone — workflows are native. Its setup, node reference, and
+  builder agent are removed from this plugin.
+- Native scrape polling drops to 10s, and enrich rows run in parallel.
+
 ## 0.1.6 — 2026-08-10
 
 First skills sync since 0.1.5 (2026-07-30).

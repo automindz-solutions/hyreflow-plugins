@@ -16,6 +16,9 @@ slate; BD/MPC; passive-poach). Read `../recruiter-craft.md` first for the voice 
 canon, then frame the plan around the *better next action* at each stage (recommend it; never auto-run a
 paid path past the approval gate).
 
+Write the step labels and prose narration in the language of the user's original ask (these plan
+steps are shown to the user live) — keep tool/command names and proper nouns as-is regardless of language.
+
 Primary job:
 
 - Read the relevant skill docs first (start with `../recruiter-craft.md` for the funnel + voice).

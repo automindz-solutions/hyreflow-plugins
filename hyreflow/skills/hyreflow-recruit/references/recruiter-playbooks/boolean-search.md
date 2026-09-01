@@ -55,6 +55,13 @@ site:github.com (rust OR wasm) location ("Berlin" OR "remote")
 - Combine with the four blocks above. X-ray is recall-heavy + noisy — treat hits as leads to verify,
   not a finished list. In Hyreflow, the engineering equivalent is the GitHub leg of
   [`../../recipes/it-sourcing.md`](../../recipes/it-sourcing.md).
+- **Run the string with `serper search`** (payload key `query`, 0.1 cr per call, charged even when it finds
+  nothing) — set `gl`/`hl` for non-US markets, since results default to US English:
+  ```
+  hyreflow tools execute serper search --payload '{"query":"site:linkedin.com/in (\"data engineer\" OR \"analytics engineer\") (spark OR airflow) \"San Francisco\"","num":10}'
+  ```
+  X-ray is the fallback for targets the people-DBs don't cover, not the default path — see
+  [`../../finding-companies-and-contacts.md`](../../finding-companies-and-contacts.md) §No coverage.
 
 ## Mapping a Boolean string onto Hyreflow
 Decompose, don't paste:

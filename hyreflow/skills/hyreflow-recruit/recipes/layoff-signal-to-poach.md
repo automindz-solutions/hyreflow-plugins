@@ -8,19 +8,19 @@ engineers"). A layoff = a pool of available candidates to poach **and** a BD ope
 > [`../recruiter-craft.md`](../recruiter-craft.md) §B + §A recruitability signals for who to approach first.
 
 Powered by the **`layoffsignal`** Hyreflow Native (free public news RSS) → fan into the standard
-sourcing pipeline. The native is **credit-metered, no BYOK** (see `references/provider-precedence.md` — natives
+sourcing pipeline. The native is **free (0 credits), no BYOK** (see `references/provider-precedence.md` — natives
 are exempt from the waterfall).
 
 ## Where this runs (Model A)
 The **extraction + dedupe + qualification is reasoning done by the host agent** — free, no
-OpenRouter. Credits are spent on the native (the feed pull) and on the downstream enrichment of *passes only*.
+OpenRouter. Credits are spent only on the downstream enrichment of *passes only* — the feed pull itself is free.
 
 ## Inputs
 - Mode: `broad` (whole market) or `targeted` (one or more named employers).
 - `when` window (default `7d`; `30d` for a named company).
 - The client's `ICP.md` (for the qualify gate) — per-client data, not in this skill.
 
-## Step 1 — Sweep the feeds (`layoffsignal`, native — credits)
+## Step 1 — Sweep the feeds (`layoffsignal`, native — free)
 ```bash
 hyreflow tools execute layoffsignal layoff_news --payload '{"when":"7d"}'                 # broad sweep
 # targeted:   hyreflow tools execute layoffsignal layoff_news --payload '{"company":"Microsoft","when":"30d"}'

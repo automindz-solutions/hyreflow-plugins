@@ -5,7 +5,7 @@ Hyreflow-supported recruiting CRM/ATS.
 
 ## Operational defaults
 
-All CRM adapters use a token-scoped `TokenRateLimiter` in `lib/_base.py`. Defaults:
+All CRM adapters pace writes with a token-scoped rate limiter. Defaults:
 
 - Bullhorn: 1,500 req/min (per OAuth Client ID). `BULLHORN_RATE_LIMIT_RPM` to override.
 - JobAdder: 120 req/min (2/sec, conservative). `JOBADDER_RATE_LIMIT_RPM` to override.
@@ -21,7 +21,7 @@ All CRM adapters use a token-scoped `TokenRateLimiter` in `lib/_base.py`. Defaul
 |---|---|---|---|---|
 | Bullhorn | `create_candidates_batch` | `create_client_contacts_batch` | `create_client_corporations_batch` | `create_job_orders_batch` |
 | JobAdder | `add_candidates_batch` | `add_contacts_batch` | `add_companies_batch` | `add_jobs_batch` |
-| Loxo | `create_people_batch` | — | `create_company` (singular) | `create_jobs_batch` |
+| Loxo | `create_people_batch` | — | `create_companies_batch` | `create_jobs_batch` |
 | Recruiterflow | `add_candidates_batch` | `add_contacts_batch` | `add_clients_batch` | `create_jobs_batch` |
 | Vincere | `create_candidates_batch` | — | — | — |
 | Atlas | `create_people_batch` | — | `create_companies_batch` | `create_projects_batch` / `create_opportunities_batch` |
@@ -65,7 +65,4 @@ engine returns a Stripe checkout link; do not proceed until the user adds credit
 
 ## References
 
-- `lib/_base.py` — `TokenRateLimiter` + `run_batch`
-- `lib/<crm>.py` — per-adapter batch helpers and `*_RATE_LIMIT_RPM` defaults
-- `engine/app.py` — `/enrich/run` cost estimate + 402 credit gate
 - `apps/web/content/docs/integrations/crm-bulk-pushes.mdx` — user-facing version
