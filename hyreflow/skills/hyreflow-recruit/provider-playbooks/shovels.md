@@ -10,7 +10,7 @@ HOW in `lib/shovels.py`. Paths from docs.shovels.ai (2026-06-01); index: `refere
 ## Auth & config
 - **Base URL:** `https://api.shovels.ai/v2` · **Auth:** header `X-API-Key` (env `SHOVELS_API_KEY`; never hardcode).
 - **Pagination:** cursor — `size` (≤100, default 50) + `cursor` → `next_cursor`; `iter_permits`/`iter_contractors` auto-walk it.
-- **Credit-metered** — `get_usage()` to check (safe read-only pilot).
+- **Credit-metered** — `get_usage()` reads your own Shovels account (Shovels is BYOK-only). Budget a run against `hyreflow billing balance`.
 
 ## Core workflow (geo_id first)
 Everything keys off a **`geo_id`**. Resolve the place first — `search_addresses` / `search_cities` /
@@ -68,7 +68,7 @@ Call via the CLI: `hyreflow tools execute shovels <method> --payload '{...}'` (p
 - `get_jurisdiction_metrics_current(geo_id: str, **params) -> Any`
 - `get_jurisdiction_metrics_monthly(geo_id: str, **params) -> Any`
 - `get_permit(permit_id: str) -> Any` — GET /permits/{id} — a single permit by id.
-- `get_usage() -> Any` — GET /usage — API usage / credits (safe read-only pilot).
+- `get_usage() -> Any` — GET /usage — API usage / credits on the caller's own Shovels account (Shovels is BYOK-only).
 - `iter_contractors(*, geo_id: str, permit_from: str, permit_to: str, **params) -> Iterator[dict]`
 - `iter_permits(*, geo_id: str, permit_from: str, permit_to: str, **params) -> Iterator[dict]` — Auto-paginate /permits/search across all cursor pages.
 - `list_tags(**params) -> Any` — GET /lists/tags — all available permit tags (inferred sub-path).

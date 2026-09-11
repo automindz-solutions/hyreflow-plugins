@@ -14,7 +14,7 @@ Call via the CLI: `hyreflow tools execute builtwith <method> --payload '{...}'` 
 
 - `categories(**params) -> Any` — GET /v22/api.json?CATEGORIES=1 — lookup table: the full list of every technology category/group BuiltWith tracks. CONFIRMED api.builtwith.com 2026-06-01.
 - `company_to_url(company: str, **params) -> Any` — GET /ctu3/api.json?COMPANY={name} — resolve a company name → domain (feed `domain`).
-- `credit_balance() -> Any` — GET payments.builtwith.com/v1/billing/api-discovery — prepaid Agent-API credit pool: {credits_total, credits_used, credits_available}. FREE. Requires "Agent API Billing" enabled on the account. Doc: api.builtwith.com/agent-payment-api.
+- `credit_balance() -> Any` — GET payments.builtwith.com/v1/billing/api-discovery — prepaid Agent-API credit pool: {credits_total, credits_used, credits_available} on the caller's own BuiltWith account (BuiltWith is BYOK-only). Requires "Agent API Billing" enabled on the account. Doc: api.builtwith.com/agent-payment-api.
 - `domain(lookup: str, **params) -> Any` — GET /v22/api.json?LOOKUP={domain} — full tech profile of a domain (qualify/enrich by tech stack).
 - `free(lookup: str, **params) -> Any` — GET /free1/api.json?LOOKUP={domain} — free-tier basic tech lookup (light; safe pilot).
 - `iter_lists(tech: str, *, max_records: int = 1000, **params) -> Iterator[dict]` — Walk Lists API pages via NextOffset (bounded by max_records). Field/offset names follow the Lists API response — verify on first pilot; falls back gracefully if absent.

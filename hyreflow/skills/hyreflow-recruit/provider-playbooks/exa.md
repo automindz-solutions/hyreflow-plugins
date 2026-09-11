@@ -86,7 +86,7 @@ hyreflow tools execute exa_agent_get --payload '{"run_id":"agent_run_01j..."}'
 Call via the CLI: `hyreflow tools execute exa <method> --payload '{...}'` (preview with `--dry-run`; `hyreflow tools get exa <method>` returns the live contract + cost). Base: `https://api.exa.ai`. Any endpoint without a typed method is reachable through the tool's generic `request` passthrough.
 
 - `answer(query: str, *, text: bool = False, **opts) -> dict` — POST /answer — LLM answer grounded in Exa search results, with citations.
-- `budget_remaining() -> dict` — Remaining Exa balance. FREE. Uses the team-management service key (env EXA_SERVICE_KEY, host admin-api.exa.ai) — NOT the search key. Exa exposes no balance API (the dashboard's get-credits route is session-cookie + Vercel-checkpoint gated), so we reconstruct it:
+- `budget_remaining() -> dict` — Remaining Exa balance — NOT callable by a workspace. It reads a Hyreflow-side Exa balance rather than the caller's own account, so connecting your own Exa key does not unlock it; the engine refuses it on the workspace path regardless of BYOK.
 - `find_similar(url: str, *, num_results: int = 10, **opts) -> dict` — POST /findSimilar — find pages semantically similar to a seed URL.
 - `get_agent_run(run_id: str) -> dict` — GET /agent/runs/{run_id} — fetch an Exa Agent run's status and result.
 - `get_contents(urls: list[str], *, text: bool = True, **opts) -> dict` — POST /contents — fetch cleaned page content for URLs (text/highlights/summary).

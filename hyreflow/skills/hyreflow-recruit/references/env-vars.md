@@ -36,7 +36,7 @@ commit one.** The engine operator sets these in the server's secrets manager / e
 | sendkit | `SENDKIT_API_KEY` | header `X-Api-Key` | workspace key only (`sk_...`); a platform key (`sk_user_...`) is rejected; deliverability reads (mailbox health, warmup, inbox-placement/blacklist tests); connect-your-own (BYOK, self-serve) |
 | serper | `SERPER_API_KEY` | header `X-API-KEY` | google.serper.dev + scrape.serper.dev |
 | smartlead | `SMARTLEAD_API_KEY` | **query param** `api_key` | not a header; connect-your-own (BYOK, self-serve) |
-| spott | `SPOTT_API_KEY` | header `x-api-key` | 49 methods; read + create/update, no record delete; connect-your-own (BYOK, self-serve) |
+| spott | `SPOTT_API_KEY` | header `x-api-key` | 61 methods; read + create/update, no record delete; connect-your-own (BYOK, self-serve) |
 | theirstack | `THEIRSTACK_API_KEY` | `Authorization: Bearer` | credits: jobs + companies billed per result (check `hyreflow tools get theirstack <method>` for the live rate); blur_company_data=free preview |
 | predictleads | `PREDICTLEADS_API_KEY`, `PREDICTLEADS_API_TOKEN` | headers `X-Api-Key` + `X-Api-Token` (**inferred — verify**) | funding/hiring discovery; JSON:API; base `/api/v3`; company endpoints per-request (≤1000), discover per-result; paths/auth flagged verify-on-pilot |
 | shovels | `SHOVELS_API_KEY` | header `X-API-Key` | BYOK-only for user workspaces; no managed fallback for workspace calls; US building permits + contractors; cursor pagination; searches need geo_id+permit_from/to |
@@ -45,13 +45,13 @@ commit one.** The engine operator sets these in the server's secrets manager / e
 | layoffsignal | **none** (Hyreflow **Native**) | **no auth** (free public RSS) | layoff/RIF recruiting trigger; free (0 credits), NO BYOK key; Google News RSS + per-site feeds; links via firecrawl |
 | builtwith | `BUILTWITH_API_KEY` | **`KEY` query param** | BYOK-only for user workspaces; no managed fallback for workspace calls; technographics; versioned per-API paths; Lists is heavy (OFFSET paging) |
 | zoominfo | `ZOOMINFO_CLIENT_ID`, `ZOOMINFO_CLIENT_SECRET` (+ optional `ZOOMINFO_SCOPE`) | OAuth2 client-credentials → Bearer | token `POST /gtm/oauth/v1/token` (~1h, auto-refreshed); per-endpoint scopes (api:data:contact/company…); BYOK-only for user workspaces; no managed fallback for workspace calls |
-| sourcewhale | `SOURCEWHALE_API_KEY`, `SOURCEWHALE_USER_EMAIL` | header (confirm) | auth scheme flagged to confirm; BYOK-only, not self-serve — contact Hyreflow to enable |
+| sourcewhale | `SOURCEWHALE_API_KEY`, `SOURCEWHALE_USER_EMAIL` | header `api-key` (raw, confirmed) | BYOK-only, self-serve: dashboard Integrations → API key + user email (`userEmail` query param on most calls) |
 | vincere | `VINCERE_TENANT`, `VINCERE_API_KEY`, `VINCERE_ID_TOKEN` | `x-api-key` + `id-token` | id_token ~30 min TTL — refresh via OAuth; BYOK-only, not self-serve — contact Hyreflow to enable |
 | granola | `GRANOLA_API_KEY` | header `Authorization: Bearer` | meeting notes/transcripts/folders; connect-your-own (BYOK, self-serve, Business plan) |
 | jobadder | `JOBADDER_CLIENT_ID`, `JOBADDER_CLIENT_SECRET`, `JOBADDER_REFRESH_TOKEN` (optional shortcut: `JOBADDER_ACCESS_TOKEN`, `JOBADDER_API_BASE`) | 3-leg OAuth refresh-token grant → Bearer | region-specific base URL returned by the token endpoint; BYOK-only, not self-serve — contact Hyreflow to enable |
 | wiza | `WIZA_API_KEY` | Bearer | LinkedIn → email/phone reveal; async reveal (start → poll) |
-| hyreflow_native | **none** (Hyreflow **Native**) | **no auth** | first-party scrapers: job scrapes (career pages, LinkedIn, Indeed, Arbeitsagentur) pay-on-match per job; LinkedIn post feeds (`profile_posts`, `company_posts`) per request |
-| hyreflow_agent | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` | managed server-side | AI reasoning Native; `infer`/`research`; no BYOK |
+| hyreflow_native | **none** (Hyreflow **Native**) | **no auth** | first-party scrapers: job scrapes (career pages, LinkedIn, Indeed, Arbeitsagentur) pay-on-match per job; LinkedIn post feeds (`profile_posts`, `company_posts`) and keyword post search (`search_posts`) per request |
+| hyreflow_agent | **none** (managed server-side) | managed server-side | AI reasoning Native; `infer`/`research`; no BYOK |
 
 **Parked (no env / no adapter):** `quil` (CoRecruit) — no public API.
 

@@ -4,6 +4,31 @@ All notable changes to the Hyreflow plugin are documented here. Versions track
 the plugin, kept in lockstep across the marketplace manifests and the plugin's
 own `plugin.json` files.
 
+## 1.1.9 — 2026-09-11
+
+Skills synced from the Hyreflow engine — first content change since 0.1.7.
+
+**Added**
+- **Batch enrichment.** `hyreflow tools execute <waterfall> --rows JSON|@FILE|-` enriches up to 100
+  people in one call: the chain runs stage-major and FullEnrich becomes a single provider job, so 100
+  rows finish in roughly the time one used to. Billing stays per row; a `still_enriching` row carries
+  a `resume` command instead of being resent.
+- **LinkedIn post search** (`search_posts`) — keyword across every public post, past week by default,
+  `author_title` to narrow to recruiters. Routed from the recruit skill's decision table.
+- **Direct job fetch** for `linkedin_jobs` via `linkedin_job_urls` / `linkedin_job_ids` — pull postings
+  you already hold instead of guessing a title/location search.
+- Spott **lists**: browse, create, and add or remove candidates, clients, and client contacts by name.
+
+**Changed**
+- Budget runs against the **workspace's Hyreflow credit balance** (`hyreflow billing balance`,
+  `hyreflow session usage`). A provider's own balance endpoint is BYOK-only and is refused on a
+  Hyreflow-managed provider — it was never the workspace's number anyway.
+- The quickstart demo confirms before it spends, and previews with `--dry-run` first.
+- Personal-email coverage now names `wiza` alongside `fullenrich` and `leadmagic`.
+- Prospeo `search_suggestions` is 0.1 credits on a direct call, free inside a `people_search` waterfall.
+- Refreshed cost card, provider precedence, field notes, env vars, and the IT-sourcing and
+  JD-to-shortlist recipes.
+
 ## 1.1.8 — 2026-09-01
 
 Packaging release — the skills are unchanged from 0.1.7.

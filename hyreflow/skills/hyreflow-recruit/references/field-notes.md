@@ -56,7 +56,7 @@ building against a provider.
   confusion with adjacent/similarly-named tools before trusting a keyword hit alone. Worked example —
   German tax/accounting: **Datev** is near-universal, so a Datev-only skill hit is a fair "likely
   qualified" tier, but **Addison is a different product — don't treat it as a Datev match.**
-- Only **FullEnrich** and **LeadMagic** return personal emails — AI Ark (like Prospeo and BetterContact) is
+- Only **FullEnrich**, **LeadMagic**, and **Wiza** return personal emails — AI Ark (like Prospeo and BetterContact) is
   work-email only.
 
 ### Via the `people_search` waterfall
@@ -153,7 +153,7 @@ building against a provider.
   mailbox can't be bounce-tested, but `catch_all_safe` is graded safe-to-send (standard deliverability
   practice) — use it; `catch_all_not_safe` should be avoided. BetterContact's multi-provider waterfall can
   out-cover a single-source lookup on catch-all domains. These remain **work** emails — BD use, not
-  personal-email candidate acquisition (that's FullEnrich/LeadMagic).
+  personal-email candidate acquisition (that's FullEnrich/LeadMagic/Wiza).
 - Billing: charged once, when the retrieved result carries data — 0.5 credits for an email reveal, 4.8
   for a phone reveal (email included) — check `hyreflow tools get bettercontact start_enrichment` for
   the live rate.
@@ -252,8 +252,9 @@ building against a provider.
   rate. `canReveal` in the search response tells you whether a field is revealable before you spend
   credits on it.
 - `get_usage.used` reflects transient holds that settle, not real spend — the authoritative number per
-  call is the response's `billing.creditsCharged`. Reconcile total spend via `get_usage` only after
-  holds settle, not mid-session.
+  call is the response's `billing.creditsCharged`. `get_usage` reads Lusha's own account usage and is
+  callable only on a connected Lusha key; reconcile the workspace's total spend via
+  `hyreflow session usage` / `hyreflow billing balance` instead.
 - Coverage varies sharply by segment: Lusha has weak/suppressed coverage of large-tech-employer staff
   (opt-out/compliance), but solid general US B2B coverage (roughly a quarter of contacts match, with a
   smaller fraction revealable). Always search-preview first (cheap) to read the match rate and `canReveal`
@@ -261,7 +262,7 @@ building against a provider.
 - Phone reveal returns a real direct-dial number; each phone carries a `doNotCall` compliance
   flag — check it before dialing.
 - Channel rule: Lusha, like AI Ark and Prospeo, is work-email/BD only — personal emails come from
-  FullEnrich/LeadMagic.
+  FullEnrich/LeadMagic/Wiza.
 
 ## O*NET title → code resolution
 - `discover_job_openings` (PredictLeads) needs `onet_codes`, but customers speak in job titles. Never let
@@ -297,7 +298,9 @@ building against a provider.
   does not bill; with an O*NET code it returns instantly — always pass `onet_codes`. `job_openings(domain)`
   is a separate, company-scoped hiring endpoint, distinct from `discover_job_openings` (which is
   O*NET-code-keyed cross-company discovery).
-- `api_subscription` is free (auth + balance check). Each `discover_*` record is charged.
+- `api_subscription` is free and doubles as an auth check; it reads PredictLeads' own subscription/balance
+  and is callable only on a connected PredictLeads key. Each `discover_*` record is charged in Hyreflow
+  credits — check `hyreflow billing balance`.
 - `financing_events(domain)` is the cheap, reliable path: full round history plus investor companies plus
   a `meta.message` listing subsidiary domains to try, for one charge per response regardless of record
   count.
@@ -350,7 +353,8 @@ building against a provider.
   `company_headcount_growth` is `{timeframe_month,min,max,departments[]}`; `company_type` is a rich object.
 - `INVALID_FILTERS` responses surface `provider_error_code` + `provider_detail.filter_error` naming which
   filter was rejected, rather than a bare message.
-- Flow/billing: `search_suggestions` and `search_person` are free (25/page), with 30-day dedup on repeat
+- Flow/billing: `search_suggestions` bills 0.1 credits on a direct call (free inside a `people_search`
+  waterfall) and `search_person` bills 0.4 credits per request (25/page), with 30-day dedup on repeat
   calls. Results carry `person`+`company` but no email/mobile — enrich the `person_id` separately
   (`enrich_person`; `enrich_mobile=True` reveals a mobile at a higher rate than an email reveal — check
   `hyreflow tools get prospeo enrich_person` for the live rates). The job-change filter has schema drift — use
@@ -405,8 +409,9 @@ building against a provider.
 - Auth is Bearer, base `https://wiza.co/api`. Reveals and list operations are async.
 - **Billing gotcha: the API spends a separate `api_credits` pool, not the plan's `email_credits`/
   `phone_credits`.** A reveal can fail with `status:"failed"`, `fail_error:"billing_issue"` even when
-  `email_credits`/`phone_credits` show a healthy balance, if `api_credits` is 0. Check `api_credits > 0`
-  (via `get_credits`) before attempting any reveal. A reveal that fails for billing reasons charges nothing.
+  `email_credits`/`phone_credits` show a healthy balance, if `api_credits` is 0. `get_credits` reads
+  Wiza's own account credit pools and is callable only on a connected Wiza key; a reveal that fails for
+  billing reasons charges nothing regardless. Budget the run against `hyreflow billing balance`.
 
 ## Multi-source sourcing (cross-provider)
 > Full workflow and every gotcha in one place: **`recipes/multi-source-candidate-search.md`**.

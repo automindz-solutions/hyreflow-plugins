@@ -37,7 +37,7 @@ Call via the CLI: `hyreflow tools execute leadmagic <method> --payload '{...}'` 
 - `email_finder(payload: dict) -> dict` — POST /v1/people/email-finder — work email from first_name + last_name + domain/company_name.
 - `email_validation(email: str, **opts) -> dict` — POST /v1/people/email-validation — deliverability/validation for an email.
 - `employee_finder(payload: dict) -> dict` — POST /v1/people/employee-finder — list employees at a company.
-- `get_credits() -> dict` — GET /v1/credits — current credit balance (read-only, safe pilot).
+- `get_credits() -> dict` — GET /v1/credits — current credit balance on the caller's own LeadMagic account; requires the workspace's own key.
 - `job_change_detector(payload: dict) -> dict` — POST /v1/people/job-change-detector — detect recent job changes.
 - `mobile_finder(payload: dict) -> dict` — POST /v1/people/mobile-finder — mobile phone from profile_url or name+domain.
 - `people_search(payload: dict) -> dict` — POST /v3/people/search — people search (v3).

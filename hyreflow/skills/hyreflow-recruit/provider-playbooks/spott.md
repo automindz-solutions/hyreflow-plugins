@@ -1,6 +1,6 @@
 ---
 name: spott
-description: "Read from and write to Spott (recruiting CRM/ATS — candidates, clients, client contacts, jobs, applications, notes, placements, tasks, opportunities) via its REST API. Use when the user mentions Spott, pushing candidates/leads into the ATS, syncing clients/contacts, reading jobs, moving applications through pipeline stages, or logging notes/tasks against a candidate. Pairs with the sourcing/enrichment layer: that produces an enriched CSV, this skill loads it into Spott. Keys: BYOK — connect your own Spott account."
+description: "Read from and write to Spott (recruiting CRM/ATS — candidates, clients, client contacts, jobs, applications, notes, placements, tasks, opportunities, lists) via its REST API. Use when the user mentions Spott, pushing candidates/leads into the ATS, syncing clients/contacts, reading jobs, moving applications through pipeline stages, logging notes/tasks against a candidate, or adding candidates or clients to a named list. Pairs with the sourcing/enrichment layer: that produces an enriched CSV, this skill loads it into Spott. Keys: BYOK — connect your own Spott account."
 ---
 
 # Spott — Integration Meta Skill
@@ -31,8 +31,10 @@ the HOW lives in the callable-surface block below and the Python client's docstr
 ## 3) The record model
 
 Spott exposes candidates, clients (companies-as-accounts), client contacts, jobs, applications, notes,
-placements, tasks, and opportunities, plus pipeline-stage lookups and a tenant-wide people search.
-Pagination is cursor-based on most list endpoints; placements use offset pagination instead.
+placements, tasks, opportunities, and lists, plus pipeline-stage lookups and a tenant-wide people search.
+A list belongs to exactly one entity type — candidates, clients, or client contacts — and is either
+personal or workspace-wide. Pagination is cursor-based on most list endpoints; placements use offset
+pagination instead.
 
 ## 4) Common flows
 
@@ -51,6 +53,10 @@ Pagination is cursor-based on most list endpoints; placements use offset paginat
 - **Bulk pushes.** Use the `*_batch` helpers (`create_candidates_batch`, `create_clients_batch`,
   `create_notes_batch`) for paced single-record loops, or the native bulk endpoints
   (`create_applications_bulk`, `update_applications_bulk`) when writing applications in one call.
+- **Add records to a list by name.** Resolve the list with `find_list` (or go straight to
+  `add_to_list_by_name`, which resolves internally), and confirm the resolved list with the user before
+  writing — then link in batches of at most 250 ids. Use `list_lists` to browse existing lists and
+  `create_list` to make a new one first. `remove_from_list_by_name` is the reverse.
 
 ## 5) Approval gates (writes & bulk operations)
 
@@ -71,7 +77,16 @@ Spott writes are real changes to a production ATS. Before any create/update or b
 - **Keys are attributed to the creating user.** A key created by one user cannot cleanly represent
   another user's actions in Spott — provision one key per user for multi-user integrations.
 - **Not exposed: record deletion.** Spott wraps no delete endpoint for any record type — there is no
-  way to remove a candidate, client, job, or other record through this integration.
+  way to remove a candidate, client, job, or other record through this integration. Deleting a list
+  itself is not exposed either — only adding/removing records from one.
+- **Duplicate list names fail resolution on purpose.** If more than one list shares a name, narrow the
+  lookup with an entity type (candidate/client/client contact) or personal-vs-workspace instead of
+  guessing which one was meant.
+- **250 ids per link/unlink call.** An over-limit, empty, or duplicate-containing id list is rejected,
+  not trimmed or deduped for you.
+- **`add_to_list_by_name` won't create a missing list.** If the name doesn't resolve, create the list
+  first.
+- **Removing records from a list does not delete the records** — it only unlinks them from that list.
 
 ## 7) Handoff from the sourcing/enrichment layer
 
@@ -83,6 +98,7 @@ Spott fields. Never read large CSVs into context.
 ## Callable surface
 Call via the CLI: `hyreflow tools execute spott <method> --payload '{...}'` (preview with `--dry-run`; `hyreflow tools get spott <method>` returns the live contract + cost). Base: `https://api.gospott.com`. Any endpoint without a typed method is reachable through the tool's generic `request` passthrough.
 
+- `add_to_list_by_name(list_name: str, record_ids: list, *, entity_type: str | None = None, list_type: str | None = None) -> dict` — POST /lists/{id}/{entityType}/_link — add records to a list identified by NAME.
 - `batch(method: str, calls: list, *, stop_on_error: bool = False) -> dict` — Batched get/search/update/create: run one method over many inputs, rate-limited. Each call is a value -> method(value), or {"args": [...], "kwargs": {...}} for multi-arg methods like create_client_contact(client_id, payload). Destructive methods (delete) are refused. See
 - `create_application(payload: dict) -> dict` — POST /applications — create an application. Required: vacancyId, candidateId, stageId, statusId. `vacancyId` and `statusId` accept an explicit null; `candidateId`/`stageId` do not. CONFIRMED.
   - requires: vacancyId, candidateId, stageId, statusId
@@ -100,6 +116,7 @@ Call via the CLI: `hyreflow tools execute spott <method> --payload '{...}'` (pre
 - `create_job(payload: dict) -> dict` — POST /vacancies — create a job. Required: companyId, name, description, stageId, salaryRange, location, employmentType, locationType, startAt, endAt, teamUserIds, clientContactIds, targetCompanyId. Of these, description, salaryRange, location,
   - requires: companyId, name, description, stageId, salaryRange, location, employmentType, locationType, startAt, endAt, teamUserIds, clientContactIds, targetCompanyId
   - example: `{"companyId":"company-123","name":"Senior Recruiter","description":"Full-cycle desk.","stageId":"stage-123","salaryRange":{"min":80000,"max":110000,"currency":"USD"},"location":null,"employmentType":"fullTime","locationType":"remote","startAt":"2026-09-01","endAt":"2026-12-31","teamUserIds":["user-123"],"clientContactIds":["contact-123"],"targetCompanyId":null}`
+- `create_list(entity_type: str, payload: dict) -> dict` — POST /lists/{entityType} — create a list. Required: name (non-empty string — a blank or whitespace-only string is rejected, matching the vendor's `minLength: 1`), colorHex (a `#rgb`/`#rgba`/`#rrggbb`/`#rrggbbaa` hex string, checked against the vendor's own pattern),
 - `create_note(payload: dict) -> dict` — POST /notes — create a note. Required: title, content. `title` accepts an explicit null; `content` does not. CONFIRMED.
   - requires: title, content
   - example: `{"title":"Intro call","content":"<p>Spoke with candidate about the role.</p>","links":[{"entityType":"candidate","entityId":"candidate-123"}]}`
@@ -111,6 +128,7 @@ Call via the CLI: `hyreflow tools execute spott <method> --payload '{...}'` (pre
   - requires: content, dueDate, assignedToUserId, links
   - each `links` item requires: taskLinkId, entityType, entityId
   - example: `{"content":"Follow up with candidate","dueDate":"2026-09-05","assignedToUserId":"user-123","links":[{"taskLinkId":null,"entityType":"candidate","entityId":"candidate-123"}]}`
+- `find_list(name: str, entity_type: str | None = None, list_type: str | None = None) -> dict | None` — GET /lists — resolve a list by NAME.
 - `get_application(application_id: str) -> dict` — GET /applications/{id} — single application by id. CONFIRMED.
 - `get_candidate(candidate_id: str) -> dict` — GET /candidates/{id} — single candidate by id. CONFIRMED.
 - `get_client(client_id: str) -> dict` — GET /clients/{id} — single client by id. CONFIRMED.
@@ -122,6 +140,9 @@ Call via the CLI: `hyreflow tools execute spott <method> --payload '{...}'` (pre
 - `get_opportunity_stages() -> dict` — GET /pipeline/opportunities/stages — pipeline stage ids for opportunities. CONFIRMED.
 - `get_placement(placement_id: str) -> dict` — GET /placements/{id} — single placement by id. CONFIRMED.
 - `get_vacancy_stages() -> dict` — GET /pipeline/vacancies/stages — pipeline stage ids for jobs (create_job's stageId).
+- `link_candidates_to_list(list_id: str, candidate_ids: list) -> Any` — POST /lists/{id}/candidates/_link — add up to 250 candidates to a list. CONFIRMED.
+- `link_client_contacts_to_list(list_id: str, client_contact_ids: list) -> Any` — POST /lists/{id}/client-contacts/_link — add up to 250 client contacts to a list.
+- `link_clients_to_list(list_id: str, client_ids: list) -> Any` — POST /lists/{id}/clients/_link — add up to 250 clients to a list. CONFIRMED.
 - `list_application_activities(application_id: str) -> dict` — GET /applications/{id}/activities — activity feed for an application. CONFIRMED.
 - `list_applications(limit: int = 25, cursor: str | None = None, modified_since: str | None = None, modified_until: str | None = None, vacancy_ids: list | None = None, candidate_email_addresses: list | None = None, is_inbound: bool | None = None, include: list | None = None) -> Iterator[dict]` — GET /applications — iterate all applications. `pagination.cursor` may be a string, a {modifiedAt,id} dict, or null — `_next_cursor`/`encode_cursor` normalize it either way.
 - `list_applications_for_candidate(candidate_id: str) -> dict` — GET /applications/candidate/{candidateId} — all applications for a candidate.
@@ -130,21 +151,27 @@ Call via the CLI: `hyreflow tools execute spott <method> --payload '{...}'` (pre
 - `list_client_contacts(limit: int = 25, client_ids: list | None = None, modified_since: str | None = None, modified_until: str | None = None, list_ids: list | None = None) -> Iterator[dict]` — GET /clients/contacts — iterate all client contacts. `client_ids` maps to the vendor's `client_ids` query param (note the snake_case — the spec spells it that way, unlike its siblings). CONFIRMED.
 - `list_clients(limit: int = 25, modified_since: str | None = None, modified_until: str | None = None, list_ids: list | None = None) -> Iterator[dict]` — GET /clients — iterate all clients (companies-as-accounts). CONFIRMED.
 - `list_jobs(limit: int = 25, modified_since: str | None = None, modified_until: str | None = None, company_ids: list | None = None, candidate_email_addresses: list | None = None, stage_ids: list | None = None, include: list | None = None) -> Iterator[dict]` — GET /vacancies — iterate all jobs. Jobs are `/vacancies` in the Spott API, NOT `/jobs`.
+- `list_lists(limit: int = 25, list_type: str | None = None) -> Iterator[dict]` — GET /lists — iterate all lists. `list_type`, when given, must be `PERSONAL` or `WORKSPACE` — rejected, never coerced. The wire query param is literally `type`; the Python arg is named `list_type` to avoid shadowing the builtin. The response envelope is
 - `list_notes(limit: int = 25, modified_since: str | None = None, modified_until: str | None = None, candidate_id: str | None = None, client_contact_id: str | None = None, source: str | None = None, label_ids: list | None = None) -> Iterator[dict]` — GET /notes — iterate all notes. CONFIRMED.
 - `list_opportunities(limit: int = 25, modified_since: str | None = None, company_ids: list | None = None, cursor: str | None = None) -> Iterator[dict]` — GET /opportunities — iterate all opportunities. The dict-cursor round-trip (re-encoding an object `pagination.cursor` back into the `cursor` request param) is inferred, not spec-verified — see `_encode_cursor`'s docstring. Verify on first pilot before relying on
 - `list_placements(page: int = 0, page_size: int = 20, company_id: str | None = None, modified_since: str | None = None, modified_until: str | None = None) -> Iterator[dict]` — GET /placements — iterate all placements (offset pagination, NOT cursor). CONFIRMED.
 - `list_tasks(limit: int = 25, modified_since: str | None = None, modified_until: str | None = None, candidate_ids: list | None = None, client_contact_ids: list | None = None, vacancy_ids: list | None = None, company_ids: list | None = None, opportunity_ids: list | None = None, sources: list | None = None, label_ids: list | None = None) -> Iterator[dict]` — GET /tasks — iterate all tasks. CONFIRMED.
 - `move_application(application_id: str, payload: dict) -> None` — PUT /applications/{id}/move — move an application to another stage. Required: stageId (does not accept null). CONFIRMED.
 - `reject_application(application_id: str, payload: dict) -> dict` — POST /applications/{id}/rejections — reject an application. Required: reason (accepts an explicit null). CONFIRMED.
+- `remove_from_list_by_name(list_name: str, record_ids: list, *, entity_type: str | None = None, list_type: str | None = None) -> dict` — POST /lists/{id}/{entityType}/_unlink — remove records from a list identified by NAME.
 - `search_candidates(filters: list | None = None, page: int = 0, page_size: int = 100) -> dict` — POST /candidates/_search — see `_search` for the shared contract. CONFIRMED.
 - `search_clients(filters: list | None = None, page: int = 0, page_size: int = 100) -> dict` — POST /clients/_search — see `_search` for the shared contract. CONFIRMED.
 - `search_jobs(filters: list | None = None, page: int = 0, page_size: int = 100) -> dict` — POST /vacancies/_search — see `_search` for the shared contract. CONFIRMED.
 - `search_people(query: str, limit: int = 25) -> dict` — GET /search/people — tenant-wide people search. `query` is required, min length 1.
+- `unlink_candidates_from_list(list_id: str, candidate_ids: list) -> Any` — POST /lists/{id}/candidates/_unlink — remove up to 250 candidates from a list.
+- `unlink_client_contacts_from_list(list_id: str, client_contact_ids: list) -> Any` — POST /lists/{id}/client-contacts/_unlink — remove up to 250 client contacts from a list. CONFIRMED.
+- `unlink_clients_from_list(list_id: str, client_ids: list) -> Any` — POST /lists/{id}/clients/_unlink — remove up to 250 clients from a list. CONFIRMED.
 - `update_applications_bulk(payloads: list[dict]) -> None` — PUT /applications/_bulk — Spott's NATIVE bulk-update for applications (one HTTP call, up to 100 items), distinct from the paced `*_batch` loops above. `items` count is enforced here (rejected, never truncated) — the vendor bounds it to 1-100. CONFIRMED.
 - `update_candidate(candidate_id: str, payload: dict) -> dict` — PATCH /candidates/{id} — partial update of a candidate. CONFIRMED.
 - `update_client(client_id: str, payload: dict) -> dict` — PATCH /clients/{id} — partial update of a client. CONFIRMED.
 - `update_client_contact(contact_id: str, payload: dict) -> dict` — PATCH /clients/contacts/{id} — partial update of a client contact. CONFIRMED.
 - `update_job(job_id: str, payload: dict) -> None` — PUT /vacancies/{id} — replace a job (PUT, not PATCH — unlike candidates/clients).
+- `update_list(entity_type: str, list_id: str, payload: dict) -> None` — PATCH /lists/{entityType}/{id} — partial update of a list. No body field is required (the spec declares none) — it's a PATCH, so an absent key means "leave unchanged". If `payload` carries `type`, it must be PERSONAL or WORKSPACE — rejected, never coerced. If
 - `update_note(note_id: str, payload: dict) -> None` — PUT /notes/{id} — replace a note (PUT, not PATCH). Required: title, content, pinned (per UpdateNoteDto's required list). `title` accepts an explicit null; `content` and `pinned` do not — but `pinned: False` is a valid, non-null value. CONFIRMED.
 - `update_opportunity(opportunity_id: str, payload: dict) -> None` — PATCH /opportunities/{id} — partial update of an opportunity. CONFIRMED.
 

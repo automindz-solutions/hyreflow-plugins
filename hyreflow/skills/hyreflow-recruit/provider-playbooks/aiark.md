@@ -136,11 +136,11 @@ Returned `totalElements` 761,948 vs baseline 72,155,668.
 
 ## ⚠️ WORK EMAIL ONLY — not for candidate workflows
 AI Ark's email-finder returns **work / professional emails only — NOT personal emails.** Do **not** use AI Ark
-for personal-email or **candidate-acquisition** workflows. **Personal emails come from `fullenrich` or
-`leadmagic` only.** AI Ark is for sourcing + work-email/mobile enrichment.
+for personal-email or **candidate-acquisition** workflows. **Personal emails come from `fullenrich`,
+`leadmagic` or `wiza` only.** AI Ark is for sourcing + work-email/mobile enrichment.
 
 ## Guardrails
-- `mobile_phone_finder` is expensive relative to email/profile lookups — use only on high-confidence matches; check `hyreflow tools get aiark mobile_phone_finder` for the live rate. `fetch_credit()` = safe read-only pilot. Pilot small; gate bulk export/find-emails.
+- `mobile_phone_finder` is expensive relative to email/profile lookups — use only on high-confidence matches; check `hyreflow tools get aiark mobile_phone_finder` for the live rate. Budget the run against `hyreflow billing balance`, not `fetch_credit()` — that reads AI Ark's own account meter and is callable only when the workspace has connected its own AI Ark key. Pilot small; gate bulk export/find-emails.
 
 ## Handoff
 Sourcing + enrichment: company→people search → email/phone (export/find-emails or mobile finder) → ATS/sequencer. Discover companies first, then people.
@@ -176,7 +176,7 @@ Call via the CLI: `hyreflow tools execute aiark <method> --payload '{...}'` (pre
 - `export_results(track_id: str, *, page: int | None = None, size: int | None = None) -> dict` — GET /v1/people/export/{trackId}/inquiries — paginated export results (page 0-based, size 1..100; CONFIRMED — note the path is /inquiries).
 - `export_single(payload: dict) -> dict` — POST /v1/people/export/single — export one person with email by `id` OR `url` (CONFIRMED).
 - `export_statistics(track_id: str) -> dict` — GET /v1/people/export/{trackId}/statistics — export job status (free, CONFIRMED).
-- `fetch_credit() -> dict` — GET /v1/payments/credits — remaining credits (read-only, safe pilot; CONFIRMED).
+- `fetch_credit() -> dict` — GET /v1/payments/credits — remaining credits on the caller's own AI Ark account; requires the workspace's own AI Ark key.
 - `find_emails(payload: dict) -> dict` — Find an email for a person. Two modes, picked by the payload: - **Single person (sync, the interactive path):** pass `url`/`linkedin`/`linkedin_url` or `id` and we route to `export_single` (POST /v1/people/export/single) — returns the person + email
 - `mobile_phone_finder(payload: dict) -> dict` — POST /v1/people/mobile-phone-finder — mobile by `linkedin` OR `domain`+`name` (+`type`).
 - `people_analysis(payload: dict) -> dict` — POST /v1/people/analysis — personality analysis from a LinkedIn profile `url` (CONFIRMED).

@@ -70,16 +70,18 @@ Docs this leans on: [`finding-people.md`](../finding-people.md) (search), [`enri
 - Score each candidate's profile vs the JD must-haves → `tier_1 | tier_2 | no_fit`; **drop `no_fit`**. This is the
   precision step (raw search is recall). Competitor-sourced candidates usually score higher but still get qualified.
   → `POST /provider-playbooks/hyreflow_agent/infer` per candidate (or batch).
-  - **Batch alternative — the `/qualify` endpoint** (scores all candidates in one call):
+  - **For a batch, use the `/qualify` endpoint** (the standard way to score all candidates in one call):
     `POST /qualify {"job_spec": <JD text>, "candidates": [Person, …], "min_score": <0-10 optional>}` →
     returns `{candidates:[{…, qualify:{score:0-10, basis, summary, strengths[], gaps[]}}], scored, count}`.
     It scores every candidate on the work history the row carries (`profile.experience[]` from step 4, or an
     `experience[]`/`work_experience[]` a CRM row already has) and reports `qualify.basis` per candidate:
     `work_history` or `title_only`. **A batch where NO row carries work history is refused (422
     `no_work_history`)** — enrich first, or pass `allow_thin_profiles: true` to accept a title-only ranking
-    knowingly; mixed batches are scored and the thin rows are named in `_meta.thin_profiles`. Use this
-    for *many candidates × one job*; use `infer` + the "Score job against CV" prompt for the *inverse*
-    (one candidate × many jobs, e.g. `cv-to-jobs`). Interactive scoring stays free on the host agent (Model A).
+    knowingly; mixed batches are scored and the thin rows are named in `_meta.thin_profiles`. **A `/qualify`
+    call that errors, or a candidate whose `qualify.score` comes back null, gets surfaced to the user as-is
+    — never subbed with your own guess.** Use this for *many candidates × one job*; use `infer` + the
+    "Score job against CV" prompt for the *inverse* (one candidate × many jobs, e.g. `cv-to-jobs`).
+    Interactive scoring stays free on the host agent (Model A).
 
 **6 — ENRICH CONTACT (candidate channel)** *(`enriching.md`)*
 - **Personal email + LinkedIn — NEVER work email** (candidates). `personal_email` waterfall (order in `reference/waterfalls.json`),

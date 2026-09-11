@@ -13,7 +13,7 @@ are exempt from the waterfall).
 
 ## Where this runs (Model A)
 The **extraction + dedupe + qualification is reasoning done by the host agent** — free, no
-OpenRouter. Credits are spent only on the downstream enrichment of *passes only* — the feed pull itself is free.
+hosted AI model call. Credits are spent only on the downstream enrichment of *passes only* — the feed pull itself is free.
 
 ## Inputs
 - Mode: `broad` (whole market) or `targeted` (one or more named employers).
@@ -58,7 +58,7 @@ specific headcount and the best source. Output one row per layoff event.
 > default is **LinkedIn + personal email ONLY — never work email** (you're recruiting them *away* from
 > that employer; their work inbox is wrong and often dead post-layoff). Prompt: *"Personal email +
 > LinkedIn only (recruiting default), or also include work email?"* The answer picks the waterfall:
-> - **personal (default)** → **`fullenrich`** (`contact.personal_emails`) → **`leadmagic`** (`personal_email_finder`) — the only two personal-email providers + GitHub `find_user_emails` for engineers. ⚠️ do NOT use prospeo/aiark/bettercontact for personal (work email only).
+> - **personal (default)** → **`leadmagic`** (`personal_email_finder`) → **`fullenrich`** (`contact.personal_emails`) → **`wiza`** (`start_individual_reveal`, `email_options.accept_personal`) — the personal-email providers + GitHub `find_user_emails` for engineers. ⚠️ do NOT use prospeo/aiark/bettercontact for personal (work email only).
 > - work (only if user opts in, e.g. BD) → `email_enrichment` (work) order.
 >
 > **LinkedIn is the first/primary touchpoint** — we almost always already have it from people-search, so

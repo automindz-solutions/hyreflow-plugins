@@ -8,6 +8,26 @@
 Some providers are **async**: a `start_*` call returns a job id immediately; the result is ready later.
 This doc defines how hyreflow handles them server-side (the same contract the hosted engine uses).
 
+## Many rows = ONE provider job (batch at the provider, not the row)
+An enrichment waterfall run with several rows (`hyreflow tools execute <waterfall> --rows …`,
+`POST /tools/<waterfall> {rows:[…]}`, MCP `hyreflow_tools_execute {tool, rows}`) walks the chain
+**stage-major**: every pending row through provider 1, the rows still without an answer through provider 2,
+and so on — first hit still wins per row. On a provider that accepts a batch (FullEnrich, up to 100
+contacts) the whole pending set becomes **one vendor job and one poll loop**, not one job per row. The
+engine tags each contact with a correlation key and maps results back by that echo (never by position);
+billing stays **per row** — one charge per hit, misses free, and a shared HTTP call never charges twice.
+Twelve candidates that used to take twelve serial ~50s jobs finish in roughly one.
+
+## A stalled job comes back with its identity — resume it, don't resend
+When the poll budget runs out first, the step reports `still_enriching` and carries
+`job_id` + `resume: {tool, method, id_arg}`. Resume with
+`hyreflow tools execute <resume.tool> <resume.method> --payload '{"<id_arg>": "<job_id>"}'` — a **poll, not
+a new job** (`charge_on_miss: false`): free while the job runs; the poll that finds it finished charges
+each revealed row once (keyed on job + row, so polling again is free). Re-sending the original row would start, and pay for, a
+second job. In a batch, every stalled row shares the same `job_id`; one resume call answers all of them
+(the CLI prints the exact command per stalled row). Jobs are owner-gated: only the workspace that started
+a job can poll it.
+
 ## The rule
 **Adapters never block.** They expose two thin, synchronous-per-HTTP-call methods:
 - `start_*(...)` → returns a job handle (id/trackId).

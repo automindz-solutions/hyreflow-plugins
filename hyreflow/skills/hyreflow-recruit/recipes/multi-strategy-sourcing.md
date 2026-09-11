@@ -108,12 +108,13 @@ per-row step, and the one that makes the gate mean something)*
 
 **6b — QUALIFY against the brief — THE PAY GATE** *(AI step, free on the host agent)*
 - Score each candidate **on the dated work history from 6a**, not on the current title → `tier_1 | tier_2 |
-  no_fit`; **drop `no_fit`**. Use the **"Qualify candidate against role"** prompt, or the batch `/qualify`
-  endpoint for many×one:
+  no_fit`; **drop `no_fit`**. For this many×one pool, the batch `/qualify` endpoint is the standard call
+  (use the **"Qualify candidate against role"** prompt only for a single one-off score):
   → `hyreflow qualify --job @brief.md --candidates @pool.json [--min-score N]`
   `/qualify` reports `qualify.basis` (`work_history` | `title_only`) per candidate and **refuses a batch in
   which no row carries history** (422 `no_work_history`) — run 6a, or pass `allow_thin_profiles: true` to
-  accept a title-only ranking knowingly.
+  accept a title-only ranking knowingly. **A `/qualify` error, or a candidate whose `qualify.score` comes
+  back null, gets surfaced to the user as-is — never subbed with your own guess.**
 - **Everything below this line spends the EXPENSIVE per-row credits** (signal scans, contact reveals) — so it
   runs on survivors only.
 
@@ -151,7 +152,7 @@ per-row step, and the one that makes the gate mean something)*
 ## Cost shape
 | Step | Metered |
 |---|---|
-| 0 parse + enum validate | AI tokens (free); `search_suggestions` free |
+| 0 parse + enum validate | AI tokens (free); `search_suggestions` free inside the waterfall (0.1 cr on a direct call) |
 | 1 structured leg | aiark ~0.5/result (first source that fills) — count-peek free |
 | 1 semantic leg / 2 competitor discover / 3 lookalike exa / 7 signal | Exa per call (gate with small `numResults`) |
 | 2 competitor legs | aiark ~0.5/result per competitor (count-before-pay) |

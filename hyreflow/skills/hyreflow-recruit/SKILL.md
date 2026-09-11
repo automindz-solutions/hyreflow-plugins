@@ -137,6 +137,7 @@ filter and pulling the entire DB). Reading more than one is normal and encourage
 | Build an outreach **sequence / campaign** (pick the cadence) | [`recipes/campaign-plays.md`](recipes/campaign-plays.md) (confirm cadence with the user → build idle → `start_campaign` is separately gated) |
 | A **tradeshow / conference page** → BD on exhibitors (or speakers) | [`recipes/tradeshow-to-bd.md`](recipes/tradeshow-to-bd.md) (crawl exhibitors/speakers → ICP → hiring manager → pre-conference soft intro) |
 | **Which companies are hiring for X** / find open roles (a hiring signal, often geo-scoped) | [`provider-playbooks/hyreflow_native.md`](provider-playbooks/hyreflow_native.md) — the first-party job scrapes are the default source: `linkedin_jobs` / `indeed_jobs` (title + location across companies), `career_pages` (one named company), and **`arbeitsagentur_jobs` FIRST for a Germany-scoped query** (German employers post there who never list on the global boards). Germany is the one geo with its own board — run it as a leg alongside the global ones, not as a fallback; elsewhere LinkedIn/Indeed/career pages are the full set. `theirstack` only when the query needs *its* filters (tech-stack / keyword-slug) rather than raw postings |
+| **Who is posting about X** / hiring posts by recruiting-agency staff, "we're hiring" posts this week | [`provider-playbooks/hyreflow_native.md`](provider-playbooks/hyreflow_native.md) — `search_posts` (keyword search over public LinkedIn posts, **past week by default**, `author_title: "Recruiter"` for the agency-staff cut); one call, per request. Then `profile_posts` on a specific author only if their history matters |
 | Signal-driven BD (funding / hiring / layoffs) | the signal tool's `provider-playbooks/<tool>.md` + [`recipes/funding-to-bd.md`](recipes/funding-to-bd.md) (funding→BD) / [`recipes/layoff-signal-to-poach.md`](recipes/layoff-signal-to-poach.md) (layoffs) |
 | A client's **LinkedIn connections export** → scored prospect DB + a weekly Dream 100 sweep | [`recipes/network-icp-qualification.md`](recipes/network-icp-qualification.md) (batch qualifier + Dream 100 build + weekly sweep, headless up to the human send) |
 | Any credit-consuming or write action | the **Credit & approval gate** section below |
@@ -275,7 +276,7 @@ The adapters (`lib/`) and the machine-readable call contract (`reference/tool-re
 `aircall` (phone) · `fathom` (meeting notetaker API) · `granola` (meeting notes) · `quil` (**parked — no public API**)
 
 **Hyreflow Natives** — first-party, no external vendor, always credit-metered (no BYOK)
-`layoffsignal` (layoff/RIF recruiting trigger — built on free public news RSS; poach displaced talent + BD signal) · `hyreflow_native` (first-party scrapers — (a) job scrapers for career pages, LinkedIn, Indeed, Arbeitsagentur; async launch→poll, pay-on-match per job, and (b) **LinkedIn post feeds** for a person or a company via `profile_posts`/`company_posts`; one call, per request, 50 posts a page — reach for these on "what has X been posting" or any launch/hiring/funding/exec-commentary signal) · `hyreflow-agent` (AI reasoning agent — OpenRouter model + adapter toolbelt; `infer` plain + `research` agentic; the metered reasoning layer for batch/headless — interactive reasoning stays free on the host agent)
+`layoffsignal` (layoff/RIF recruiting trigger — built on free public news RSS; poach displaced talent + BD signal) · `hyreflow_native` (first-party scrapers — (a) job scrapers for career pages, LinkedIn, Indeed, Arbeitsagentur; async launch→poll, pay-on-match per job, and (b) **LinkedIn post feeds** for a person or a company via `profile_posts`/`company_posts`; one call, per request, 50 posts a page — reach for these on "what has X been posting" or any launch/hiring/funding/exec-commentary signal, and (c) **LinkedIn post search** via `search_posts`: keyword across every public post, past week by default, `author_title` to narrow to recruiters — reach for it on "who is posting about X" / "find hiring posts by agency staff") · `hyreflow-agent` (AI reasoning agent — hosted AI model + adapter toolbelt; `infer` plain + `research` agentic; the metered reasoning layer for batch/headless — interactive reasoning stays free on the host agent)
 
 > Read the matching `provider-playbooks/<tool>.md` before executing against any tool — it has the auth scheme,
 > the typed methods, the pagination contract, and the approval gates. Don't guess params.
@@ -292,7 +293,13 @@ hyreflow tools list                                       # all tools
 hyreflow tools get <tool> <method>                        # a method's inputs + cost (the call contract)
 hyreflow tools execute <tool> <method> --payload '{...}'  # run it (auth + retries + metering handled)
 hyreflow tools execute <tool> <method> --payload '{...}' --dry-run   # preview — no call, no charge
+hyreflow tools execute <waterfall> --rows JSON|@FILE|-     # enrich up to 100 people in ONE call (batched at the provider)
 ```
+**Enriching several people? `--rows`, never a loop of `--payload`.** One call walks the chain stage by
+stage and turns the FullEnrich step into ONE provider job for every row still pending — 12 or 100 rows
+finish in about the time one used to, and billing stays per row. A `still_enriching` row carries its
+`job_id` + `resume` — run the printed resume command (polling is free; a finished job bills each revealed row once); don't resend the row.
+
 **Sourcing (find people) = the `people_search` waterfall tool (DEFAULT).** Call it like any tool —
 one **canonical query** (`titles`, `locations`, `company_names`, `company_domains`, `seniority`, `limit`);
 the engine walks the house provider order (see `reference/waterfalls.json`; first source to fill the
@@ -412,7 +419,7 @@ Multi-tool flows have a step-by-step recipe in `recipes/` — follow it as the e
 - The client's **`ICP.md`** is built once by **`/icp`** at onboarding and lives in the client's working
   directory (per-client **data**, NOT in this skill).
 - Qualification is **agent reasoning** — the host agent reads `ICP.md` and scores companies.
-  **No hyreflow server call, no OpenRouter, no credits for the judgment itself.** Hard firmographic
+  **No hyreflow server call, no hosted AI model call, no credits for the judgment itself.** Hard firmographic
   filters run on data you already have (free); the LLM fuzzy-fit (via the `company-qualifier` agent or
   inline) runs only on survivors; enrichment runs only on the passes.
 - Always gate **before** enrichment/sequencing so you never pay to process non-fit companies.
@@ -499,7 +506,7 @@ hyreflow enrich --input hyreflow/data/<slug>/leads.csv --output hyreflow/data/<s
   `reference/tool-registry.json` (see [references/cost-card.md](references/cost-card.md)).
 - **No fabricated endpoints.** Adapters built from each vendor's real docs (cached under `reference/docs/<tool>/raw`).
   Where a path/auth was inferred from doc slugs, the tool's playbook flags "verify on first pilot".
-- **Stack rules** (per Hyreflow defaults): Python-only; OpenRouter for LLM; InboxKit for mailboxes;
+- **Stack rules** (per Hyreflow defaults): Python-only; the hosted AI model for LLM; InboxKit for mailboxes;
   the Hyreflow-built product is the strategic layer — the wrapped vendor API is an implementation detail.
 
 ## Credit & approval gate (paid actions)
@@ -513,8 +520,9 @@ plan step — for free/zero-cost work:
 - free count/sizing peeks (`size:1`/`page:1`/`Limit=0` to read a total without paying),
 - cached or local reads, CSV/file ops, plan/registry lookups,
 - BYOK reads the client owns,
-- any method whose cost block says **`unit: "free"`** in `reference/tool-registry.json` (`*.fetch_credit`,
-  list/iter/get reads, masked search previews, async polls — ~most read-only methods).
+- any method whose cost block says **`unit: "free"`** in `reference/tool-registry.json`
+  (`theirstack.catalog_keywords`-style catalog reads, list/iter/get reads, provider account/balance reads,
+  async polls — ~most read-only methods).
 
 **`credits: 0` alone does NOT mean free.** Read `unit` too, and gate unless it is `"free"`:
 - `byok` — 0 hyreflow credits: the call runs on the client's own vendor account. Two different reasons to
@@ -522,7 +530,7 @@ plan step — for free/zero-cost work:
   - **Metered data** (Apollo, ZoomInfo, BuiltWith, Shovels) — each call burns their vendor credits. Real
     money → gate the spend.
   - **Their sequencer / ATS / CRM / meeting tool** (Instantly, Lemlist, HeyReach, Smartlead, SendKit,
-    Recruit CRM, Recruiterflow, Loxo, Atlas, Fathom, Granola) — a flat plan, so a call costs no per-call
+    Recruit CRM, Recruiterflow, Loxo, Atlas, Spott, Fathom, Granola) — a flat plan, so a call costs no per-call
     money. Reads
     are free to make; gate the **write**, because it lands in their live account in front of candidates.
 - `metered` / `runtime` / `token` — priced by usage (Apify, the LLM Native): no fixed per-call
@@ -619,10 +627,13 @@ Options: Approve / Cancel
   was actually spent, not what the single most-recent call reported.
 
 ### Balances
-Check the provider's own balance before a big run where one's exposed — e.g. `prospeo.account_information()`,
-`theirstack.credit_balance()`, `wiza.get_credits()`, `lusha.get_usage()`. Estimate in **credits**, not dollars
-— the credit→$ conversion depends on the hyreflow plan (pricing TBD). On the hosted engine, balance + top-up
-live at the `code.hyreflow.ai` dashboard.
+Budget every run against the **workspace's Hyreflow credit balance** — `hyreflow billing balance` for the
+balance, `hyreflow session usage` for what this session has already spent, and `hyreflow tools get <tool>
+<method>` for the live per-method rate. Estimate in **credits**, not dollars — the credit→$ conversion
+depends on the hyreflow plan (pricing TBD). A provider's own account balance is a different pool: it's only
+readable on a provider whose key the workspace connected itself (BYOK), and on a Hyreflow-managed provider
+that method is refused — the number wouldn't be the workspace's balance to check anyway. On the hosted
+engine, balance + top-up live at the `recruit.hyreflow.ai` dashboard.
 
 ## Adding a new tool
 See [references/architecture.md](references/architecture.md): find cheapest doc source → cache to
@@ -720,7 +731,7 @@ for / when to reach for it*; the quirks live in the playbook. (Keep this list cu
   Summary: Use to discover funding rounds (incl. Series A), job openings and tech adoption as funding/hiring signals.
   Last reviewed: 2026-06-02
 - [prospeo playbook](provider-playbooks/prospeo.md)
-  Summary: Use to find work emails & phones and to search people/companies for BD/work-email workflows (not for candidate channels — use fullenrich/leadmagic there).
+  Summary: Use to find work emails & phones and to search people/companies for BD/work-email workflows (not for candidate channels — use fullenrich/leadmagic/wiza there).
   Last reviewed: 2026-06-02
 - [quil playbook](provider-playbooks/quil.md)
   Summary: Parked — no public REST API; use its native ATS integrations or Fathom instead.

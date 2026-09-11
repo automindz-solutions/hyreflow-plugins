@@ -68,8 +68,9 @@ Query cookbook:
   do not treat that as geo-qualified sourcing.
 
 Constraints / interpretation:
-1. **Code search is 10 queries/min** (stricter than the 30/min user/repo search bucket). Batch in rate-windowed passes
-   and inspect `get_rate_limit().resources.code_search` / `github_get_rate_limit` before large runs.
+1. **Code search is 10 queries/min** (stricter than the 30/min user/repo search bucket). Batch in rate-windowed passes;
+   with your own GitHub token connected, inspect `get_rate_limit().resources.code_search` / `github_get_rate_limit`
+   before large runs.
 2. **No `location:` qualifier on code search.** Use `search_users` or people-DBs for geo sourcing first, then
    `search_code user:<login>` for verification.
 3. **Presence = strong evidence; absence = weak evidence.** GitHub indexes public, default-branch files only. Private
@@ -101,7 +102,7 @@ Call via the CLI: `hyreflow tools execute github <method> --payload '{...}'` (pr
 
 - `candidate_dossier(full_name: str | None = None, *, github_url: str | None = None, company_name: str | None = None, location: str | None = None, linkedin_url: str | None = None, jd_keywords: list[str] | str | None = None, max_candidates: int = 5, max_repos: int = 12, include_emails: bool = True) -> dict[str, Any]` — End-to-end IT-sourcing GitHub leg: match identity → build dossier → score repos vs JD.
 - `find_user_emails(username: str, *, max_repos: int = 10) -> list[str]` — Harvest candidate emails from a user's public commits (when the profile email is private).
-- `get_rate_limit() -> Any` — GET /rate_limit — remaining REST/Search/GraphQL budget (safe read-only pilot).
+- `get_rate_limit() -> Any` — GET /rate_limit — remaining REST/Search/GraphQL budget for the caller's own GitHub token; requires the workspace's own token.
 - `get_repo_contributors(owner: str, repo: str, **params) -> Any` — GET /repos/{owner}/{repo}/contributors — source the people who build a given project.
 - `get_repo_tree(owner: str, repo: str, *, ref: str = 'HEAD', recursive: bool = True) -> Any` — GET /repos/{owner}/{repo}/git/trees/{ref} — list every path in the repo in one call.
 - `get_user(username: str) -> Any` — GET /users/{username} — profile: name, company, location, blog, email (if public), hireable, counts.

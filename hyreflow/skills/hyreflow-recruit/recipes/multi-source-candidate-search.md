@@ -16,13 +16,15 @@ profile data only (no contact info until the shortlist). Hard-won gotchas from t
    - ⚠️ **Most people list the METRO, not their suburb** — a narrow town-only list UNDER-matches badly
      (live: Lemlist 42→12, Prospeo 66→19 when narrowed; dropping the English "Munich" lost the bulk). Superset > narrow.
    - **AI Ark `geoLocation` is an ACCOUNT (company-HQ) filter, NOT contact** — under `contact` it's silently ignored.
-   - **Prospeo location MUST be canonical** from `search_suggestions({location_search})` (free); a **ZONE**
+   - **Prospeo location MUST be canonical** from `search_suggestions({location_search})` (free inside the
+     waterfall; 0.1 credits on a direct call); a **ZONE**
      suggestion (e.g. "Greater Munich Metropolitan Area, Germany") covers a metro radius in ONE value — Prospeo
      needs no town enumeration. (For AI Ark/Lemlist, the geo-radius Native — [[planned]] — will expand city→list.)
 3. **Count-peek BEFORE paying.** All 3 return a total, nested under the `result` envelope every
    `tools execute` returns (`{ _meta, result }`): AI Ark `result.totalElements`, Lemlist `result.total`,
    Prospeo `result.pagination.total_count` (a top-level read returns `None`). Do a `size:1`/`page:1` call to read it cheaply, then decide depth.
-   Billing: **Prospeo `search_person` is free** (masked preview; 30-day dedup on repeat calls); **AI Ark
+   Billing: **Prospeo `search_person` bills 0.4 credits per request** (masked preview; 30-day dedup on
+   repeat calls); **AI Ark
    bills per result (size-capped)**; **Lemlist is credit-metered per search**. Check
    `hyreflow tools get <tool> <method>` for the live rate on each. Surface "N total ≈ X credits to pull
    all — proceed?".
@@ -55,7 +57,7 @@ profile data only (no contact info until the shortlist). Hard-won gotchas from t
 |---|---|---|---|---|
 | **AI Ark** | `experience.current.title` mode SMART (full words) | `contact.location` str[] superset (geoLocation=ACCOUNT only) | `result.totalElements` | per result — check live rate |
 | **Lemlist** | `currentTitle` in[] (full words; each filter needs `in`+`out`) | `location` in[] superset | `total` | per-search credits |
-| **Prospeo** | `person_job_title` include[]+`match_mode:CONTAINS` (stem ok) | `person_location_search` include[] = canonical from `search_suggestions` (ZONE=radius) | `pagination.total_count` | free (30d dedup on repeat calls) |
+| **Prospeo** | `person_job_title` include[]+`match_mode:CONTAINS` (stem ok) | `person_location_search` include[] = canonical from `search_suggestions` (ZONE=radius) | `pagination.total_count` | 0.4 cr/request (30d dedup on repeat calls) |
 
 ## Field shapes for qualification text
 - AI Ark: `profile.headline`/`.summary`, `skills[]`, `position_groups[].profile_positions[].title/description`.

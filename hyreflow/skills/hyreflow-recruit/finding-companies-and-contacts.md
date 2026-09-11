@@ -159,8 +159,8 @@ company scope applied), you used the wrong native field — fix the payload, don
   see [`recruiter-craft.md`](recruiter-craft.md) §A for when to reframe a search around them.
 - **prospeo** — strong DB. Pass `locations` as raw names on the canonical `people_search` query (`"United
   States"`, `"munich"`) — the engine resolves them to Prospeo's canonical tokens for you. Only the **flat**
-  `prospeo_search_person` tool needs pre-resolution by hand: call `prospeo search_suggestions` (free) with
-  the raw location and pass the top suggestion's `name` (raw strings → `INVALID_FILTERS`). A **title+company combo that
+  `prospeo_search_person` tool needs pre-resolution by hand: call `prospeo search_suggestions` (0.1 credits
+  on a direct call; free when resolved inside a `people_search` waterfall) with the raw location and pass the top suggestion's `name` (raw strings → `INVALID_FILTERS`). A **title+company combo that
   matches nobody** (tiny/new co, or a title spelled differently than the company stores it) is a **clean
   miss** — the waterfall just falls through to the next provider; not an outage. Widen with the title rule
   below before assuming there's no coverage.

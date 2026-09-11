@@ -1,6 +1,6 @@
 ---
 name: sourcewhale
-description: "Read from and write to SourceWhale (recruiting outreach sequencer) via its public API — list campaigns/projects, add or modify candidates, add candidates into a campaign (optionally starting outreach), search candidates by email/phone/social/photo, pull dashboard statistics, manage Zapier webhooks. Use when the user mentions SourceWhale, pushing candidates into a SourceWhale campaign, syncing sourced/enriched candidates into outreach, or SourceWhale reporting. Keys: not a self-serve integration yet."
+description: "Read from and write to SourceWhale (recruiting outreach sequencer) via its public API — list campaigns/projects, add or modify candidates, add candidates into a campaign (optionally starting outreach), search candidates by email/phone/social/photo, pull dashboard statistics, manage Zapier webhooks. Use when the user mentions SourceWhale, pushing candidates into a SourceWhale campaign, syncing sourced/enriched candidates into outreach, or SourceWhale reporting. Keys: BYOK, self-serve — connect on the dashboard Integrations page (API key + user email)."
 ---
 
 # SourceWhale — Integration Meta Skill
@@ -17,10 +17,13 @@ lives in `reference/endpoints.md` and the Python client `lib/sourcewhale.py`.
 ## 2) Auth & config
 
 - **Base URL:** `https://sourcewhale.app/public-api`
-- **API key:** read from env `SOURCEWHALE_API_KEY` (SourceWhale Settings → API/Integrations).
+- **Connect (BYOK, self-serve):** dashboard **Integrations** → SourceWhale → API key (SourceWhale
+  Settings → API/Integrations) + **User email**. The engine injects both into every call for the
+  workspace; there is no managed Hyreflow key. Local/dev runs read env `SOURCEWHALE_API_KEY` +
+  `SOURCEWHALE_USER_EMAIL` instead.
 - **User email:** most endpoints take a `userEmail` query param ("the user performing the
-  action"). Set env `SOURCEWHALE_USER_EMAIL` once and the client defaults every call to it;
-  override per-call when acting as another user.
+  action"). The connected user email is the default for every call; override per-call
+  (`user_email=`) when acting as another SourceWhale user.
 - **Paths CONFIRMED** from the live Swagger spec (2026-06-01) — all 8 `/v1/...` endpoints, their
   query params, the `candidates/search` key set (`socialLink|photo|email|phone`), the candidate
   field list, and the zapier bodies match `lib/sourcewhale.py` exactly. Index: `reference/docs/sourcewhale/raw/endpoints.md`.
@@ -85,7 +88,7 @@ Call via the CLI: `hyreflow tools execute sourcewhale <method> --payload '{...}'
 
 - `add_candidates(candidates: list[dict], campaign_id: str | None = None, project_ids: list[str] | None = None, send_immediately: bool | None = None, user_email: str | None = None) -> Any` — POST /v1/candidates/add — add candidates, optionally into a campaign/projects.
 - `dashboard_statistics(date_from: str, date_to: str) -> Any` — GET /v1/statistics/dashboard — both dates required, format YYYY-MM-DD.
-- `list_campaigns(user_email: str | None = None, include_metrics: bool | None = None, partner: str | None = None, partner_filters: dict | None = None) -> Any` — GET /v1/campaigns/list. Returns campaigns created by userEmail (if set).
+- `list_campaigns(user_email: str | None = None, include_metrics: bool | None = None, partner: str | None = None, partner_filters: dict | None = None) -> Any` — GET /v1/campaigns/list — returns campaigns created by userEmail (if set).
 - `list_projects(user_email: str | None = None) -> Any` — GET /v1/projects/list — list projects (for the user if userEmail set).
 - `modify_candidate(candidate: dict, user_email: str | None = None) -> Any` — POST /v1/candidates/modify — update a candidate. `candidate` must include candidateId.
 - `search_candidates(key: str, value: str, user_email: str | None = None) -> Any` — GET /v1/candidates/search — find candidates by an identifier.

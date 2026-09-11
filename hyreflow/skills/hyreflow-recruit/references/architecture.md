@@ -55,8 +55,9 @@ bettercontact, exa, fullenrich, serper, instantly, heyreach, icypeas, prospeo.
    auth + pagination before any writes.
 
 ## Status notes carried from the build
-- Paths/auth **inferred from doc slugs and flagged "verify on first pilot":** aiark, lemlist, heyreach,
-  sourcewhale (auth scheme to confirm). prospeo is fully live-confirmed (enrich + search + suggestions).
+- Paths/auth **inferred from doc slugs and flagged "verify on first pilot":** aiark, lemlist, heyreach.
+  sourcewhale (all 8 paths, params, bodies + `api-key` header) and prospeo (enrich + search +
+  suggestions) are confirmed against the live specs.
 - **Auth-heavy:** bullhorn (3-leg OAuth → BhRestToken+restUrl), vincere (x-api-key + ~30-min id_token).
 - **Async (start→poll):** bettercontact, fullenrich.
 - **Parked:** quil/CoRecruit (no public API) — use fathom for API-accessible meeting data.

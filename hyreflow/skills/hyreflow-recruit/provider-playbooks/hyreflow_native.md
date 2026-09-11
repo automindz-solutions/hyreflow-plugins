@@ -108,6 +108,9 @@ assuming silence means clean). The root object also carries `credits_consumed`, 
   `limit: 15` on the poll — then one poll delivers the ask and bills exactly it.
   `scrape_arbeitsagentur_jobs` and `scrape_career_pages` take **no `rows`** (`max_pages`/`page_size` and
   `max_pages` bound them instead), so there the poll's `limit` plus stopping at the ask is the only guard.
+  A LinkedIn **direct fetch** (`linkedin_job_urls` / `linkedin_job_ids`) takes no `rows` either — its size
+  is the number of distinct references you sent, so the poll's `limit` is the only knob. 100 references
+  exceed one page: poll `offset: 0` then `offset: 50`, and expect up to 100 jobs ⇒ up to 5.0 credits.
 - **`jobs_returned` is this page only — it says nothing about coverage.** With the default `limit: 10`, a
   first poll reporting 10 jobs is just the page size, not the find. Read `jobs_total` and `has_more`
   before concluding the scrape came up thin, and only widen with another scrape (or a parallel batch —
@@ -191,8 +194,16 @@ Treat it as the account's **public posting history**, not a complete activity lo
   **Ask the user for the company's domain/website before launching** rather than guessing it from the
   company name — a guessed URL can map the wrong site. If they don't have it handy, offer to look it up
   (e.g. a web search tool) and confirm it with them before you call `scrape_career_pages`.
-- **LinkedIn jobs** — `scrape_linkedin_jobs(titles_query=…, locations=…)` and/or `company_url=` (a
-  LinkedIn company URL → that company's whole jobs page). `country` picks the regional site.
+- **LinkedIn jobs** — three input modes, one per call. `scrape_linkedin_jobs(company_url=…)` (a LinkedIn
+  company URL → that company's whole jobs page) on its own, **or** `titles_query=` together with
+  `locations=`, **or** `linkedin_job_urls=` and/or `linkedin_job_ids=` — a **direct fetch** of exactly
+  those postings (1–100 per field, pairable; an id given both ways is fetched once). Reach for the direct
+  fetch whenever you **already hold** the posting — a URL the user pasted, the `job_url` off an earlier
+  scrape, a link from a jobs page — instead of guessing a title/location search that may not surface it.
+  It runs no search, so no other search input goes with it (no `country`, no `rows`), and it always
+  returns job detail. `len(result.jobs)` can be smaller than the references you sent: a dead or
+  unfetchable posting costs nothing, and `jobs_filtered_out` is always 0 (there are no filters). In
+  search mode `country` only picks the regional site — it never substitutes for `locations`.
 - **Indeed jobs** — `scrape_indeed_jobs(titles_query, locations, …)`. Both are required.
 - **Arbeitsagentur** — `scrape_arbeitsagentur_jobs(title=…, location=…)` for the German federal job
   board (Bundesagentur für Arbeit). `radius` is in km. Need `title` and/or `location`.
@@ -212,6 +223,13 @@ hyreflow tools execute linkedin_jobs --payload '{"titles_query":"recruiter","loc
 
 # 2. poll until COMPLETED (charged per job in result.jobs — 15 here, not the default page of 10)
 hyreflow tools execute hyreflow_native_get_linkedin_jobs --payload '{"request_id":"<id>","limit":15}'
+```
+
+```bash
+# Direct fetch — you already hold the postings, so no search runs and no other search input is sent.
+# Two references → at most 2 jobs → at most 0.1 credits on the poll.
+hyreflow tools execute linkedin_jobs --payload '{"linkedin_job_urls":["https://www.linkedin.com/jobs/view/4123456789"],"linkedin_job_ids":["4000000001"]}'
+hyreflow tools execute hyreflow_native_get_linkedin_jobs --payload '{"request_id":"<id>","limit":2}'
 ```
 
 ## When to reach for it
@@ -276,6 +294,7 @@ Call via the CLI: `hyreflow tools execute hyreflow_native <method> --payload '{.
 - `scrape_arbeitsagentur_jobs(title: str | None = None, location: str | None = None, radius: int = 25, job_type: str | None = None, max_pages: int = 3, page_size: int = 25, include_details: bool = True, solve_captcha: bool = False) -> dict` — POST /v1/scrape-arbeitsagentur-jobs/async — start a German hiring-signal scrape of open roles on Germany's Bundesagentur für Arbeit board. Returns {request_id, status}.
 - `scrape_career_pages(company_url: str, company_name: str | None = None, max_pages: int = 10, target_titles: list | None = None, target_titles_prompt: str | None = None, target_locations: list | None = None, filters: dict | None = None, known_career_page_url: str | None = None, known_career_page_urls: list | None = None) -> dict` — POST /v1/scrape-career-pages/async — start a hiring-signal scrape of a named company's own career site/ATS for open roles. Returns {request_id, status}.
 - `scrape_indeed_jobs(titles_query: Any, locations: list, country: str = 'United States', rows: int = 25, start: int = 0, radius: int | None = None, job_types: list | None = None, max_age_days: int | None = None, include_job_details: bool = True, include_company_details: bool = False) -> dict` — POST /v1/scrape-indeed-jobs/async — start a hiring-signal scrape of Indeed open roles by title + location across companies. Returns {request_id, status}.
-- `scrape_linkedin_jobs(titles_query: Any = None, company_url: str | None = None, locations: list | None = None, country: str = 'United States', rows: int | None = None, distance: str | None = None, hours: int | None = None, job_types: list | None = None, work_types: list | None = None, experience_levels: list | None = None, excluded_companies: list | None = None, excluded_titles: list | None = None, excluded_industries: list | None = None, include_company_details: bool | None = None, include_job_details: bool | None = None) -> dict` — POST /v1/scrape-linkedin-jobs/async — start a hiring-signal scrape of LinkedIn open roles by title/location or for one company. Returns {request_id, status}.
+- `scrape_linkedin_jobs(titles_query: Any = None, company_url: str | None = None, locations: list | None = None, country: str | None = None, rows: int | None = None, distance: str | None = None, hours: int | None = None, job_types: list | None = None, work_types: list | None = None, experience_levels: list | None = None, excluded_companies: list | None = None, excluded_titles: list | None = None, excluded_industries: list | None = None, include_company_details: bool | None = None, include_job_details: bool | None = None, linkedin_job_urls: list | None = None, linkedin_job_ids: list | None = None) -> dict` — POST /v1/scrape-linkedin-jobs/async — start a hiring-signal scrape of LinkedIn open roles by title/location, for one company, or for specific job postings. Returns {request_id, status}.
+- `search_posts(keyword: str, date_posted: str | None = None, sort_by: str = 'date_posted', page: int = 1, limit: int = 50, author_title: str | None = None, from_members: list | None = None, content_type: str | None = None) -> dict` — POST /v1/linkedin-post-search — keyword search across public LinkedIn posts, newest first, scoped to a date window.
 
 <!-- API-SURFACE:END -->

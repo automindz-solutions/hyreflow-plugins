@@ -3,6 +3,8 @@
 ## Key patterns
 
 - **Async submit + async fetch.** `fullenrich_start_work_email_enrichment`, `fullenrich_start_personal_email_enrichment`, `fullenrich_start_mobile_enrichment` and `fullenrich_start_reverse_email` start background jobs and return an `enrichment_id`. Poll with `fullenrich_get_bulk_enrichment` or `fullenrich_get_reverse_email` for terminal data.
+- **Batch at the provider, not the row.** One `start_*` call takes up to **100 contacts** and returns ONE `enrichment_id` — one job, one poll loop for all of them. Never loop `start_*` over rows one at a time: each start is its own ~50s job. Inside an enrichment waterfall (`hyreflow tools execute email_enrichment|personal_email --rows …`) the engine does this for you — all rows still pending at the FullEnrich step ride one job, correlated back per row via a `custom` echo on each contact, and billed per row (hits only).
+- **A stalled job carries its identity.** A `still_enriching` step comes back with `job_id` + `resume`; poll it again with `hyreflow tools execute fullenrich get_bulk_enrichment --payload '{"enrichment_id": "<job_id>"}'`. Polling is free; the poll that finds it FINISHED charges one unit per revealed contact (once each — re-polling is free). Do NOT resend the contacts — that starts and pays for a second job.
 - **One method per field, one price per method.** A work email is the cheap channel, a personal email costs 3x it, a mobile 10x — so start the job for the field the play actually needs. Check `hyreflow tools get fullenrich start_work_email_enrichment` (or a sibling) for the live rate.
 - **LinkedIn URL** improves accuracy significantly (5-20% for emails, 10-60% for phones).
 - **Email status hierarchy:** DELIVERABLE > HIGH_PROBABILITY > CATCH_ALL > INVALID. Use `most_probable_work_email` field for the best result.
@@ -28,7 +30,7 @@
 Call via the CLI: `hyreflow tools execute fullenrich <method> --payload '{...}'` (preview with `--dry-run`; `hyreflow tools get fullenrich <method>` returns the live contract + cost). Base: `https://app.fullenrich.com/api/v2`. Any endpoint without a typed method is reachable through the tool's generic `request` passthrough.
 
 - `get_bulk_enrichment(enrichment_id: str) -> dict` — GET /contact/enrich/bulk/{enrichment_id} — poll for the bulk enrichment result.
-- `get_credits() -> dict` — GET /account/credits — current credit balance.
+- `get_credits() -> dict` — GET /account/credits — current credit balance on the caller's own FullEnrich account; requires the workspace's own key.
 - `get_reverse_email(enrichment_id: str) -> dict` — GET /contact/reverse/email/bulk/{enrichment_id}.
 - `search_company(payload: dict) -> dict` — POST /company/search — filter-based company search (see cached docs for filters).
 - `start_mobile_enrichment(datas: list[dict], name: str = 'hyreflow enrichment', webhook_url: str | None = None, **opts) -> dict` — POST /contact/enrich/bulk — start a MOBILE PHONE enrichment job. Returns {enrichment_id}.

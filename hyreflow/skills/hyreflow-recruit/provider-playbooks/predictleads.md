@@ -10,7 +10,7 @@ Avoid follow/unfollow workflows for now. PredictLeads followed-company APIs are 
 ## Callable surface
 Call via the CLI: `hyreflow tools execute predictleads <method> --payload '{...}'` (preview with `--dry-run`; `hyreflow tools get predictleads <method>` returns the live contract + cost). Base: `https://predictleads.com/api/v3`. Any endpoint without a typed method is reachable through the tool's generic `request` passthrough.
 
-- `api_subscription() -> Any` — GET /api_subscription — subscription status + monthly credit quota/used. **FREE** (safe pilot). CONFIRMED.
+- `api_subscription() -> Any` — GET /api_subscription — subscription status + monthly credit quota/used on the caller's own PredictLeads account; requires the workspace's own key.
 - `company(identifier: str, **params) -> Any` — GET /companies/{domain_or_id} — one company (name, location, ticker, parent, similar). CONFIRMED.
 - `connections(identifier: str, **params) -> Any` — GET /companies/{id}/connections — partner/vendor/integration/investor/parent connections.
 - `discover_companies(**params) -> Any` — GET /discover/companies — discover companies by `location` + `sizes` (e.g. ['11-50','201-500']).

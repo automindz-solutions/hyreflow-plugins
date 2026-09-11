@@ -49,6 +49,6 @@ Call via the CLI: `hyreflow tools execute zoominfo <method> --payload '{...}'` (
 - `search_intent(payload: dict, **params) -> Any` — POST /data/v1/intent/search (inferred).
 - `search_news(payload: dict, **params) -> Any` — POST /data/v1/news/search (inferred).
 - `search_scoops(payload: dict, **params) -> Any` — POST /data/v1/scoops/search (inferred).
-- `user_usage(**params) -> Any` — GET /data/v1/users/usage — API usage/credits (CONFIRMED; safe read-only pilot).
+- `user_usage(**params) -> Any` — GET /data/v1/users/usage — API usage/credits on the caller's own ZoomInfo account (ZoomInfo is BYOK-only).
 
 <!-- API-SURFACE:END -->

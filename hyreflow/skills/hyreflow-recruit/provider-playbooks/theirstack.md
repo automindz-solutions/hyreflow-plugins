@@ -24,7 +24,11 @@
 
 4. **Tech stack enrichment:** Use `theirstack_company_technographics` for a single known company — provide `company_domain` when possible (most reliable identifier).
 
-5. **Check credits:** Use `theirstack_credit_balance` before large batch runs.
+5. **Budget before large batch runs:** count-before-pay off the search response, price it with
+   `hyreflow tools get theirstack <method>`, and check `hyreflow billing balance` for headroom.
+   `theirstack_credit_balance` reads the TheirStack account's own credit meter — it's callable only when
+   the workspace has connected its own TheirStack key, and even then it's a different pool from the
+   workspace's Hyreflow balance.
 
 ## Key Filters
 
@@ -37,11 +41,12 @@
 
 ## Cost Awareness
 
-- Company search: per company returned. Use `limit: 10` for exploration.
-- Job search: per job returned. Safe to use with `limit: 25`.
-- Technographics: per company lookup (regardless of result count).
-- Catalog keywords and credit balance: free.
-- Check `hyreflow tools get theirstack <method>` for the live rate before scaling up `limit`.
+- Company search: per company returned, in Hyreflow credits. Use `limit: 10` for exploration.
+- Job search: per job returned, in Hyreflow credits. Safe to use with `limit: 25`.
+- Technographics: per company lookup (regardless of result count), in Hyreflow credits.
+- Catalog keywords: free.
+- Check `hyreflow tools get theirstack <method>` for the live rate before scaling up `limit`, and
+  `hyreflow billing balance` for the workspace's remaining Hyreflow credits.
 
 ## Common Mistakes
 
@@ -61,7 +66,7 @@ Call via the CLI: `hyreflow tools execute theirstack <method> --payload '{...}'`
 - `company_buying_intents(*, company_domain: str | None = None, company_name: str | None = None, company_linkedin_url: str | None = None, **extra) -> Any` — POST /v1/companies/buying_intents — buying-intent topics detected for a company (3 TheirStack credits, vendor-side).
 - `company_technographics(*, company_domain: str | None = None, company_name: str | None = None, company_linkedin_url: str | None = None, **extra) -> Any` — POST /v1/companies/technologies — technologies a company uses (3 TheirStack credits, vendor-side).
 - `create_company_list(payload: dict) -> Any` — POST /v0/company_lists — create a company list.
-- `credit_balance() -> Any` — GET /v0/billing/credit-balance — remaining credits (free, safe read-only pilot).
+- `credit_balance() -> Any` — GET /v0/billing/credit-balance — remaining credits on the caller's own TheirStack account; requires the workspace's own key.
 - `get_company_list(list_id: str | int) -> Any` — GET /v0/company_lists/{id}.
 - `list_company_lists(**params) -> Any` — GET /v0/company_lists — all company lists for the team.
 - `search_companies(filters: dict | None = None, *, page: int = 0, limit: int = 25, blur_company_data: bool | None = None, **extra) -> Any` — POST /v1/companies/search — company search. **3 THEIRSTACK credits per company returned** (vendor-side; hyreflow's price is this method's `cost` block).

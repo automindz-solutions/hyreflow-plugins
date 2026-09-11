@@ -14,6 +14,7 @@ All CRM adapters pace writes with a token-scoped rate limiter. Defaults:
 - Vincere: 60 req/min. `VINCERE_RATE_LIMIT_RPM` to override.
 - Atlas: 60 req/min. `ATLAS_RATE_LIMIT_RPM` to override.
 - Recruit CRM: 60 req/min. `RECRUITCRM_RATE_LIMIT_RPM` to override (10 req/min per license for >6 licenses).
+- Spott: 600 req/min (per API key). `SPOTT_RATE_LIMIT_RPM` to override.
 
 ## Which batch helper to call
 
@@ -26,6 +27,7 @@ All CRM adapters pace writes with a token-scoped rate limiter. Defaults:
 | Vincere | `create_candidates_batch` | — | — | — |
 | Atlas | `create_people_batch` | — | `create_companies_batch` | `create_projects_batch` / `create_opportunities_batch` |
 | Recruit CRM | `create_candidates_batch` | `create_contacts_batch` | `create_companies_batch` | — |
+| Spott | `create_candidates_batch` | — | `create_clients_batch` | — |
 
 ## Bulk helper contract
 
@@ -51,14 +53,18 @@ Examples: bulk update = `batch("update_candidate", [{"args":[slug, payload]}, ..
 ## Cost gate
 
 ATS/CRM writes are free. Before running a large enrichment, call `/enrich/run` with `estimate=True` or use
-`hyreflow enrich --estimate` to get a worst-case credit cost. If the workspace balance is insufficient, the
-engine returns a Stripe checkout link; do not proceed until the user adds credits.
+`hyreflow enrich --estimate` to get a worst-case credit cost. The run is only blocked if the balance can't
+cover even one row at the worst-case rate; if the balance covers a row but not the full estimate, the run
+proceeds and the response carries a `partial_budget` warning that later rows may come back without a
+result. When it's blocked, the engine returns a Stripe checkout link; do not proceed until the user adds
+credits.
 
 ## Procedure for 1,000+ records
 
 1. Confirm the user's CRM credentials are stored (`byok` or workspace provider config).
 2. Estimate the run cost: `hyreflow enrich --estimate --file <csv> --with <tool> --with <crm>.<batch>`.
-3. If balance < estimate, stop and ask the user to top up credits.
+3. If balance can't cover even one row at the worst-case rate, stop and ask the user to top up credits.
+   Otherwise proceed — watch for a `partial_budget` warning if the balance may not cover every row.
 4. Pilot one payload manually through the single-record method.
 5. Build the list of payloads and call the batch helper with `stop_on_error=False`.
 6. Report `{created_count, failed_count, total, elapsed_ms}` and surface the first few failed rows.

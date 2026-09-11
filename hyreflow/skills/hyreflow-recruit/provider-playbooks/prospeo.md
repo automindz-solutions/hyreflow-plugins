@@ -11,7 +11,7 @@ HOW in `lib/prospeo.py`. Docs cached at `reference/docs/prospeo/raw/`.
 - **Base URL:** `https://api.prospeo.io` · **Auth:** header `X-KEY` (env `PROSPEO_API_KEY`; never hardcode). All endpoints POST + JSON; charged on a found result (see Credits below).
 
 ## Operations (ALL CONFIRMED from prospeo.io/api-docs, 2026-06-01)
-**Live:** `enrich_person` (`/enrich-person` — `data{first_name,last_name,full_name,linkedin_url,email,company_name,company_website,company_linkedin_url,person_id}` + `only_verified_email`/`enrich_mobile`/`only_verified_mobile`), `bulk_enrich_person` (≤50), `enrich_company`, `bulk_enrich_company` (≤50), `search_person` (200M+ contacts, 30+ filters), `search_company` (30M+), `search_suggestions`, `account_information` (safe pilot). Endpoint index: `reference/docs/prospeo/raw/endpoints.md`.
+**Live:** `enrich_person` (`/enrich-person` — `data{first_name,last_name,full_name,linkedin_url,email,company_name,company_website,company_linkedin_url,person_id}` + `only_verified_email`/`enrich_mobile`/`only_verified_mobile`), `bulk_enrich_person` (≤50), `enrich_company`, `bulk_enrich_company` (≤50), `search_person` (200M+ contacts, 30+ filters), `search_company` (30M+), `search_suggestions`, `account_information` (Prospeo's own account usage/renewal/credits — only callable on a connected Prospeo key). Endpoint index: `reference/docs/prospeo/raw/endpoints.md`.
 
 ## ⚠️ Deprecation
 `email_finder`, `domain_search`, `mobile_finder`, `social_url_enrichment`, `email_verifier`, `linkedin_email_finder` are **deprecated (sunset 2026-03-01)** — kept as thin wrappers but **migrate to `enrich_person`/`search_person`**. `enrich_person(enrich_mobile=True)` bills the higher mobile-reveal rate (vs the email-reveal rate for a plain email); the legacy `mobile_finder` wrapper is priced the same. Check `hyreflow tools get prospeo enrich_person` for the live rates.
@@ -19,7 +19,7 @@ HOW in `lib/prospeo.py`. Docs cached at `reference/docs/prospeo/raw/`.
 ## ⚠️ WORK EMAIL ONLY — not for candidate workflows
 Prospeo returns **work / professional emails only — it does NOT find personal emails.** Do **not** use it
 in personal-email or **candidate-acquisition** workflows (recruiting candidates → personal email + LinkedIn).
-**Personal emails come from `fullenrich` or `leadmagic` only.** Prospeo is for BD / work-email use.
+**Personal emails come from `fullenrich`, `leadmagic` or `wiza` only.** Prospeo is for BD / work-email use.
 
 **`enrich_person` also answers the `linkedin_profile` capability** — the same call returns dated job
 history, not contact detail, so this is the one candidate-workflow use that's fine: pulling work history
@@ -36,7 +36,7 @@ Enrichment layer (**work email**): shortlist → Prospeo for work emails/phones 
 
 > **Field-shape note:** these are vendor-native operational notes. The client returns the **raw vendor JSON** and uses the method names in this file — read field shapes accordingly (no normalized-wrapper / `result.data.` prefix).
 
-- **Flow (LIVE-CONFIRMED 2026-06-02):** `search_suggestions` (FREE) to resolve canonical filter values → `search_person`/`search_company` to build lists → `enrich_person`/`enrich_company` for email/mobile. Search results **never include email/mobile** — enrich the `person_id`s afterward (`bulk_enrich_person` ≤50, body `{"data":[{"identifier": "...", "person_id": "..."}]}` — `identifier` (your own row id) is required per item, and `bulk_enrich_company` mirrors it (`{"data":[{"identifier": "...", "company_website": "..."}]}`)).
+- **Flow (LIVE-CONFIRMED 2026-06-02):** `search_suggestions` (free inside a `people_search` waterfall; 0.1 credits on a direct call) to resolve canonical filter values → `search_person`/`search_company` to build lists → `enrich_person`/`enrich_company` for email/mobile. Search results **never include email/mobile** — enrich the `person_id`s afterward (`bulk_enrich_person` ≤50, body `{"data":[{"identifier": "...", "person_id": "..."}]}` — `identifier` (your own row id) is required per item, and `bulk_enrich_company` mirrors it (`{"data":[{"identifier": "...", "company_website": "..."}]}`)).
 - **Company lookalikes (LIVE-CONFIRMED 2026-06):** the right flow is **enrich → verify → lookalike**:
   1. `enrich_company` to resolve a seed to its `company_id` — **payload needs the `data` wrapper**: `{"data":{"company_website":"acme.com"}}` (top-level fields → `400 Field required`). Prefer `company_linkedin_url` (most unique) or a clean own-domain; see `reference/docs/prospeo/raw/enrich-company.md`.
   2. **VERIFY the resolved seed** — confirm the returned `company.name`/`domain` is the company you meant. ⚠️ Bare shared-SaaS domains (`personio.com`/`.de`) match the *wrong* company (they appear in many firms' records → resolved to *Aion Bank* / *kiutra* live). A unique domain works: `acme.com` → *Acme* ✅.
@@ -109,15 +109,22 @@ Enrichment layer (**work email**): shortlist → Prospeo for work emails/phones 
   - **⚠️ Can't search with `exclude`-only — need ≥1 positive filter.**
 - **🎯 RADIUS trick:** for "within ~X km of a city," use the **ZONE** suggestion (e.g. `"Greater Munich Metropolitan Area, Germany"`) — it covers the metro in ONE value, no town enumeration (unlike AI Ark `contact.location` / Lemlist which need city lists). Confirmed: Steuerfachwirt + Munich ZONE → 66 matches.
 - **Credits — two billing systems, don't conflate:** what the CUSTOMER pays is the `cost` block in
-  `reference/tool-registry.json`: every reveal bills per result (`enrich_person`, `bulk_enrich_person`,
-  `enrich_company`, `bulk_enrich_company`, `search_company` + the deprecated wrappers), a higher rate with
-  `enrich_mobile=True` (`cost.credits_max`); free = `search_person` (masked preview), `search_suggestions`,
-  `account_information`. Check `hyreflow tools get prospeo enrich_person` for the live rates. The
-  VENDOR-side billing (what Prospeo charges the key owner, so it only shows up on a BYOK key):
-  `search_suggestions` = **FREE** (15 req/s); `search_person` = **1 vendor credit per
-  page of 25** that returns ≥1 result, **dedup: same filters+page within 30 days returns `"free":true`**
-  (no charge); `enrich_person` = 1 vendor credit/email; **`enrich_mobile:true` = 10 vendor credits** —
-  gate to explicit phone asks. `account_information` = free pilot.
+  `reference/tool-registry.json`, in Hyreflow credits — budget against `hyreflow billing balance`: every
+  reveal bills per result (`enrich_person`, `bulk_enrich_person`, `enrich_company`, `bulk_enrich_company`
+  + the deprecated wrappers), a higher rate with `enrich_mobile=True`
+  (`cost.credits_max`); `search_person`/`search_company`/`domain_search` bill **0.4 credits per request**
+  (masked preview, one charge per page of up to 25 results); `search_suggestions` bills **0.1 credits**
+  on a direct call (free when it resolves inside a `people_search` waterfall); free = `account_information`.
+  **A bulk reveal is priced per RECORD, so estimate it as rows x rate, never as one call:** 50 rows on
+  `bulk_enrich_person` is up to 50x the per-record rate (and `enrich_mobile=True` uses the mobile rate,
+  `cost.credits_max`), which is what the pre-flight hold reserves. Quote that number before you send it.
+  Check `hyreflow tools get prospeo enrich_person` for the live rates. The
+  VENDOR-side billing (what Prospeo charges the key owner — only meaningful, and only readable via
+  `account_information`, on a connected Prospeo key; a Hyreflow-managed Prospeo key has no vendor account
+  of the workspace's to check): `search_suggestions` = **FREE** (15 req/s); `search_person` = **1 vendor
+  credit per page of 25** that returns ≥1 result, **dedup: same filters+page within 30 days returns
+  `"free":true`** (no charge); `enrich_person` = 1 vendor credit/email; **`enrich_mobile:true` = 10 vendor
+  credits** — gate to explicit phone asks.
 - **Do NOT use Prospeo for job-change detection/filters** — `person_job_change` has live schema drift; use FullEnrich for job-change workflows.
 - **⚠️ WORK email only** (search/enrich return professional emails) — for candidate personal email use FullEnrich/LeadMagic/Wiza.
 
@@ -125,7 +132,7 @@ Enrichment layer (**work email**): shortlist → Prospeo for work emails/phones 
 ## Callable surface
 Call via the CLI: `hyreflow tools execute prospeo <method> --payload '{...}'` (preview with `--dry-run`; `hyreflow tools get prospeo <method>` returns the live contract + cost). Base: `https://api.prospeo.io`. Any endpoint without a typed method is reachable through the tool's generic `request` passthrough.
 
-- `account_information(payload: dict | None = None) -> dict` — POST /account-information — usage/renewal/credits (safe read-only pilot).
+- `account_information(payload: dict | None = None) -> dict` — POST /account-information — usage/renewal/credits on the caller's own Prospeo account; requires the workspace's own key.
 - `bulk_enrich_company(payload: dict) -> dict` — POST /bulk-enrich-company — up to 50 companies per call.
   - requires: data
   - each `data` item requires: identifier

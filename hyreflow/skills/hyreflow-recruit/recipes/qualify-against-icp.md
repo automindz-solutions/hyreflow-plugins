@@ -7,7 +7,7 @@ only ICP-fit companies pass downstream. This is the `qualify` stage of the pipel
 
 ## Where this runs (Model A)
 Qualification is **reasoning done by the host agent** (the agent running this skill), reading
-the client's local `ICP.md`. **No hyreflow server call, no OpenRouter, no credits for the judgment itself**
+the client's local `ICP.md`. **No hyreflow server call, no hosted AI model call, no credits for the judgment itself**
 — credits are only spent on the optional firmographic lookups in Step 1 and on enriching the *passes*.
 
 ## Inputs

@@ -91,9 +91,9 @@ dotted. Placeholders `{{col}}` pull from the input row; `extract_js` flattens th
   hyreflow tools execute github_search_code --payload '{"q":"\"[tool.ruff]\" user:<login>","per_page":1}'
   ```
   Read `result.total_count`; you usually only need counts, not file contents.
-- **Batch rate-windowed passes:** GitHub code search has a stricter **10 queries/min** bucket. Check
-  `github_get_rate_limit` / `get_rate_limit().resources.code_search`, batch candidates by fingerprint, and pause
-  between windows.
+- **Batch rate-windowed passes:** GitHub code search has a stricter **10 queries/min** bucket. With your own
+  GitHub token connected, check `github_get_rate_limit` / `get_rate_limit().resources.code_search`; otherwise
+  batch candidates by fingerprint and pause between windows on a fixed schedule.
 - **No `location:` qualifier exists for code search.** Pipeline = `search_users` / people-DB geo sourcing → dossier
   known candidates → `search_code user:<login>` verification → tag/rank. Do **not** use code search as a standalone
   geo+tool sourcing filter.
@@ -107,8 +107,9 @@ dotted. Placeholders `{{col}}` pull from the input row; `extract_js` flattens th
 **3 — People-DB leg** *(breadth — the devs not on GitHub; runs on every IT role, not just the infra ones)*
 - **Target: at least `1.5×N` people-DB rows before you merge** (N = the count the user asked for). This leg is
   volume-matched to the GitHub pool, not a spot check — a handful of rows is an under-run, not a completed step.
-  `limit` is the lever: `people_search` bills **per result** (aiark 0.1 cr/row — current rates in `cost-card.json`),
-  so `limit: 15` for N=10 is ~1.5 cr. The leg is cheap; the missed candidates are not.
+  `limit` is the lever: `people_search` bills **per result** (aiark 0.1 cr/row — current rates in `cost-card.json`;
+  if the chain falls through to prospeo, that leg bills 0.4 cr per request instead — one charge per page
+  of up to 25), so `limit: 15` for N=10 is ~1.5 cr on aiark. The leg is cheap; the missed candidates are not.
 - **Under-target → widen and re-query before merging.** Drop the narrowest filter first (`min_experience_years`,
   then `seniority`, then extra `skills`), and search **city variants** the way you do for GitHub
   (`Germany` / `Berlin` / `Munich`). Only continue to step 4 once you hit the target or you have run out of
@@ -151,7 +152,9 @@ or pass `allow_thin_profiles: true` when the dossier is the evidence you're deli
 **6 — QUALIFY 0-10 vs the JD** *(`/qualify`)* — score each candidate's dossier (skills + impact tier + deep
 context) **plus the dated employment history from 5b**, then **deliver exactly the top N** the user asked for
 (rank by score, cut the rest). The precision step (search = recall). GitHub-sourced usually score high
-(evidence-backed). Don't hand back the whole pool — N is the deliverable.
+(evidence-backed). **A `/qualify` error, or a candidate whose `qualify.score` comes back null, gets
+surfaced to the user as-is — never subbed with your own guess.** Don't hand back the whole pool — N is the
+deliverable.
 
 **7 — OUTREACH handoff** — candidate channel = **LinkedIn-first → personal email** (GDPR-aware; harvested emails are
 unconsented). See `writing-outreach.md`.
@@ -168,7 +171,7 @@ unconsented). See `writing-outreach.md`.
 | Step | Metered? |
 |---|---|
 | GitHub leg (search, dossier, email) | **free** (token; ~$0) |
-| people-DB leg | metered **per result** (aiark people_search 0.1 cr/row → ~1.5 cr for a 15-row pull; current costs in cost-card.json) |
+| people-DB leg | metered **per result** (aiark people_search 0.1 cr/row → ~1.5 cr for a 15-row pull; current costs in cost-card.json) — if the chain falls through to prospeo, that leg bills 0.4 cr/request instead |
 | deep context (Firecrawl + AI) | metered — **gate to finalists** |
 | qualify (AI) | metered (tokens) |
 So GitHub sourcing + emails are free margin; you meter the people-DB breadth + the Firecrawl/AI enrichment. Free

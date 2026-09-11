@@ -18,6 +18,17 @@ Run it: `POST /enrich/email_enrichment` (engine) — body `{rows:[Person, …]}`
 output row also carries `company_match` (whether the returned address checked out against the employer)
 and `company_match_basis` (`company_domain` or `company_name` — which one it was judged on).
 
+**Many people ⇒ ONE call, not a loop.** Hand the whole list over at once:
+```bash
+hyreflow tools execute personal_email --rows @candidates.json      # up to 100 rows; JSON, @file or -
+```
+The engine walks the chain **stage-major** (every row through provider 1, the leftovers through provider 2,
+…) and batches at the provider where it can — FullEnrich takes all still-pending rows as **one job with one
+poll loop** instead of one ~50s job per row, so 12 or 100 candidates finish in about the time one used to.
+First hit still wins per row; billing is still per row (hits only). Looping `tools execute … --payload`
+over rows one at a time throws that away. A row that comes back `still_enriching` carries `job_id` +
+`resume` — run the printed resume command (polling is free; a finished job bills each revealed row once); never resend the row (that starts a second, billed job).
+
 **Identifier rule:** `linkedin_url` alone works, OR `first_name + last_name + company_domain` (no
 LinkedIn needed). Common aliases are folded in automatically — `domain`→`company_domain`,
 `company`→`company_name`, `name`→`full_name` — so a `{first_name, last_name, domain}` row enriches fine.

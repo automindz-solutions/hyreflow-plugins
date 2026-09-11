@@ -31,7 +31,7 @@
 ## Callable surface
 Call via the CLI: `hyreflow tools execute bettercontact <method> --payload '{...}'` (preview with `--dry-run`; `hyreflow tools get bettercontact <method>` returns the live contract + cost). Base: `https://app.bettercontact.rocks/api/v2`. Any endpoint without a typed method is reachable through the tool's generic `request` passthrough.
 
-- `get_account() -> dict` — GET /account — account info + remaining credits: {success, credits_left, email}. FREE.
+- `get_account() -> dict` — GET /account — account info + remaining credits: {success, credits_left, email} on the caller's own BetterContact account; requires the workspace's own key.
 - `get_enrichment(request_id: str) -> dict` — GET /async/{request_id} — poll the enrichment result.
 - `ping() -> dict` — BYOK key-verification probe — GET /account (free, no job started).
 - `start_enrichment(data: list[dict], *, enrich_email_address: bool = True, enrich_phone_number: bool = False, webhook: str | None = None, **opts) -> dict` — POST /async — start waterfall enrichment for up to 100 leads. Returns {id}.

@@ -1,6 +1,6 @@
 ---
 name: hyreflow-agent
-description: "First-party AI reasoning Native (hyreflow's first-party AI reasoning Native) — a hosted OpenRouter model you call per-row/per-task to classify, extract, qualify, research, or generate, optionally with a toolbelt of hyreflow's own web adapters. Use for batch/headless/scale reasoning. Metered, no BYOK. Use when the user wants bulk AI qualification/personalization/research, or names the hyreflow agent."
+description: "First-party AI reasoning Native (hyreflow's first-party AI reasoning Native) — a hosted AI model you call per-row/per-task to classify, extract, qualify, research, or generate, optionally with a toolbelt of hyreflow's own web adapters. Use for batch/headless/scale reasoning. Metered, no BYOK. Use when the user wants bulk AI qualification/personalization/research, or names the hyreflow agent."
 ---
 
 # hyreflow-agent — AI reasoning Native
@@ -8,7 +8,7 @@ description: "First-party AI reasoning Native (hyreflow's first-party AI reasoni
 HOW in `lib/hyreflow_agent.py`. Prompt cookbook in `prompts.json` (skill root).
 
 ## What it is
-A hosted LLM (via **OpenRouter**) you invoke to do model work on a row or task, with two entry points:
+A hosted LLM you invoke to do model work on a row or task, with two entry points:
 - **`infer(prompt, schema=…)`** — *plain* model call, **no tools**. Classify / extract / score / write. Cheap.
 - **`research(prompt, schema=…)`** — *agentic*: model **+ a toolbelt of hyreflow adapters** in a tool-calling loop, for open-ended research / signal extraction / synthesis.
 
@@ -21,7 +21,7 @@ Bound to real adapters (verify bindings on first pilot):
 - `firecrawl_scrape(url)` → `firecrawl.scrape` — scrape ONE known URL to markdown — only after you know the page.
 
 ## Metering & class
-- **First-party Native — no BYOK, always credit-metered.** Cost = **OpenRouter tokens + any tool calls** the agentic loop makes, billed post-call from actual returned usage as a pure pass-through of the underlying model's list price (no markup). Runs on hyreflow's managed key, server-side in production.
+- **First-party Native — no BYOK, always credit-metered.** Cost = **model tokens + any tool calls** the agentic loop makes, billed post-call from actual returned usage as a pure pass-through of the underlying model's list price (no markup). Runs on hyreflow's managed key, server-side in production.
 
 ## When to use it — and when NOT
 - **In interactive Model A, the host agent does this reasoning for FREE — the agent you're already paying for.** Reach for this Native for **batch / headless / scale**: per-row over thousands of rows, or scheduled/automated runs with no agent present.

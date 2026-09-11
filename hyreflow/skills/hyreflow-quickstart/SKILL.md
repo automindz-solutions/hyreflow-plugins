@@ -47,10 +47,15 @@ all fallbacks are exhausted, or (b) the user's ask doesn't match this recipe. Ne
 Follow this pattern for the recipe:
 
 1. **Tell the user what you're about to do** — the goal + which data source(s), before running anything.
-2. **Run the recipe directly.** Keep it fast: do NOT run `hyreflow session …` progress commands or
+2. **Confirm before spending credits.** This recipe is a real, metered run (search + enrichment), not a
+   free preview — only proceed once the user has actually asked you to run something. An informational
+   question ("what's the fastest way to do X", "how would this work") gets an answer in words, not a run.
+3. **Preview with `--dry-run` first, then run for real.** Both `tools execute` and `enrich` take
+   `--dry-run` (no calls, no charge) — use it to sanity-check the payload, then drop the flag for the
+   metered run. Keep the real run fast: do NOT run `hyreflow session …` progress commands or
    `hyreflow --version` / `auth status` on this path — they don't improve the demo. (Session/Playground
    progress is for real runs — see `/hyreflow-recruit` or `/hyreflow-workflows`.)
-3. **Tell the user the results** — what came back, where it came from, and the exact CSV path to inspect
+4. **Tell the user the results** — what came back, where it came from, and the exact CSV path to inspect
    next. Mention they can go deeper (phones, firmographics, hiring signals) with `/hyreflow-recruit`.
 
 ---
