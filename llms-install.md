@@ -1,26 +1,29 @@
-# Installing Hyreflow in Cline
+# Connecting to Hyreflow
 
 Hyreflow is a remote MCP server. There is nothing to download or run locally.
 
-1. Open Cline's MCP settings (the server icon in the Cline panel, or edit `cline_mcp_settings.json`).
-2. Add a remote server:
+- **Endpoint:** `https://recruit.hyreflow.ai/api/v2/mcp`
+- **Transport:** Streamable HTTP
+- **Authentication:** OAuth 2.1 with dynamic client registration. Add the URL and the client
+  opens a browser sign-in; sign in with a Hyreflow account or create one (new accounts start
+  with free credits). Do not add an `Authorization` header: a static token disables the
+  browser sign-in.
 
-```json
-{
-  "mcpServers": {
-    "hyreflow": {
-      "type": "streamableHttp",
-      "url": "https://recruit.hyreflow.ai/api/v2/mcp",
-      "disabled": false,
-      "autoApprove": []
-    }
-  }
-}
-```
+## Client configuration
 
-3. Cline will detect that the server requires sign-in and open your browser. Sign in with your Hyreflow account, or create one; new accounts start with free credits.
-4. Back in Cline, the Hyreflow tools appear (search the tool catalogue, run a sourcing or enrichment step, check your credit balance, and so on). Start with `hyreflow_tools_search` to find the right tool for a task.
+Most MCP clients take the URL directly. Common shapes:
 
-Do not add an `Authorization` header: Hyreflow uses OAuth, and a static header disables the browser sign-in.
+| Client | Where | Snippet |
+|---|---|---|
+| Claude Code | terminal | `claude mcp add --transport http hyreflow https://recruit.hyreflow.ai/api/v2/mcp` |
+| Claude Desktop / claude.ai | Settings → Connectors → Add custom connector | paste the URL |
+| Cursor | `~/.cursor/mcp.json` | `{"mcpServers":{"hyreflow":{"url":"https://recruit.hyreflow.ai/api/v2/mcp"}}}` |
+| Cline | MCP settings (`cline_mcp_settings.json`) | `{"mcpServers":{"hyreflow":{"type":"streamableHttp","url":"https://recruit.hyreflow.ai/api/v2/mcp"}}}` |
+| VS Code / Copilot | `.vscode/mcp.json` | `{"servers":{"hyreflow":{"type":"http","url":"https://recruit.hyreflow.ai/api/v2/mcp"}}}` |
+| Codex CLI | terminal | `codex mcp add hyreflow --url https://recruit.hyreflow.ai/api/v2/mcp` then `codex mcp login hyreflow` |
+| Antigravity | `~/.gemini/config/mcp_config.json` | `{"mcpServers":{"hyreflow":{"serverUrl":"https://recruit.hyreflow.ai/api/v2/mcp","oauth":{"clientId":"mcp_3c39d0bc0c1f435941f7962f"}}}}` |
 
-Docs: https://hyreflow.ai/docs/mcp-setup
+## First steps
+
+Start with `hyreflow_tools_search` to find the right tool for a task, and
+`hyreflow_billing_balance` to check credits. Full docs: https://hyreflow.ai/docs/mcp-setup
