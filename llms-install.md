@@ -26,4 +26,7 @@ Most MCP clients take the URL directly. Common shapes:
 ## First steps
 
 Start with `hyreflow_tools_search` to find the right tool for a task, and
-`hyreflow_billing_balance` to check credits. Full docs: https://hyreflow.ai/docs/mcp-setup
+`hyreflow_billing_balance` to check credits.
+
+- Setup guide (per client): https://recruit.hyreflow.ai/docs/mcp-setup
+- MCP reference (tools, auth, scopes): https://recruit.hyreflow.ai/docs/mcp-reference
