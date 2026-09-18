@@ -24,13 +24,20 @@ token disables the browser sign-in.
 |---|---|
 | Claude Desktop / claude.ai | Settings → Connectors → Add custom connector → paste the URL (free plan: one custom connector) |
 | Claude Code | `claude mcp add --transport http hyreflow https://recruit.hyreflow.ai/api/v2/mcp` |
-| ChatGPT (web, developer mode) | Settings → Apps → Developer mode, then `+` → Connection → paste the URL, choose OAuth |
+| ChatGPT web (developer mode) | Settings → Apps → Developer mode, then `+` → Connection → paste the URL, choose OAuth |
+| ChatGPT desktop | Settings → Plugins → MCPs → Add → Connect to a custom MCP: name `Hyreflow`, type **Streamable HTTP**, paste the URL, leave the token and headers empty, Save. Restart the app; sign in when prompted. Allow a minute before the tools appear |
 | Codex CLI | `codex mcp add hyreflow --url https://recruit.hyreflow.ai/api/v2/mcp` then `codex mcp login hyreflow` |
 | Cursor | `~/.cursor/mcp.json`: `{"mcpServers":{"hyreflow":{"url":"https://recruit.hyreflow.ai/api/v2/mcp"}}}` |
 | VS Code / Copilot | `.vscode/mcp.json`: `{"servers":{"hyreflow":{"type":"http","url":"https://recruit.hyreflow.ai/api/v2/mcp"}}}` |
 | Cline | `{"mcpServers":{"hyreflow":{"type":"streamableHttp","url":"https://recruit.hyreflow.ai/api/v2/mcp"}}}` |
-| Antigravity | `~/.gemini/config/mcp_config.json`: `{"mcpServers":{"hyreflow":{"serverUrl":"https://recruit.hyreflow.ai/api/v2/mcp","oauth":{"clientId":"mcp_3c39d0bc0c1f435941f7962f"}}}}` then Ctrl+, → Customizations → Authenticate |
-| Hermes Agent | `{"mcpServers":{"hyreflow":{"url":"https://recruit.hyreflow.ai/api/v2/mcp","auth":"oauth"}}}` |
+| Antigravity (desktop or IDE) | `~/.gemini/config/mcp_config.json`: `{"mcpServers":{"hyreflow":{"serverUrl":"https://recruit.hyreflow.ai/api/v2/mcp","oauth":{"clientId":"mcp_3c39d0bc0c1f435941f7962f"}}}}` then Ctrl+, → Customizations → Authenticate |
+| Hermes Desktop | MCP settings: `{"mcpServers":{"hyreflow":{"url":"https://recruit.hyreflow.ai/api/v2/mcp","auth":"oauth"}}}` (CLI: same keys in `config.yaml`) |
+| Grok Bot | In chat: "Add a custom MCP called Hyreflow at https://recruit.hyreflow.ai/api/v2/mcp" → **Add it** → **Authorize** on the connect card |
+| OpenCode (desktop or CLI) | `~/.config/opencode/opencode.jsonc`: `{"mcp":{"hyreflow":{"type":"remote","url":"https://recruit.hyreflow.ai/api/v2/mcp","enabled":true}}}` — signs in on first use; allow a minute |
+| DeepSeek Harness | Needs the community [`dsh-oauth-mcp-client`](https://github.com/springbrand-lab/dsh-oauth-mcp-client) plugin (clone, `pnpm install && pnpm build`, `dsh plugin --profile web add <dir>`), then in `~/.dsh/profiles/web/cordis.patch.yml` an `insert` entry with `name: '@dsh-external/dsh-oauth-mcp-client'` and `config: {serverName: hyreflow, url: https://recruit.hyreflow.ai/api/v2/mcp, credentialRef: HYREFLOW_OAUTH}` — signs in via browser on first start |
+
+Not yet supported: the ChatGPT **desktop** app's custom-MCP option (bearer tokens only, no OAuth; use
+the web app), the Gemini web app outside the US, and Meta's consumer Muse app (no MCP support).
 
 Start with `hyreflow_tools_search` to find the right tool for a task and `hyreflow_billing_balance`
 to check credits. See [`llms-install.md`](./llms-install.md) for a client-agnostic version of this
