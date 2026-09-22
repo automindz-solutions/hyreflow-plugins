@@ -43,7 +43,13 @@
         "brandColor": "#DB7455",
         "composerIcon": "./assets/icon-64.png",
         "logo": "./assets/logo-512.png",
-        "screenshots": []
+        "screenshots": [
+          "./assets/screenshots/01-plugin-page.png",
+          "./assets/screenshots/02a-add-to-chatgpt.png",
+          "./assets/screenshots/02b-sign-in.png",
+          "./assets/screenshots/03-balance.png",
+          "./assets/screenshots/04-cost-preview.png"
+        ]
       }
     }
   }
