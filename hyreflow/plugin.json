@@ -1,0 +1,50 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "hyreflow",
+  "version": "1.1.9",
+  "description": "Source, enrich, qualify, sequence, and push candidates to your ATS from your agent. Drives the Hyreflow CLI and MCP server.",
+  "author": {
+    "name": "Automindz Solutions",
+    "url": "https://hyreflow.ai"
+  },
+  "homepage": "https://hyreflow.ai",
+  "repository": "https://github.com/automindz-solutions/hyreflow-plugins",
+  "license": "MIT",
+  "keywords": [
+    "recruiting",
+    "sourcing",
+    "enrichment",
+    "ats",
+    "gtm",
+    "candidates",
+    "outreach"
+  ],
+  "extensions": {
+    "com.openai": {
+      "hooks": "./hooks/codex-hooks.json",
+      "interface": {
+        "displayName": "Hyreflow",
+        "shortDescription": "Recruiting automation: source, enrich, and reach candidates.",
+        "longDescription": "Hyreflow gives your agent a full recruiting and go-to-market toolkit in one connection. Search for people and companies, enrich contacts with verified work emails and phone numbers through a waterfall of 40+ data providers, qualify them against your criteria, run outreach sequences, and push results into your ATS or CRM — all metered on one credit balance, with the agent shown the cost before anything is spent.\n\nSign in with your existing Hyreflow account; new accounts start with free credits. Every spend is confirmed first, and read-only tools (search the catalog, check your balance, read datasets) never charge.",
+        "developerName": "Automindz Solutions",
+        "category": "Productivity",
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
+        "websiteURL": "https://hyreflow.ai",
+        "privacyPolicyURL": "https://hyreflow.ai/privacy",
+        "termsOfServiceURL": "https://hyreflow.ai/terms",
+        "defaultPrompt": [
+          "Call hyreflow_billing_balance to check my credit balance, then describe the cheapest way to find work emails for one person.",
+          "Use Hyreflow to find 10 senior backend engineers in Berlin with verified emails. Show me each step's cost before running it.",
+          "Use Hyreflow to list my saved workflows and show the last three runs of each."
+        ],
+        "brandColor": "#DB7455",
+        "composerIcon": "./assets/icon-64.png",
+        "logo": "./assets/logo-512.png",
+        "screenshots": []
+      }
+    }
+  }
+}
