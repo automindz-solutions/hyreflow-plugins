@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Please report security issues privately to **security@hyreflow.ai**, or through the
+Please report security issues privately to **hello@hyreflow.ai**, or through the
 [Hyreflow support page](https://hyreflow.ai/docs/support). Do not open a public issue for
 anything that could be exploited before it is fixed.
 
