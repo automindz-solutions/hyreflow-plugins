@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "hyreflow": {
+      "type": "http",
+      "url": "https://recruit.hyreflow.ai/api/v2/mcp"
+    }
+  }
+}
