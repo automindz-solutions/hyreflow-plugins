@@ -1,7 +1,8 @@
 {
   "name": "hyreflow",
   "interface": {
-    "displayName": "Hyreflow"
+    "displayName": "Hyreflow",
+    "description": "Hyreflow recruitment-automation skills and CLI approval hook for Codex."
   },
   "plugins": [
     {
@@ -13,7 +14,9 @@
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
-      }
+      },
+      "category": "Productivity",
+      "description": "Source, enrich, qualify, sequence, and push candidates to your ATS from your agent. Drives the Hyreflow CLI."
     }
   ]
 }

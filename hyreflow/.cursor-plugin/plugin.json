@@ -3,8 +3,12 @@
   "version": "1.1.9",
   "description": "Source, enrich, qualify, sequence, and push candidates to your ATS from your agent. Drives the Hyreflow CLI.",
   "author": {
-    "name": "Automindz Solutions"
+    "name": "Automindz Solutions",
+    "url": "https://hyreflow.ai"
   },
+  "homepage": "https://hyreflow.ai",
+  "repository": "https://github.com/automindz-solutions/hyreflow-plugins",
+  "license": "MIT",
   "skills": [
     "./skills"
   ],
