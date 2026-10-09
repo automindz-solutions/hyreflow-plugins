@@ -58,6 +58,8 @@ Planning rules:
   variants + functional equivalents, e.g. VP of Sales → CRO / Head of Sales / VP Revenue) and/or
   seniority + a function keyword, per the title-expansion rule in `finding-companies-and-contacts.md`.
   Avoid single-exact-title strategies.
+- For a JD-to-shortlist plan, include the recipe's separate **promotion lane** when the role has a defensible
+  next-lower feeder level; keep the hard requirements and assess readiness only after dated profile enrichment.
 - Don't guess provider schemas — include a `hyreflow tools get <tool> <method>` validation step when the
   plan depends on a provider's payload.
 - **Candidate contact rule:** personal email + LinkedIn, **never** work email (BD = work email).

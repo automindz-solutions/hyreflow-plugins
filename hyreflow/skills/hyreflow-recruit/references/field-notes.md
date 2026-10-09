@@ -32,7 +32,8 @@ building against a provider.
   language variants (people list the metro, not the suburb, so a narrow list under-matches).
 - `geoLocation` is an ACCOUNT (company-HQ) filter, not a contact filter — putting it under `contact` is
   silently ignored and returns nationwide results. For the person's own location use `contact.location`
-  (string array, exact match, no radius).
+  (string array, exact match, no radius). For "within N miles of a postcode or city", build that array with
+  `postcode_radius` (`hyreflow_native.places_within_radius`).
 - `experience.current.title` SMART matching needs full title forms, not a bare stem — a stem-only query
   (missing a gendered/alternate suffix on a non-English title) can return 0 where the full forms return
   hundreds. **Include gendered forms** (e.g. German `Steuerfachwirt` **and** `Steuerfachwirtin`; the bare
@@ -209,10 +210,12 @@ building against a provider.
 - Campaign flow: `POST /api/campaigns` (`{name, timezone, autoReview?}`) creates a campaign AND
   auto-creates an empty sequence + schedule, returning `_id` + `sequenceId`. `POST
   /api/sequences/{sequenceId}/steps` adds a step (`{type:"email", subject, message(HTML), delay(days),
-  index}`); `PATCH /api/sequences/steps/{stepId}` updates one. Delete needs the sequence id in the path
-  (`DELETE /sequences/{seq}/steps/{id}`; the sequence-less path 405s). No sender is required at campaign or
-  step level (assign later). A draft campaign sends nothing until leads are added and it's explicitly
-  started — Lemlist can be fully provisioned via API end to end (campaign, sequence, steps, leads).
+  index}`). Update and delete BOTH need the sequence id in the path (`PATCH|DELETE
+  /sequences/{seq}/steps/{id}`) — the sequence-less `/sequences/steps/{id}` 405s for either verb. No
+  sender is required at campaign or step level (assign later). Create returns `state: running`, NOT a
+  draft: pause it before building the sequence. A paused (or duplicate-created draft) campaign sends
+  nothing until leads are added and it's explicitly started — Lemlist can be fully provisioned via API
+  end to end (campaign, sequence, steps, leads).
   **Contrast SourceWhale, which has no create-campaign API at all (UI-only)** — for API-provisioned
   outbound, Lemlist is the sequencer that works end to end.
 - Conditional branching: `add_conditional_step(seq, "linkedinInviteAccepted", delay_type="within",

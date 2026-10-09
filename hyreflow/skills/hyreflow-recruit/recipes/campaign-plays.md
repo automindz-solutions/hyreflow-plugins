@@ -7,7 +7,14 @@ not an assumption — so **always prompt the user with a few example plays and c
 1. **Never assume the channel.** Default to what the data + client supports: **no email on the leads → LinkedIn-only**;
    candidate acquisition → LinkedIn + personal email (never work email — see provider-precedence).
 2. **Prompt the user** with 2–4 example **plays** (below) — let them pick or tweak (steps, delays, branching).
-3. Only then build it (no sender, draft, no leads, not started). Sending (`start_campaign`) is separately approval-gated.
+3. Only then build it — no sender, no leads, and **paused**. Creating a campaign over the API does not give
+   you a draft: `lemlist_create_campaign` returns `state: "running"` (no parameter on that endpoint yields
+   a draft), so **pause it immediately after creating it** and confirm the state before adding any step. Once the user
+   has confirmed the cadence and the campaign is paused, building the steps is not separately gated — that
+   includes the **message-bearing** types (`linkedinInvite` notes, `linkedinSend` and `email` bodies). A
+   paused or draft campaign **sends nothing**; `start_campaign` is the send gate. Steps only — pushing leads
+   into the campaign stays gated, and on a campaign that is actually sending its steps go out to the leads
+   already enrolled, so editing them is a send: pause first, or gate it.
 
 ## Example plays (offer these)
 **A — LinkedIn-only: connect → messages** (no email at all)
@@ -15,7 +22,7 @@ not an assumption — so **always prompt the user with a few example plays and c
 D0 linkedinVisit → D1 linkedinInvite (no note)
  └ IF linkedinInviteAccepted within 3d → linkedinSend ×3 (D0, +2, +3)
 ```
-**B — LinkedIn-first + email fallback (multichannel)**  ← used for the Meta-RIF campaign
+**B — LinkedIn-first + email fallback (multichannel)**  ← used for the acme-corp campaign
 ```
 D0 linkedinVisit → D1 linkedinInvite (no note)
  └ accepted within 3d  → linkedinSend ×3 (if email on file: LinkedIn first, email only if no reply)
@@ -39,6 +46,6 @@ D0 linkedinVisit → D1 linkedinInvite → D4 linkedinSend → D7 linkedinSend
   **those branch sequence ids**. `delete_sequence_step(seqId, stepId)` to remove (needs seqId in path).
 - ⚠️ **SourceWhale has NO create-campaign API** (UI-only) — for SourceWhale, prompt the user to build the cadence in the app first (see `provider-playbooks/sourcewhale.md`). Lemlist is fully API-buildable.
 
-## Live example (Meta-RIF, Play B)
-campaign `cam_chQLJcAoSqHyE6jGK` · main `seq_uoqzMqirRwFi9Du42` (visit→invite→conditional) · accepted branch
-`seq_i47bcdb9gJRieZAvT` (3 linkedinSend) · fallback `seq_GmMXi69vWvkSvJNRK` (empty — email branch, leads have no email).
+## Worked example (Play B)
+campaign `cam_acme00000000001` · main `seq_acme00000000main` (visit→invite→conditional) · accepted branch
+`seq_acme0000000accept` (3 linkedinSend) · fallback `seq_acme0000000fallbk` (empty — email branch, leads have no email).

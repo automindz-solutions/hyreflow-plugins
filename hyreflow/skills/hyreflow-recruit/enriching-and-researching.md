@@ -22,12 +22,24 @@ and `company_match_basis` (`company_domain` or `company_name` — which one it w
 ```bash
 hyreflow tools execute personal_email --rows @candidates.json      # up to 100 rows; JSON, @file or -
 ```
+On MCP, call `hyreflow_tools_execute` once with the whole array:
+```json
+{"tool":"email_enrichment","rows":[{"first_name":"Jane","last_name":"Doe","company_domain":"acme.example.com"}]}
+```
+Use `email_enrichment` for BD work emails and `personal_email` for candidates.
 The engine walks the chain **stage-major** (every row through provider 1, the leftovers through provider 2,
 …) and batches at the provider where it can — FullEnrich takes all still-pending rows as **one job with one
-poll loop** instead of one ~50s job per row, so 12 or 100 candidates finish in about the time one used to.
+poll loop** instead of one ~50s job per row, so 12 or 100 candidates finish in roughly the time a single
+row takes.
 First hit still wins per row; billing is still per row (hits only). Looping `tools execute … --payload`
 over rows one at a time throws that away. A row that comes back `still_enriching` carries `job_id` +
-`resume` — run the printed resume command (polling is free; a finished job bills each revealed row once); never resend the row (that starts a second, billed job).
+`resume` and **ends its chain there** — no further provider is tried. The job is persisted and settles
+server-side on its own; run the printed resume command any time to check it sooner (polling is free; a
+finished job bills each revealed row once); never resend the row (that starts a second, billed job). It
+usually settles within 1–2 minutes — check it every 20–30 seconds rather than waiting minutes between
+checks. If it settles with no result, the later providers in the chain were never tried for that row;
+continue the chain yourself with the next provider (see
+[`references/provider-precedence.md`](references/provider-precedence.md)).
 
 **Identifier rule:** `linkedin_url` alone works, OR `first_name + last_name + company_domain` (no
 LinkedIn needed). Common aliases are folded in automatically — `domain`→`company_domain`,
@@ -51,8 +63,12 @@ missing fields.
   re-running `linkedin_profile` over rows that already hold a `profile` pays for it twice.
   ⚠️ Never hand-pick a raw scraper actor for this: Apify is BYOK-only
   and its spend is invisible to your credits, the spend cap and the approval gate.
-- ⚠️ prospeo / aiark / lusha are **work-email only** — never use them for candidate/personal *email* flows.
-  (Their *profile* answers carry no contact detail, so `linkedin_profile` is safe for candidates.)
+- ⚠️ prospeo / aiark / lusha / **bettercontact** are **work-email only** — never use them for candidate/personal
+  *email* flows, and never as a "fallback" when the `personal_email` waterfall comes up short (a
+  `spending_cap_reached` shortfall, or a `still_enriching` job that is still running, is *retry later*, not
+  *find another provider*). A `still_enriching` job that has since **settled empty** is different — pick up
+  with the next provider in the `personal_email` chain itself, never a work-email one.
+  (prospeo/aiark/lusha/hyreflow_native *profile* answers carry no contact detail, so `linkedin_profile` is safe for candidates.)
 - House order for every waterfall lives in `reference/waterfalls.json` — never restate it here.
 
 ## Per-provider input is auto-mapped (the canonicalization)
@@ -71,6 +87,11 @@ Each provider wants the identifier in a different field/shape — the waterfall 
 - **Charge only on result.** A miss / empty / "no result" charges **0** — only a real hit bills. (Soft misses like
   HTTP-200-with-empty-body are treated as 0, not billed.)
 - **Skip on no key / error** — a provider without a key (or erroring) is skipped, chain continues.
+- **A cap is not a miss.** When the workspace spending cap stops a provider mid-batch, the affected rows
+  record `outcome: "skip", detail: "spending_cap_reached"` AND the response carries a
+  `_meta.warnings[]` entry with `code: "spending_cap_reached"` (rows affected + providers skipped). Read
+  that as "retry after the cap is raised/rolls over" — the rows were never asked, so a lower hit count
+  says nothing about coverage and is NOT a reason to reach for a different (work-email) provider.
 - **Count-before-pay + over-provision ~1.4×.** Coverage is a property of the person — a bare profile / tiny-co
   contact has near-zero coverage everywhere. Deliver the best **N complete** rows; drop the incomplete.
 
@@ -79,9 +100,12 @@ Each provider wants the identifier in a different field/shape — the waterfall 
   are unusable. Drop those; keep verified + catch_all_safe.
 
 ## Provider quirks (rest in each `provider-playbooks/<tool>.md`)
-- **BetterContact** — not part of the `email_enrichment`/`personal_email` waterfalls; call it directly
-  (`bettercontact_start_enrichment`) when single-provider finders miss. Batch + async; ~30–40s to
-  terminate; email at `data[].contact_email_address` (+ `_status:"deliverable"`).
+- **BetterContact** — **BD / work-email flows only.** Not part of any waterfall; on an `email_enrichment`
+  (work-email) run you may call it directly (`bettercontact_start_enrichment`) when single-provider
+  finders miss. It returns **work** addresses (`data[].contact_email_address`) — never use it on a
+  candidate / `personal_email` pipeline, whatever the waterfall's hit rate was. Batch + async; ~30–40s to
+  terminate; `_status:"deliverable"` marks a usable hit. The engine stamps `_meta.channel: "work_email"`
+  + a `work_email_only` warning on its responses as a reminder.
 - **Prospeo** — sync, fast; returns `person.email.{email,status}`; status `UNAVAILABLE` = real miss → fall through.
 - **Wiza** — async (`data.status` finished/failed); consumes **api_credits** (separate from email_credits — keep topped up).
 - **FullEnrich** — async batch; needs `FULLENRICH_API_KEY`. **Personal-email** channel.

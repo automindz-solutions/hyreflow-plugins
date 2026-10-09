@@ -15,6 +15,8 @@ All CRM adapters pace writes with a token-scoped rate limiter. Defaults:
 - Atlas: 60 req/min. `ATLAS_RATE_LIMIT_RPM` to override.
 - Recruit CRM: 60 req/min. `RECRUITCRM_RATE_LIMIT_RPM` to override (10 req/min per license for >6 licenses).
 - Spott: 600 req/min (per API key). `SPOTT_RATE_LIMIT_RPM` to override.
+- TrackerRMS: 600 req/min (per OAuth access token). `TRACKERRMS_RATE_LIMIT_RPM` to override.
+- Carerix: 600 req/min (10 req/sec, per client and tenant).
 
 ## Which batch helper to call
 
@@ -28,6 +30,8 @@ All CRM adapters pace writes with a token-scoped rate limiter. Defaults:
 | Atlas | `create_people_batch` | — | `create_companies_batch` | `create_projects_batch` / `create_opportunities_batch` |
 | Recruit CRM | `create_candidates_batch` | `create_contacts_batch` | `create_companies_batch` | — |
 | Spott | `create_candidates_batch` | — | `create_clients_batch` | — |
+| TrackerRMS | `create_resources_batch` | `create_contacts_batch` | `create_clients_batch` | `create_opportunities_batch` |
+| Carerix | `create_candidates_batch` | — | — | — |
 
 ## Bulk helper contract
 

@@ -19,7 +19,7 @@ profile data only (no contact info until the shortlist). Hard-won gotchas from t
    - **Prospeo location MUST be canonical** from `search_suggestions({location_search})` (free inside the
      waterfall; 0.1 credits on a direct call); a **ZONE**
      suggestion (e.g. "Greater Munich Metropolitan Area, Germany") covers a metro radius in ONE value — Prospeo
-     needs no town enumeration. (For AI Ark/Lemlist, the geo-radius Native — [[planned]] — will expand city→list.)
+     needs no town enumeration. (For AI Ark/Lemlist, `postcode_radius` expands a postcode or city + radius into the town list — free.)
 3. **Count-peek BEFORE paying.** All 3 return a total, nested under the `result` envelope every
    `tools execute` returns (`{ _meta, result }`): AI Ark `result.totalElements`, Lemlist `result.total`,
    Prospeo `result.pagination.total_count` (a top-level read returns `None`). Do a `size:1`/`page:1` call to read it cheaply, then decide depth.

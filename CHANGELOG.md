@@ -4,6 +4,30 @@ All notable changes to the Hyreflow plugin are documented here. Versions track
 the plugin, kept in lockstep across the marketplace manifests and the plugin's
 own `plugin.json` files.
 
+## 1.1.10 — 2026-10-09
+
+First skills sync since 1.1.9 (2026-09-11).
+
+**Added**
+- `hyreflow-artifact` — render a run's results as a branded, interactive page: candidate
+  shortlists, open roles and BD pipelines, with table, card and board views, sort and
+  filters, LinkedIn links and profile photos.
+- Ten new ATS / CRM / sequencer playbooks: Ashby, Breezy, Carerix, Lever, Recruitee,
+  Reply.io, SmartRecruiters, TrackerRMS, Zoho Recruit, and OpenMart.
+- Recipes for sourcing from employer team pages and Impressum when LinkedIn is sparse,
+  posting one job across several ATSs, and pulling people straight off a web page.
+- `shortlist.md` — bulk screening against a brief, polled by run id and billed in chunks.
+
+**Changed**
+- Hyreflow natives cover more ground: LinkedIn profile lookup and post search, reactions on
+  a post, direct job fetch by URL or id, StepStone scrapes, postcode and city-radius people
+  search, and a contact database as the final `people_search` step.
+- Self-serve BYOK connect for Vincere, JobAdder, Bullhorn, Aircall and ZoomInfo.
+- Enrichment batches at the provider rather than per row, and async vendor jobs settle in
+  the background instead of blocking the chain.
+- The skills note when they are running against the MCP server rather than the CLI.
+- Breezy is documented as Coming Soon on every surface.
+
 ## 1.1.9 — 2026-09-11
 
 Skills synced from the Hyreflow engine — first content change since 0.1.7.

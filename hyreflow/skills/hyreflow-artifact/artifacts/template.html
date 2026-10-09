@@ -1,0 +1,965 @@
+<!doctype html>
+<!--
+  hyreflow results view: reference template (see ../SKILL.md). One renderer, three kinds of data:
+  candidates (a shortlist), jobs (open roles / hiring signals), bd (accounts and contacts being pitched).
+  FIXED: logo, :root tokens, type, backdrop, component styles, motion. Don't restyle.
+  ADAPT: replace the whole DATA object below with real data and the config the user wants.
+  The sample data is fictional; none of it may ship.
+  Every value is rendered with textContent, so data is escaped. Keep it that way if you edit the script.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Candidate shortlist · hyreflow</title>
+<style>
+  :root {
+    --canvas: #fafaf7; --surface: #ffffff; --surface-soft: #f5f3ec; --surface-warm: #f0ede4;
+    --ink: #0a0a0a; --body: #3f3f3a; --muted: #67655e; --ash: #9a9890;
+    --hairline: #e7e4dc; --hairline-strong: #d6d2c8;
+    --accent: #cc785c; --accent-deep: #9d5138; --accent-soft: #f0d7cc; --ok: #4a9d5c; --ok-soft: #e3f0e5;
+    --sans: Geist, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --ease: cubic-bezier(.22, 1, .36, 1);           /* ease-out-quint */
+    --z-sticky: 10; --z-menu: 30; --z-drag: 40;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--canvas); color: var(--body); font: 15px/1.55 var(--sans);
+         -webkit-font-smoothing: antialiased; min-height: 100vh; position: relative; overflow-x: hidden; }
+  /* Graph-paper backdrop: the site's GridBackdrop (40px tile, anchored right, radial fade). */
+  body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .55;
+    background-image: linear-gradient(var(--hairline) 1px, transparent 1px),
+                      linear-gradient(90deg, var(--hairline) 1px, transparent 1px);
+    background-size: 40px 40px;
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 100% 30%, #000 0%, rgba(0,0,0,.7) 35%, transparent 75%);
+            mask-image: radial-gradient(ellipse 70% 60% at 100% 30%, #000 0%, rgba(0,0,0,.7) 35%, transparent 75%); }
+  .page { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 36px 16px 56px; }
+  a { color: var(--ink); text-underline-offset: 3px; text-decoration-color: var(--hairline-strong); }
+  a:hover { color: var(--accent-deep); text-decoration-color: currentColor; }
+  .num { font-variant-numeric: tabular-nums; }
+  .label { font-size: 11.5px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  button, select, input { font-family: var(--sans); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- header ---- */
+  .wordmark { height: 26px; width: auto; display: block; margin-bottom: 40px; }
+  .eyebrow { color: var(--accent-deep); margin: 0 0 12px; }
+  h1 { font-size: clamp(30px, 5vw, 50px); font-weight: 600; letter-spacing: -.03em; color: var(--ink);
+       margin: 0; line-height: 1.04; text-wrap: balance; max-width: 26ch; }
+  h1 .where { color: var(--ash); font-weight: 500; }
+  .meta { color: var(--muted); font-size: 14px; margin: 14px 0 0; max-width: 68ch; text-wrap: pretty; }
+  .ledger { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 26px 0 0; padding: 0; list-style: none; font-size: 14px; }
+  .ledger li { display: flex; align-items: baseline; gap: 6px; color: var(--muted); }
+  .ledger b { color: var(--ink); font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
+
+  /* composition bar: the mix of one key (tier, stage, source), and a one-click filter on it */
+  .mix { display: flex; gap: 4px; margin-top: 18px; max-width: 760px; }
+  .mix button { flex: var(--n) 1 0; min-width: 104px; background: none; border: 0; padding: 0; cursor: pointer; text-align: left;
+                display: flex; flex-direction: column; gap: 7px; color: var(--body); border-radius: 6px; }
+  .mix .bar { height: 10px; border-radius: 4px; background: var(--hairline-strong); transition: opacity .2s var(--ease), transform .2s var(--ease); }
+  .mix button:first-child .bar { background: var(--accent); }
+  .mix .cap { font-size: 12.5px; display: flex; gap: 6px; align-items: baseline; white-space: nowrap; overflow: hidden; }
+  .mix .cap b { font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; }
+  .mix button:hover .bar { transform: scaleY(1.35); }
+  .mix.filtered button:not([aria-pressed="true"]) .bar { opacity: .3; }
+  .mix.filtered button:not([aria-pressed="true"]) .cap { color: var(--muted); }
+  @media (max-width: 640px) { .mix { flex-wrap: wrap; row-gap: 10px; } .mix button { flex: 1 1 40%; } }
+
+  /* ---- toolbar: views, sort, search ---- */
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; justify-content: space-between; margin: 36px 0 10px; }
+  .tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .seg { display: inline-flex; background: var(--surface-soft); border: 1px solid var(--hairline); border-radius: 10px; padding: 3px; }
+  .seg button { font-size: 13px; font-weight: 500; color: var(--muted); background: none; border: 0; border-radius: 6px;
+                padding: 6px 14px; cursor: pointer; transition: background .15s, color .15s; }
+  .seg button:hover { color: var(--ink); }
+  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(10,10,10,.08); }
+  .sortbox { display: inline-flex; align-items: center; background: var(--surface); border: 1px solid var(--hairline-strong);
+             border-radius: 10px; height: 36px; overflow: hidden; }
+  .sortbox label { font-size: 12.5px; color: var(--muted); padding: 0 4px 0 12px; }
+  .sortbox select { appearance: none; border: 0; background: transparent; font-size: 13.5px; font-weight: 500; color: var(--ink);
+                    padding: 0 8px 0 2px; height: 100%; cursor: pointer; }
+  .sortbox select:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent-soft); }
+  .sortbox button { border: 0; border-left: 1px solid var(--hairline); background: var(--surface-soft); height: 100%; width: 34px;
+                    cursor: pointer; font-size: 14px; color: var(--ink); }
+  .sortbox button:hover { background: var(--surface-warm); }
+  .searchbox { position: relative; }
+  .search { font-size: 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--hairline-strong);
+            border-radius: 10px; padding: 0 34px 0 12px; height: 36px; width: 250px; max-width: 100%; }
+  .search::placeholder { color: var(--muted); opacity: 1; }
+  .search:focus { outline: 2px solid var(--accent-soft); outline-offset: 0; border-color: var(--accent); }
+  .searchbox kbd { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+  kbd { font: 500 11px var(--sans); border: 1px solid var(--hairline-strong); border-bottom-width: 2px; border-radius: 6px;
+        padding: 0 5px; background: var(--surface); color: var(--body); }
+  .linkbtn { font-size: 13px; font-weight: 500; color: var(--accent-deep); background: none; border: 0; padding: 0; cursor: pointer;
+             text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ---- filter bar: one dropdown per facet + the active chips ---- */
+  .filterbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 18px; }
+  .facet { position: relative; }
+  .facet > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px;
+                     border: 1px solid var(--hairline-strong); border-radius: 999px; background: var(--surface); font-size: 13px;
+                     color: var(--body); user-select: none; }
+  .facet > summary::-webkit-details-marker { display: none; }
+  .facet > summary::after { content: ""; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+                            transform: translateY(-2px) rotate(45deg); opacity: .6; }
+  .facet[open] > summary, .facet > summary:hover { border-color: var(--ink); color: var(--ink); }
+  .facet.on > summary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .facet .n { font-size: 11.5px; font-weight: 600; background: var(--accent-soft); color: var(--accent-deep); border-radius: 999px; padding: 0 6px; }
+  .menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: var(--z-menu); min-width: 220px; max-height: 300px; overflow: auto;
+          background: var(--surface); border: 1px solid var(--hairline-strong); border-radius: 12px; padding: 6px;
+          box-shadow: 0 18px 40px -20px rgba(10,10,10,.35); animation: menu-in .16s var(--ease); }
+  @keyframes menu-in { from { opacity: 0; transform: translateY(-4px); } }
+  .menu label { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 8px; font-size: 13.5px; cursor: pointer; }
+  .menu label:hover { background: var(--surface-soft); }
+  .menu input { accent-color: var(--accent-deep); width: 15px; height: 15px; margin: 0; }
+  .menu .c { margin-left: auto; color: var(--muted); font-size: 12px; }
+  .active { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 6px 0 10px; border-radius: 999px;
+            background: var(--accent-soft); color: var(--accent-deep); font-size: 12.5px; font-weight: 500; }
+  .active button { border: 0; background: none; color: inherit; cursor: pointer; width: 18px; height: 18px; border-radius: 50%; font-size: 13px; line-height: 1; }
+  .active button:hover { background: rgba(157,81,56,.15); }
+  .count { color: var(--muted); font-size: 13px; margin-left: auto; }
+
+  /* ---- shared bits ---- */
+  .avatar { width: 40px; height: 40px; border-radius: 50%; flex: none; display: grid; place-items: center;
+            font-weight: 600; font-size: 14px; background: var(--surface-warm); color: var(--ink); }
+  .avatar.co { border-radius: 10px; background: var(--ink); color: #fff; }
+  .avatar.t1 { background: var(--accent-soft); color: var(--accent-deep); }
+  .avatar { position: relative; overflow: hidden; }
+  .avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .name { font-size: 16.5px; font-weight: 600; color: var(--ink); letter-spacing: -.01em; margin: 0; text-decoration: none; }
+  .role { color: var(--muted); font-size: 13.5px; margin: 2px 0 0;
+          display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .tier, .tag { font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap;
+                background: var(--surface-soft); color: var(--body); border: 1px solid var(--hairline); }
+  .tier.t1 { background: var(--accent-soft); color: var(--accent-deep); border-color: transparent; }
+  .tag.fresh { background: var(--ok-soft); color: #2f6f3c; border-color: transparent; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 12px; padding: 2px 8px; border-radius: 6px; background: var(--surface-soft); color: var(--body); }
+  .chip.hit { background: var(--accent-soft); color: var(--accent-deep); }
+  .score { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--muted); }
+  .score .track { flex: 1; height: 4px; background: var(--surface-soft); border-radius: 4px; overflow: hidden; }
+  .score .track i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+  /* LinkedIn: the one third-party mark on the page, in LinkedIn's own blue so it reads at a glance */
+  .li { display: inline-flex; align-items: center; gap: 6px; color: #0a66c2; text-decoration: none; font-weight: 500; flex: none; }
+  .li svg { width: 16px; height: 16px; display: block; fill: currentColor; }
+  .li:hover { color: #004182; }
+  .li.icon { width: 24px; height: 24px; justify-content: center; border-radius: 6px; }
+  .li.icon:hover { background: #e8f1fb; }
+  .ext::after { content: " ↗"; }
+  .contact { font-size: 12.5px; color: var(--muted); }
+  .contact .ok { color: var(--ok); font-weight: 500; }
+  .contact .ok::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+                         margin-right: 6px; vertical-align: 1px; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 14px; font-size: 13px; margin: 0; }
+  .kv dt { color: var(--muted); } .kv dd { margin: 0; color: var(--body); }
+  .person { display: flex; align-items: center; gap: 10px; font-size: 13.5px; }
+  .person .avatar { width: 28px; height: 28px; font-size: 11px; }
+  .person b { color: var(--ink); font-weight: 600; } .person span { color: var(--muted); }
+  .signal { font-size: 13.5px; color: var(--ink); background: var(--surface-soft); border-radius: 8px; padding: 8px 10px; margin: 0; }
+  .signal::before { content: "Why now  "; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-deep); }
+  .msg { font-size: 13.5px; color: var(--body); border-left: 2px solid var(--hairline-strong); padding: 2px 0 2px 12px; margin: 0;
+         white-space: pre-wrap; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .copy { font-size: 12.5px; font-weight: 500; border: 1px solid var(--hairline-strong); background: var(--surface); color: var(--ink);
+          border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+  .copy:hover { border-color: var(--ink); }
+  .copy[data-done] { background: var(--ok-soft); border-color: transparent; color: #2f6f3c; }
+  .when { font-size: 12.5px; color: var(--muted); }
+
+  /* ---- cards ---- */
+  .group + .group { margin-top: 36px; }
+  .ghead { margin: 0 0 14px; font-size: 15px; font-weight: 600; color: var(--ink); display: flex; gap: 8px; align-items: baseline; }
+  .ghead .num { color: var(--muted); font-weight: 500; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 14px; }
+  .card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px; padding: 18px;
+          display: flex; flex-direction: column; gap: 12px; transition: border-color .18s var(--ease), box-shadow .18s var(--ease); }
+  .card:hover { border-color: var(--hairline-strong); box-shadow: 0 10px 30px -18px rgba(10,10,10,.28); }
+  .head { display: flex; gap: 12px; align-items: flex-start; }
+  .head > div:not(.avatar) { flex: 1; min-width: 0; }
+  .fit { margin: 0; color: var(--body); text-wrap: pretty; }
+  .clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .foot { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 13px;
+          margin-top: auto; padding-top: 12px; border-top: 1px solid var(--hairline); }
+  .foot > :last-child:not(:first-child) { margin-left: auto; }
+
+  /* ---- table ---- */
+  .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th { text-align: left; background: var(--surface-soft); padding: 0; white-space: nowrap; }
+  th button { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 6px; width: 100%; padding: 11px 14px; cursor: pointer;
+              font-size: 11.5px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  th button:hover { color: var(--ink); }
+  th button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  th button::after { content: "↕"; opacity: 0; font-size: 12px; letter-spacing: 0; transition: opacity .15s; }
+  th button:hover::after { opacity: .45; }
+  th[aria-sort] button { color: var(--ink); }
+  th[aria-sort="ascending"] button::after { content: "↑"; opacity: 1; color: var(--accent-deep); }
+  th[aria-sort="descending"] button::after { content: "↓"; opacity: 1; color: var(--accent-deep); }
+  td { padding: 12px 14px; border-top: 1px solid var(--hairline); vertical-align: top; }
+  tbody tr { cursor: pointer; transition: background .12s; }
+  tbody tr:hover td { background: #fcfbf8; }
+  td .who { display: flex; gap: 10px; align-items: center; min-width: 230px; }
+  td .who > div:not(.avatar) { flex: 1; min-width: 0; }
+  td .avatar { width: 32px; height: 32px; font-size: 12px; }
+  td .name { font-size: 14.5px; }
+  td.wide { min-width: 260px; max-width: 420px; }
+  td .chips { min-width: 220px; }
+  td .contact, td .when { white-space: nowrap; }
+  td .person { min-width: 220px; }
+
+  /* ---- board ---- */
+  .hint { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; justify-content: space-between;
+          font-size: 12.5px; color: var(--muted); margin: 0 0 12px; }
+  .board { display: flex; gap: 12px; align-items: flex-start; overflow-x: auto; padding: 2px 2px 12px; scroll-snap-type: x proximity; }
+  .col { flex: 1 1 0; min-width: 256px; max-width: 360px; scroll-snap-align: start; display: flex; flex-direction: column;
+         max-height: 78vh; background: var(--surface-soft); border: 1px solid var(--hairline); border-radius: 14px;
+         transition: border-color .15s var(--ease), background-color .15s var(--ease); }
+  .col.over { border-color: var(--accent); background: color-mix(in srgb, var(--accent-soft) 40%, var(--surface-soft)); }
+  .col-head { display: flex; align-items: center; gap: 8px; padding: 12px 14px 10px; }
+  .col-head h3 { margin: 0; flex: 1; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ash); flex: none; }
+  .col.first .dot { background: var(--accent); }
+  .col.last .dot { background: var(--ok); }
+  .col-head .n { font-size: 12px; font-weight: 600; color: var(--muted); background: var(--surface); border: 1px solid var(--hairline);
+                 border-radius: 999px; padding: 0 8px; }
+  .col-body { display: flex; flex-direction: column; gap: 8px; padding: 0 10px 10px; overflow-y: auto; min-height: 96px; }
+  .drop { border: 1px dashed var(--hairline-strong); border-radius: 10px; color: var(--muted); font-size: 12.5px;
+          text-align: center; padding: 22px 10px; }
+  .col-body:has(.slot) .drop { display: none; }
+  .slot { border-radius: 10px; background: color-mix(in srgb, var(--accent-soft) 55%, transparent);
+          border: 1px dashed var(--accent); flex: none; }
+  .kcard { min-width: 0; background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 12px;
+           display: flex; flex-direction: column; gap: 8px; cursor: grab; user-select: none;
+           transition: box-shadow .18s var(--ease), border-color .18s var(--ease); }
+  .kcard:hover { border-color: var(--hairline-strong); box-shadow: 0 10px 24px -16px rgba(10,10,10,.4); }
+  .kcard.landed { animation: land .6s var(--ease); }
+  @keyframes land { from { box-shadow: 0 0 0 3px var(--accent-soft); border-color: var(--accent); } }
+  .ghost { position: fixed; left: 0; top: 0; z-index: var(--z-drag); pointer-events: none; margin: 0; cursor: grabbing;
+           box-shadow: 0 24px 48px -18px rgba(10,10,10,.45), 0 2px 6px rgba(10,10,10,.08); border-color: var(--hairline-strong);
+           will-change: transform; }
+  body.dragging, body.dragging * { cursor: grabbing !important; user-select: none; }
+  .ktop { display: flex; gap: 10px; align-items: center; }
+  .ktop .avatar { width: 30px; height: 30px; font-size: 11.5px; }
+  .ktop .avatar.co { border-radius: 8px; }
+  .ktop > div:not(.avatar) { flex: 1; min-width: 0; }
+  .kname { font-size: 14px; font-weight: 600; color: var(--ink); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ktitle { font-size: 12.5px; color: var(--muted); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kscore { font-size: 12px; font-weight: 600; color: var(--accent-deep); background: var(--accent-soft); border-radius: 6px; padding: 1px 6px; }
+  .kline { font-size: 12.5px; color: var(--body); margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .kmeta { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); min-height: 24px; }
+  .kmeta > span:not(.tier):not(.tag) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .kmeta .tier, .kmeta .tag { flex: none; font-size: 11px; padding: 1px 7px; }
+  .kcard .chip { font-size: 11.5px; padding: 1px 7px; }
+  .moves { margin-left: auto; flex: none; display: flex; gap: 4px; opacity: 0; transition: opacity .15s var(--ease); }
+  .kcard:hover .moves, .kcard:focus-within .moves { opacity: 1; }
+  .moves button, .grip { width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--hairline); background: var(--surface);
+                         color: var(--body); cursor: pointer; font-size: 13px; font-weight: 600; line-height: 1; padding: 0; }
+  .moves button:hover { border-color: var(--ink); color: var(--ink); }
+  .moves button:disabled { opacity: .35; cursor: default; border-color: var(--hairline); color: var(--body); }
+  .grip { display: none; touch-action: none; cursor: grab; letter-spacing: -2px; }
+  @media (hover: none) { .moves { opacity: 1; } .grip { display: inline-grid; place-items: center; } }
+
+  /* ---- detail sheet ---- */
+  dialog.sheet { margin: 0 0 0 auto; height: 100vh; max-height: 100vh; width: min(480px, 100vw); max-width: 100vw;
+                 border: 0; border-left: 1px solid var(--hairline); padding: 0; background: var(--canvas); color: var(--body); }
+  dialog.sheet::backdrop { background: rgba(10,10,10,.28); }
+  dialog.sheet[open] { animation: sheet-in .28s var(--ease); }
+  dialog.sheet[open]::backdrop { animation: fade-in .28s var(--ease); }
+  @keyframes sheet-in { from { transform: translateX(32px); opacity: 0; } }
+  @keyframes fade-in { from { opacity: 0; } }
+  .sbar { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--hairline);
+          position: sticky; top: 0; z-index: var(--z-sticky); background: var(--canvas); }
+  .sbar button { font-size: 13px; font-weight: 500; border: 1px solid var(--hairline-strong); background: var(--surface); color: var(--ink);
+                 border-radius: 8px; padding: 5px 12px; cursor: pointer; }
+  .sbody { padding: 20px 18px; }
+  .sbody .card { border: 0; padding: 0; background: transparent; box-shadow: none; }
+  .sbody .role, .sbody .msg, .sbody .clamp { display: block; -webkit-line-clamp: unset; overflow: visible; }
+
+  .empty { text-align: center; color: var(--muted); padding: 48px 16px; border: 1px dashed var(--hairline-strong); border-radius: 14px; }
+  footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--hairline); font-size: 12.5px; color: var(--muted);
+           display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: space-between; align-items: center; }
+  footer svg { height: 16px; width: auto; vertical-align: -3px; margin-right: 6px; }
+
+  /* ---- view transitions: each item is one object that moves between views ---- */
+  ::view-transition-group(*) { animation-duration: .42s; animation-timing-function: var(--ease); }
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .18s; }
+  /* snapshots crop from the top-left instead of stretching, and the outgoing one clears fast,
+     so a card reads as folding into its row rather than two layouts blending */
+  ::view-transition-old(*.cand), ::view-transition-new(*.cand) { height: 100%; object-fit: cover; object-position: left top; }
+  ::view-transition-old(*.cand) { animation: vt-out .14s var(--ease) both; }
+  ::view-transition-new(*.cand) { animation: vt-in .3s var(--ease) .06s both; }
+  @keyframes vt-out { to { opacity: 0; } }
+  @keyframes vt-in { from { opacity: 0; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+  }
+  @media print { body::before, .toolbar, .filterbar, .hint, .moves, .grip, .mix { display: none; } .card, .kcard, .col { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<main class="page">
+  <header>
+    <svg class="wordmark" role="img" aria-label="hyreflow" viewBox="0 0 598 148" fill="none" xmlns="http://www.w3.org/2000/svg">
+<circle cx="10" cy="21" r="10" fill="#161A1B"/>
+<circle cx="54" cy="45" r="13" fill="#161A1B"/>
+<circle cx="11" cy="74" r="10" fill="#161A1B"/>
+<circle cx="54" cy="102" r="13" fill="#161A1B"/>
+<circle cx="12" cy="127" r="10" fill="#161A1B"/>
+<circle cx="104" cy="73" r="20" fill="#DB7455"/>
+<path d="M212.68 115V85.246C212.68 82.006 212.374 79.036 211.762 76.336C211.15 73.6 210.16 71.224 208.792 69.208C207.46 67.156 205.714 65.572 203.554 64.456C201.43 63.34 198.838 62.782 195.778 62.782C192.97 62.782 190.486 63.268 188.326 64.24C186.202 65.212 184.402 66.616 182.926 68.452C181.486 70.252 180.388 72.448 179.632 75.04C178.876 77.632 178.498 80.584 178.498 83.896L172.882 82.654C172.882 76.678 173.926 71.656 176.014 67.588C178.102 63.52 180.982 60.442 184.654 58.354C188.326 56.266 192.538 55.222 197.29 55.222C200.782 55.222 203.824 55.762 206.416 56.842C209.044 57.922 211.258 59.38 213.058 61.216C214.894 63.052 216.37 65.158 217.486 67.534C218.602 69.874 219.412 72.376 219.916 75.04C220.42 77.668 220.672 80.296 220.672 82.924V115H212.68ZM170.506 115V37.24H177.688V81.142H178.498V115H170.506ZM243.001 140.92L254.287 110.302L254.449 119.374L228.907 56.68H237.331L258.283 109.114H254.827L274.159 56.68H282.259L250.939 140.92H243.001ZM291.638 115V56.68H298.766V70.72L297.362 68.884C298.01 67.156 298.856 65.572 299.9 64.132C300.944 62.656 302.078 61.45 303.302 60.514C304.814 59.182 306.578 58.174 308.594 57.49C310.61 56.77 312.644 56.356 314.696 56.248C316.748 56.104 318.62 56.248 320.312 56.68V64.132C318.188 63.592 315.866 63.466 313.346 63.754C310.826 64.042 308.504 65.05 306.38 66.778C304.436 68.29 302.978 70.108 302.006 72.232C301.034 74.32 300.386 76.552 300.062 78.928C299.738 81.268 299.576 83.59 299.576 85.894V115H291.638ZM354.179 116.62C348.491 116.62 343.559 115.36 339.383 112.84C335.243 110.32 332.021 106.774 329.717 102.202C327.413 97.63 326.261 92.266 326.261 86.11C326.261 79.738 327.395 74.23 329.663 69.586C331.931 64.942 335.117 61.36 339.221 58.84C343.361 56.32 348.239 55.06 353.855 55.06C359.615 55.06 364.529 56.392 368.597 59.056C372.665 61.684 375.743 65.464 377.831 70.396C379.919 75.328 380.873 81.214 380.693 88.054H372.593V85.246C372.449 77.686 370.811 71.98 367.679 68.128C364.583 64.276 360.047 62.35 354.071 62.35C347.807 62.35 343.001 64.384 339.653 68.452C336.341 72.52 334.685 78.316 334.685 85.84C334.685 93.184 336.341 98.89 339.653 102.958C343.001 106.99 347.735 109.006 353.855 109.006C358.031 109.006 361.667 108.052 364.763 106.144C367.895 104.2 370.361 101.41 372.161 97.774L379.559 100.636C377.255 105.712 373.853 109.654 369.353 112.462C364.889 115.234 359.831 116.62 354.179 116.62ZM331.877 88.054V81.412H376.427V88.054H331.877ZM420.703 63.484V56.68H436.903V63.484H420.703ZM398.455 115V52.36C398.455 50.848 398.527 49.354 398.671 47.878C398.851 46.402 399.193 44.998 399.697 43.666C400.201 42.298 400.993 41.038 402.073 39.886C403.261 38.59 404.557 37.654 405.961 37.078C407.365 36.466 408.823 36.07 410.335 35.89C411.883 35.71 413.395 35.62 414.871 35.62H422.323V42.316H415.411C412.387 42.316 410.119 43.054 408.607 44.53C407.131 46.006 406.393 48.328 406.393 51.496V115H398.455ZM388.357 63.484V56.68H422.323V63.484H388.357ZM435.985 115V35.62H443.923V115H435.985ZM484.426 116.62C478.63 116.62 473.68 115.306 469.576 112.678C465.472 110.05 462.322 106.414 460.126 101.77C457.93 97.126 456.832 91.798 456.832 85.786C456.832 79.666 457.948 74.302 460.18 69.694C462.412 65.086 465.58 61.504 469.684 58.948C473.824 56.356 478.738 55.06 484.426 55.06C490.258 55.06 495.226 56.374 499.33 59.002C503.47 61.594 506.62 65.212 508.78 69.856C510.976 74.464 512.074 79.774 512.074 85.786C512.074 91.906 510.976 97.288 508.78 101.932C506.584 106.54 503.416 110.14 499.276 112.732C495.136 115.324 490.186 116.62 484.426 116.62ZM484.426 109.006C490.906 109.006 495.73 106.864 498.898 102.58C502.066 98.26 503.65 92.662 503.65 85.786C503.65 78.73 502.048 73.114 498.844 68.938C495.676 64.762 490.87 62.674 484.426 62.674C480.07 62.674 476.47 63.664 473.626 65.644C470.818 67.588 468.712 70.306 467.308 73.798C465.94 77.254 465.256 81.25 465.256 85.786C465.256 92.806 466.876 98.44 470.116 102.688C473.356 106.9 478.126 109.006 484.426 109.006ZM534.296 115L516.476 56.626L524.414 56.68L538.238 101.986L552.116 56.68H559.352L573.23 101.986L587.162 56.68H595.046L577.226 115H570.314L555.734 68.56L541.208 115H534.296Z" fill="#161A1B"/>
+</svg>
+    <p class="label eyebrow" id="eyebrow"></p>
+    <h1 id="title"></h1>
+    <p class="meta" id="meta"></p>
+    <ul class="ledger" id="ledger"></ul>
+    <div class="mix" id="mix" role="group" aria-label="Filter"></div>
+  </header>
+  <div class="toolbar" id="toolbar"></div>
+  <div class="filterbar" id="filterbar" role="group" aria-label="Filters"></div>
+  <section id="view" aria-live="polite"></section>
+  <footer>
+    <span><svg aria-hidden="true" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+<circle cx="18" cy="17" r="10" fill="#161A1B"/>
+<circle cx="62" cy="41" r="13" fill="#161A1B"/>
+<circle cx="19" cy="70" r="10" fill="#161A1B"/>
+<circle cx="62" cy="98" r="13" fill="#161A1B"/>
+<circle cx="20" cy="123" r="10" fill="#161A1B"/>
+<circle cx="112" cy="69" r="20" fill="#DB7455"/>
+</svg>Prepared with hyreflow</span>
+    <span id="stamp"></span>
+  </footer>
+</main>
+
+<script>
+/* ======================================================================================
+   DATA: replace this whole object. Omit any field you don't have; the template drops it.
+   kind: "candidates" | "jobs" | "bd". Every config key is optional; each kind has defaults.
+   ====================================================================================== */
+const DATA = {
+  kind: "candidates",
+  title: "Senior Backend Engineer",           // the role, the search, or the campaign
+  client: "Acme",                             // optional; eyebrow reads "Candidate shortlist · Acme"
+  location: "Berlin",                         // optional
+  date: "2026-09-29",                         // ISO date; rendered as "29 Sept 2026"
+  method: "2 sources, qualified against the JD must-haves",  // one line: how this was built
+  config: {
+    views: ["table", "cards", "kanban"],      // any subset, in tab order; one entry => no switcher
+    defaultView: "table",
+    sort: "score",                            // default sort key (see SKILL.md for each kind's keys)
+    filters: ["tier", "location", "skills", "stage"],   // facet dropdowns, in order
+    groupBy: "tier",                          // card groups (or null)
+    mixBy: "tier",                            // the composition bar under the header (or null)
+    groupOrder: ["Tier 1", "Tier 2", "Tier 3"], // order for groups and the mix; first = highlighted
+    stages: ["Shortlisted", "Contacted", "Interviewing", "Offer"], // board columns (pipeline)
+    columns: ["stage", "tier", "company", "location", "score", "fit", "skills", "contact"], // table columns after the name
+    matchSkills: ["Python", "Go", "PostgreSQL"], // skills from the brief: highlighted, shown first
+    showContactValues: false,                 // true only when the user asked for emails/phones in the output
+    anonymise: false                          // candidates: hide name, company, links and contact
+  },
+  items: [
+    { name: "Alex Example", title: "Senior Backend Engineer", company: "Acme Payments", location: "Berlin",
+      tier: "Tier 1", score: 92, fit: "Seven years of Go and Python on payment APIs; led a Postgres sharding migration.",
+      skills: ["Go", "Python", "PostgreSQL", "Kafka"], linkedin: "https://www.linkedin.com/in/example-a",
+      proof: { label: "Conference talk", url: "https://example.com/talk" },
+      contact: { email: "verified" }, extra: { "Years in role": "3.5" } },
+    { name: "Sam Sample", title: "Staff Software Engineer, Platform", company: "Acme Mobility", location: "Berlin",
+      tier: "Tier 1", score: 88, fit: "Owns the Python service platform; strong on distributed systems and on-call leadership.",
+      skills: ["Python", "Kubernetes", "PostgreSQL"], linkedin: "https://www.linkedin.com/in/example-b",
+      contact: { email: "found", phone: "found" }, stage: "Contacted" },
+    { name: "Jo Placeholder", title: "Backend Engineer", company: "Acme Health", location: "Potsdam",
+      tier: "Tier 2", score: 71, fit: "Solid Go backend work; one level below the seniority bar, promotion-ready.",
+      skills: ["Go", "gRPC"], linkedin: "https://www.linkedin.com/in/example-c", contact: {} }
+  ]
+};
+
+/* ======================================================================================
+   RENDERER: don't restyle; extend only if the user asks for something this can't show.
+   ====================================================================================== */
+(function () {
+  // ---------- helpers ----------
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls;
+    if (text != null && text !== "") n.textContent = String(text); return n; };
+  const btn = (cls, text, fn, label) => { const b = el("button", cls, text); b.type = "button"; if (fn) b.onclick = fn;
+    if (label) b.setAttribute("aria-label", label); return b; };
+  const has = (v) => v != null && v !== "" && !(Array.isArray(v) && !v.length);
+  const safeUrl = (u) => { try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : null; } catch (e) { return null; } };
+  const link = (url, text, cls) => { const u = safeUrl(url); if (!u) return null; const a = el("a", cls, text);
+    a.href = u; a.target = "_blank"; a.rel = "noopener noreferrer"; return a; };
+  const day = (d) => { const t = new Date(d); return isNaN(t) ? null : t; };
+  const fmtDate = (d) => { const t = day(d); return t ? t.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : String(d); };
+  const NOW = day(DATA.date) || new Date();
+  const daysAgo = (d) => { const t = day(d); return t ? Math.max(0, Math.round((NOW - t) / 864e5)) : null; };
+  const ago = (d) => { const n = daysAgo(d); if (n == null) return null;
+    return n === 0 ? "today" : n === 1 ? "yesterday" : n < 7 ? n + "d ago" : n < 30 ? Math.round(n / 7) + "w ago" : Math.round(n / 30) + "mo ago"; };
+  const initials = (n) => String(n || "?").replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase() || "?";
+  const cap = (w) => w ? w[0].toUpperCase() + w.slice(1) : w;
+  const money = (s) => { if (!has(s)) return null; if (typeof s !== "object") return String(s);
+    const k = (v) => v >= 1000 ? Math.round(v / 1000) + "k" : String(v), cur = { EUR: "€", USD: "$", GBP: "£" }[s.currency] || (s.currency ? s.currency + " " : "");
+    const r = has(s.min) && has(s.max) ? k(s.min) + "–" + k(s.max) : has(s.min) ? "from " + k(s.min) : has(s.max) ? "up to " + k(s.max) : null;
+    return r ? cur + r + (s.period ? " / " + s.period : "") : null; };
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+  const canVT = () => !!document.startViewTransition && !reduce.matches;
+  const vt = (fn) => { if (canVT()) document.startViewTransition(fn); else fn(); };
+
+  // ---------- kinds: what each kind of data looks like ----------
+  const KINDS = {
+    candidates: { one: "candidate", many: "candidates", eyebrow: "Candidate shortlist", first: "Candidate",
+      views: ["table", "cards", "kanban"], defaultView: "table", sort: "score", groupBy: "tier", mixBy: "tier",
+      filters: ["tier", "location", "skills", "stage"],
+      columns: ["stage", "tier", "company", "location", "score", "fit", "skills", "contact"],
+      sorts: [["score", "Score", -1], ["name", "Name", 1], ["company", "Company", 1], ["tier", "Tier", 1], ["location", "Location", 1]] },
+    jobs: { one: "role", many: "roles", eyebrow: "Open roles", first: "Role",
+      views: ["table", "cards"], defaultView: "table", sort: "posted", groupBy: "company", mixBy: "source",
+      filters: ["company", "location", "workplace", "seniority", "source", "posted"],
+      columns: ["company", "location", "workplace", "salary", "posted", "source", "hiringManager"],
+      sorts: [["posted", "Newest", -1], ["company", "Company", 1], ["title", "Title", 1], ["salary", "Salary", -1], ["location", "Location", 1]] },
+    bd: { one: "account", many: "accounts", eyebrow: "BD outreach", first: "Account",
+      views: ["kanban", "table", "cards"], defaultView: "kanban", sort: "score", groupBy: "stage", mixBy: "stage",
+      stages: ["To contact", "Contacted", "Replied", "Meeting booked"],
+      filters: ["stage", "industry", "location", "channel", "size"],
+      columns: ["stage", "contact", "signal", "channel", "lastTouch", "nextStep"],
+      sorts: [["score", "Fit score", -1], ["lastTouch", "Last touch", -1], ["company", "Company", 1], ["stage", "Stage", 1]] }
+  };
+  const kind = KINDS[DATA.kind] ? DATA.kind : "candidates", K = KINDS[kind];
+  const C = Object.assign({ views: K.views, defaultView: K.defaultView, sort: K.sort, filters: K.filters, groupBy: K.groupBy,
+    mixBy: K.mixBy, groupOrder: [], stages: K.stages || null, columns: K.columns, matchSkills: [], showContactValues: false,
+    anonymise: false }, DATA.config || {});
+  const items = (DATA.items || DATA.candidates || []).map((c, i) => Object.assign({}, c, C.anonymise && kind !== "jobs"
+    ? (kind === "bd" ? { contact: c.contact ? { title: c.contact.title } : null } :
+       { name: "Candidate " + (i + 1), company: null, linkedin: null, contact: null, proof: null }) : {}));
+  const idx = (c) => items.indexOf(c);
+  const tag = (n, c) => { if (canVT()) { n.style.viewTransitionName = "c" + idx(c); n.style.viewTransitionClass = "cand"; } return n; };
+  const hit = new Set(C.matchSkills.map((s) => String(s).toLowerCase()));
+  const SKILL_NAME = new Map();   // lowercase -> display name: the brief's spelling first, else the first one seen
+  C.matchSkills.forEach((s) => SKILL_NAME.set(String(s).toLowerCase(), String(s)));
+  (DATA.items || DATA.candidates || []).forEach((c) => (c.skills || []).forEach((s) => { const k = String(s).toLowerCase(); if (!SKILL_NAME.has(k)) SKILL_NAME.set(k, String(s)); }));
+  const topGroup = C.groupOrder[0] || (kind === "candidates" ? "Tier 1" : null);
+  const isTop = (c) => kind === "candidates" && has(c.tier) && c.tier === topGroup;
+  const titleOf = (c) => kind === "candidates" ? c.name : kind === "jobs" ? c.title : c.company;
+  // Profile photo over the initials; a blocked or expired photo removes itself and the initials show.
+  const avatar = (c) => {
+    if (kind !== "candidates") return el("div", "avatar co", initials(c.company));
+    const d = el("div", "avatar" + (isTop(c) ? " t1" : ""), C.anonymise ? "#" : initials(c.name));
+    const embedded = typeof c.photo === "string" && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(c.photo);
+    const src = C.anonymise ? null : embedded ? c.photo : safeUrl(c.photo);
+    if (src) { const img = document.createElement("img"); img.alt = ""; img.loading = "lazy"; img.referrerPolicy = "no-referrer";
+      img.onerror = () => img.remove(); img.src = src; d.append(img); }
+    return d;
+  };
+  const workplace = (c) => has(c.workplace) ? c.workplace : null;
+
+  // ---------- small parts ----------
+  const LI_PATH = "M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.125 2.062 2.062 0 0 1 0 4.125zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z";
+  // LinkedIn mark (simple-icons path, CC0), built with DOM calls; the URL goes through safeUrl.
+  const liLink = (url, who, withLabel) => {
+    if (!url) return null;
+    const a = link(url, withLabel ? "LinkedIn" : null, "li" + (withLabel ? "" : " icon")); if (!a) return null;
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg"), path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true"); path.setAttribute("d", LI_PATH); svg.append(path);
+    a.prepend(svg); a.setAttribute("aria-label", "LinkedIn profile of " + who); a.title = "Open LinkedIn profile";
+    return a;
+  };
+  const candLI = (c, label) => C.anonymise ? null : liLink(c.linkedin, c.name, label);
+  const contactNode = (ct) => {
+    if (C.anonymise || !ct) return null;
+    const bits = [];
+    for (const k of ["email", "phone"]) {
+      const v = ct[k]; if (!has(v)) continue;
+      if (v === "verified") bits.push(["Verified " + k, true]);
+      else if (v === "found" || !C.showContactValues) bits.push([cap(k) + " found", true]);
+      else bits.push([v, false]);
+    }
+    const n = el("span", "contact");
+    if (!bits.length) { n.textContent = "Contact not enriched yet"; return n; }
+    bits.forEach(([t, ok], i) => { if (i) n.append("  "); n.append(el("span", ok ? "ok" : "", t)); });
+    return n;
+  };
+  const skillChips = (c, max) => {
+    if (!has(c.skills)) return null;
+    const sorted = c.skills.map(String).sort((a, b) => hit.has(b.toLowerCase()) - hit.has(a.toLowerCase()));
+    const box = el("div", "chips");
+    sorted.slice(0, max).forEach((s) => box.append(el("span", "chip" + (hit.has(s.toLowerCase()) ? " hit" : ""), s)));
+    if (sorted.length > max) box.append(el("span", "chip", "+" + (sorted.length - max)));
+    return box;
+  };
+  const fresh = (c) => { const a = ago(c.posted); if (!a) return null;
+    return el("span", "tag" + (daysAgo(c.posted) <= 3 ? " fresh" : ""), (daysAgo(c.posted) <= 3 ? "New · " : "") + "Posted " + a); };
+  const personNode = (p, withLI) => {
+    if (!p || !has(p.name)) return null;
+    const n = el("div", "person"), t = el("div");
+    n.append(el("div", "avatar", initials(p.name))); t.append(el("b", "", p.name));
+    if (has(p.title)) { t.append(" "); t.append(el("span", "", p.title)); }
+    n.append(t); if (withLI) { const li = liLink(p.linkedin, p.name, false); if (li) n.append(li); }
+    return n;
+  };
+  const copyBtn = (text) => {
+    const b = btn("copy", "Copy opener", (e) => { e.stopPropagation();
+      const done = () => { b.textContent = "Copied"; b.dataset.done = ""; setTimeout(() => { b.textContent = "Copy opener"; delete b.dataset.done; }, 1600); };
+      const fallback = () => { const ta = el("textarea"); ta.value = text; ta.style.cssText = "position:fixed;opacity:0"; document.body.append(ta);
+        ta.select(); try { document.execCommand("copy"); done(); } catch (x) {} ta.remove(); };
+      try { navigator.clipboard.writeText(text).then(done, fallback); } catch (x) { fallback(); } });
+    return b;
+  };
+  const subLine = (c) => kind === "candidates" ? [c.title, c.company, c.location] :
+    kind === "jobs" ? [c.company, c.location] : [c.industry, c.size, c.location];
+  const nameNode = (c, cls) => kind === "candidates" && !C.anonymise && c.linkedin ? (link(c.linkedin, c.name, cls) || el("p", cls, c.name))
+    : kind === "jobs" && c.url ? (link(c.url, c.title, cls) || el("p", cls, c.title)) : el("p", cls, titleOf(c));
+
+  // ---------- full card (cards view + detail sheet) ----------
+  const card = (c, full) => {
+    const n = el("article", "card");
+    const head = el("div", "head"), who = el("div");
+    head.append(avatar(c)); who.append(nameNode(c, "name"), el("p", "role", subLine(c).filter(has).join(" · "))); head.append(who);
+    if (kind === "candidates" && has(c.tier) && (full || C.groupBy !== "tier")) head.append(el("span", "tier" + (isTop(c) ? " t1" : ""), c.tier));
+    if (kind === "bd" && has(c.stage) && (full || C.groupBy !== "stage")) head.append(el("span", "tag", c.stage));
+    n.append(head);
+    if (typeof c.score === "number") { const s = el("div", "score"), t = el("div", "track"), i = el("i");
+      i.style.width = Math.max(0, Math.min(100, c.score)) + "%"; t.append(i); s.append(t, el("span", "num", c.score)); n.append(s); }
+    if (kind === "jobs") {
+      const tg = el("div", "tags");
+      [workplace(c), c.employment, c.seniority, money(c.salary)].filter(has).forEach((t) => tg.append(el("span", "tag", t)));
+      const f = fresh(c); if (f) tg.append(f);
+      if (tg.childNodes.length) n.append(tg);
+      if (has(c.summary)) n.append(el("p", "fit" + (full ? "" : " clamp"), c.summary));
+    }
+    if (kind === "bd") {
+      if (has(c.signal)) n.append(el("p", "signal", c.signal));
+      const p = personNode(c.contact, true); if (p) n.append(p);
+      if (has(c.message)) n.append(el("p", "msg", c.message));
+    }
+    if (kind === "candidates" && has(c.fit)) n.append(el("p", "fit", c.fit));
+    const chips = skillChips(c, full ? 99 : 6); if (chips) n.append(chips);
+    if (kind === "jobs" && c.hiringManager) { const p = personNode(c.hiringManager, true); if (p) { n.append(el("span", "label", "Hiring manager")); n.append(p); } }
+    const kv = [];
+    if (kind === "bd") [["Channel", c.channel], ["Step", c.step], ["Last touch", ago(c.lastTouch)], ["Next step", c.nextStep]].forEach((x) => has(x[1]) && kv.push(x));
+    if (kind === "jobs" && full) [["Source", c.source], ["Posted", has(c.posted) ? fmtDate(c.posted) : null]].forEach((x) => has(x[1]) && kv.push(x));
+    if (c.extra) Object.entries(c.extra).forEach(([k, v]) => has(v) && kv.push([k, v]));
+    if (kv.length) { const dl = el("dl", "kv"); kv.forEach(([k, v]) => dl.append(el("dt", "", k), el("dd", "", v))); n.append(dl); }
+    const foot = el("div", "foot");
+    if (kind === "candidates") {
+      const li = candLI(c, true); if (li) foot.append(li);
+      if (c.proof && !C.anonymise) { const a = link(c.proof.url, c.proof.label || "Proof of work", "ext"); if (a) foot.append(a); }
+      const ct = contactNode(c.contact); if (ct) foot.append(ct);
+    } else if (kind === "jobs") {
+      const a = link(c.url, "View posting", "ext"); if (a) foot.append(a);
+      if (has(c.source)) foot.append(el("span", "when", c.source));
+    } else {
+      if (has(c.domain)) { const a = link("https://" + String(c.domain).replace(/^https?:\/\//, ""), c.domain, "ext"); if (a) foot.append(a); }
+      if (has(c.message)) foot.append(copyBtn(c.message));
+    }
+    if (foot.childNodes.length) n.append(foot);
+    return n;
+  };
+
+  // ---------- facets, sorting, search ----------
+  const FACET_LABEL = { tier: "Tier", location: "Location", skills: "Skills", stage: "Stage", company: "Company", workplace: "Workplace",
+    seniority: "Seniority", source: "Source", posted: "Posted", industry: "Industry", channel: "Channel", size: "Company size", employment: "Type" };
+  const POSTED = ["Last 3 days", "Last 7 days", "Last 30 days", "Older"];
+  const facetVals = (c, k) => {
+    if (k === "skills") { const s = (c.skills || []).map(String);   // one facet value per skill, whatever its casing
+      return [...new Set((hit.size ? s.filter((x) => hit.has(x.toLowerCase())) : s).map((x) => SKILL_NAME.get(x.toLowerCase()) || x))]; }
+    if (k === "posted") { const n = daysAgo(c.posted); if (n == null) return [];
+      return n <= 3 ? POSTED.slice(0, 3) : n <= 7 ? POSTED.slice(1, 3) : n <= 30 ? [POSTED[2]] : [POSTED[3]]; }
+    if (k === "stage" && C.stages) return [colOf(c, C.stages)];
+    const v = k === "workplace" ? workplace(c) : c[k]; return has(v) ? [String(v)] : [];
+  };
+  const facetOptions = (k) => {
+    const counts = new Map(); items.forEach((c) => facetVals(c, k).forEach((v) => counts.set(v, (counts.get(v) || 0) + 1)));
+    const order = k === "posted" ? POSTED : k === "stage" && C.stages ? C.stages : k === C.groupBy || k === C.mixBy ? C.groupOrder : [];
+    return [...counts].sort((a, b) => { const ia = order.indexOf(a[0]), ib = order.indexOf(b[0]);
+      if (ia >= 0 || ib >= 0) return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib); return b[1] - a[1] || a[0].localeCompare(b[0]); });
+  };
+  const sortVal = (c, k) => {
+    if (k === "name" || k === "title") return String(titleOf(c) || c[k] || "").toLowerCase();
+    if (k === "posted" || k === "lastTouch") { const t = day(c[k]); return t ? +t : null; }
+    if (k === "salary") return c.salary && typeof c.salary === "object" ? (c.salary.max || c.salary.min || null) : null;
+    if (k === "stage" && C.stages) return C.stages.indexOf(colOf(c, C.stages));
+    if (k === "contact") return c.contact && c.contact.name ? c.contact.name.toLowerCase() : null;
+    if (k === "hiringManager") return c.hiringManager && c.hiringManager.name ? c.hiringManager.name.toLowerCase() : null;
+    const v = has(c[k]) ? c[k] : c.extra ? c.extra[k] : null;
+    if (k === C.groupBy || k === C.mixBy) { const i = C.groupOrder.indexOf(v); if (i >= 0) return i; }
+    return typeof v === "number" ? v : has(v) ? String(v).toLowerCase() : null;
+  };
+  const SORTS = K.sorts.filter(([k]) => k === "name" || k === "title" || items.some((c) => sortVal(c, k) != null));
+  const searchText = (c) => [titleOf(c), c.title, c.company, c.location, c.fit, c.summary, c.signal, c.industry, c.source,
+    c.contact && c.contact.name, c.hiringManager && c.hiringManager.name, ...(c.skills || [])].filter(has).join(" ").toLowerCase();
+
+  // ---------- board state (per viewer, localStorage) ----------
+  const BK = C.stages ? "stage" : (C.groupBy || "tier");
+  const orig = items.map((c) => c[BK]);
+  const SKEY = "hyreflow-board:" + [kind, DATA.title, DATA.client, DATA.date, items.map(titleOf).join(",")].join("|");
+  let moves = {}, order = items.map((_, i) => i);
+  try { const saved = JSON.parse(localStorage.getItem(SKEY) || "null");
+    if (saved) { moves = saved.moves || {};
+      if (Array.isArray(saved.order) && saved.order.length === items.length && saved.order.every((i) => items[i]) && new Set(saved.order).size === items.length) order = saved.order; }
+  } catch (e) { /* storage blocked: the board still works, it just won't remember */ }
+  items.forEach((c, i) => { if (moves[i] != null) c[BK] = moves[i]; });
+  const save = () => { try { localStorage.setItem(SKEY, JSON.stringify({ moves, order })); } catch (e) {} };
+  const dirty = () => Object.keys(moves).length > 0 || order.some((v, i) => v !== i);
+  function boardCols() {
+    if (C.stages) return C.stages.slice();
+    const seen = [...C.groupOrder]; items.forEach((c) => { const k = has(c[BK]) ? c[BK] : "Other"; if (!seen.includes(k)) seen.push(k); });
+    return seen.filter((g) => C.groupOrder.includes(g) || items.some((c) => (has(c[BK]) ? c[BK] : "Other") === g));
+  }
+  function colOf(c, cols) { return C.stages ? (cols.includes(c.stage) ? c.stage : cols[0]) : (has(c[BK]) ? c[BK] : "Other"); }
+  let landed = null;
+  const commit = (c, g, before) => {
+    const i = idx(c), cols = boardCols();
+    const home = colOf(Object.assign({}, c, { [BK]: orig[i] }), cols);
+    if (g === home) { c[BK] = orig[i]; delete moves[i]; } else { c[BK] = g; moves[i] = g; }
+    order = order.filter((x) => x !== i);
+    let at = before != null ? order.indexOf(before) : -1;
+    if (at < 0) { const inCol = order.map((x, p) => [x, p]).filter(([x]) => colOf(items[x], cols) === g); at = inCol.length ? inCol[inCol.length - 1][1] + 1 : order.length; }
+    order.splice(at, 0, i); save(); landed = i;
+  };
+
+  // ---------- state ----------
+  const views = C.views.filter((v) => ["table", "cards", "kanban"].includes(v) && (v !== "kanban" || C.stages || C.groupBy));
+  if (!views.length) views.push("table");
+  // A phone opens on cards when the page has them: a wide table needs sideways scrolling there.
+  const phoneCards = matchMedia("(max-width: 640px)").matches && views.includes("cards");
+  let view = phoneCards ? "cards" : views.includes(C.defaultView) ? C.defaultView : views[0], q = "";
+  const start = SORTS.find(([k]) => k === C.sort) || SORTS[0] || ["name", "Name", 1];
+  let sortKey = start[0], dir = start[2];
+  const filters = {};   // key -> Set of values
+  const active = () => Object.entries(filters).filter(([, s]) => s.size);
+  const groups = (rows) => {
+    if (!C.groupBy) return [[null, rows]];
+    const m = new Map(); (C.groupBy === "stage" && C.stages ? C.stages : C.groupOrder).forEach((g) => m.set(g, []));
+    rows.forEach((c) => { const k = C.groupBy === "stage" && C.stages ? colOf(c, C.stages) : has(c[C.groupBy]) ? String(c[C.groupBy]) : "Other";
+      if (!m.has(k)) m.set(k, []); m.get(k).push(c); });
+    return [...m].filter(([, v]) => v.length);
+  };
+  const sorted = (rows) => [...rows].sort((a, b) => { const x = sortVal(a, sortKey), y = sortVal(b, sortKey);
+    if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1;
+    return (typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y))) * dir; });
+
+  // ---------- detail sheet ----------
+  const sheet = el("dialog", "sheet"); sheet.setAttribute("aria-label", "Details"); document.body.append(sheet);
+  sheet.addEventListener("click", (e) => { if (e.target === sheet) sheet.close(); });
+  const openSheet = (c) => {
+    sheet.textContent = "";
+    const bar = el("div", "sbar"), body = el("div", "sbody");
+    bar.append(el("span", "label", C.stages ? colOf(c, C.stages) : (c.tier || c.company || cap(K.one))), btn("", "Close", () => sheet.close()));
+    body.append(card(c, true)); sheet.append(bar, body); sheet.showModal();
+  };
+
+  // ---------- header ----------
+  $("eyebrow").textContent = (DATA.eyebrow || K.eyebrow) + (has(DATA.client) ? " · " + DATA.client : "");
+  document.title = [DATA.title, K.eyebrow].filter(has).join(" · ") + " · hyreflow";
+  $("title").textContent = DATA.title || DATA.role || "";
+  if (has(DATA.location)) { $("title").append(" "); $("title").append(el("span", "where", DATA.location)); }
+  $("meta").textContent = [has(DATA.date) ? fmtDate(DATA.date) : null, DATA.method].filter(has).join(" · ");
+  $("stamp").textContent = has(DATA.date) ? fmtDate(DATA.date) : "";
+  const drawLedger = () => {
+    const L = $("ledger"); L.textContent = "";
+    const add = (v, k) => { const li = el("li"); li.append(el("b", "num", v), k); L.append(li); };
+    add(items.length, items.length === 1 ? K.one : K.many);
+    if (kind === "jobs") {
+      const cos = new Set(items.map((c) => c.company).filter(has)).size; if (cos) add(cos, cos === 1 ? "company" : "companies");
+      const wk = items.filter((c) => { const n = daysAgo(c.posted); return n != null && n <= 7; }).length; if (wk) add(wk, "posted this week");
+      const hm = items.filter((c) => c.hiringManager && has(c.hiringManager.name)).length; if (hm) add(hm, hm === 1 ? "hiring manager found" : "hiring managers found");
+    }
+    const scored = items.filter((c) => typeof c.score === "number");
+    if (scored.length) add(Math.round(scored.reduce((a, c) => a + c.score, 0) / scored.length), "avg. score");
+    if (kind === "candidates") { const em = items.filter((c) => c.contact && has(c.contact.email)).length;
+      if (!C.anonymise && em) add(em, em === 1 ? "email found" : "emails found"); }
+    if (C.stages) { const cols = C.stages, later = items.filter((c) => colOf(c, cols) !== cols[0]).length;
+      if (later) add(later, "past " + cols[0].toLowerCase());
+      const done = items.filter((c) => colOf(c, cols) === cols[cols.length - 1]).length;
+      if (kind === "bd" && done) add(done, cols[cols.length - 1].toLowerCase()); }
+  };
+  const drawMix = () => {
+    const M = $("mix"); M.textContent = ""; M.hidden = false;
+    const key = C.mixBy, opts = key ? facetOptions(key) : [];
+    if (opts.length < 2 || opts.length > 6) { M.hidden = true; return; }
+    const sel = filters[key] || new Set();
+    M.classList.toggle("filtered", sel.size > 0);
+    opts.forEach(([g, n]) => { const b = btn("", null, () => { const s = filters[key] = filters[key] || new Set();
+        const only = s.size === 1 && s.has(g); s.clear(); if (!only) s.add(g); vt(draw); }, "Show " + g + " only (" + n + ")");
+      b.style.setProperty("--n", n); b.title = g + " (" + n + ")"; b.setAttribute("aria-pressed", String(sel.size === 1 && sel.has(g)));
+      const capn = el("span", "cap"); capn.append(el("b", "", g), el("span", "num", n)); b.append(el("span", "bar"), capn); M.append(b); });
+  };
+
+  // ---------- toolbar ----------
+  const tb = $("toolbar"), left = el("div", "tools"), right = el("div", "tools");
+  if (views.length > 1) { const seg = el("div", "seg"); seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "View");
+    views.forEach((v) => { const b = btn("", v === "kanban" ? "Board" : cap(v), () => { if (view !== v) { view = v; vt(draw); } }); b.dataset.v = v; seg.append(b); });
+    left.append(seg); }
+  const sortbox = el("div", "sortbox"), sl = el("label", "", "Sort"), ss = el("select"), sd = btn("", "", null);
+  ss.id = "sortkey"; sl.htmlFor = "sortkey";
+  SORTS.forEach(([k, lab]) => { const o = el("option", "", lab); o.value = k; ss.append(o); });
+  const syncSort = () => { ss.value = sortKey; sd.textContent = dir > 0 ? "↑" : "↓";
+    sd.setAttribute("aria-label", dir > 0 ? "Ascending, switch to descending" : "Descending, switch to ascending"); };
+  ss.onchange = () => { sortKey = ss.value; dir = (K.sorts.find(([k]) => k === sortKey) || [, , 1])[2]; vt(draw); };
+  sd.onclick = () => { dir = -dir; vt(draw); };
+  sortbox.append(sl, ss, sd); left.append(sortbox);
+  let search = null;
+  if (items.length > 6) { const box = el("div", "searchbox"); search = el("input", "search"); search.type = "search"; search.id = "search";
+    search.placeholder = "Search " + K.many; search.setAttribute("aria-label", "Search " + K.many);
+    search.oninput = () => { q = search.value.toLowerCase(); draw(); };
+    box.append(search, el("kbd", "", "/")); right.append(box);
+    addEventListener("keydown", (e) => { if (e.key === "/" && document.activeElement !== search && !sheet.open && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) { e.preventDefault(); search.focus(); } }); }
+  tb.append(left, right);
+
+  // ---------- filter bar ----------
+  const fb = $("filterbar"), count = el("span", "count num");
+  const drawFilters = () => {
+    const openKey = (fb.querySelector("details[open]") || {}).dataset ? fb.querySelector("details[open]").dataset.k : null;
+    fb.textContent = "";
+    C.filters.forEach((k) => {
+      const opts = facetOptions(k); if (opts.length < 2 && !(filters[k] && filters[k].size)) return;
+      const sel = filters[k] = filters[k] || new Set();
+      const d = el("details", "facet" + (sel.size ? " on" : "")), s = el("summary"), menu = el("div", "menu");
+      d.dataset.k = k; if (k === openKey) d.open = true;
+      s.append(FACET_LABEL[k] || cap(k)); if (sel.size) s.append(el("span", "n num", sel.size));
+      opts.forEach(([v, n]) => { const lab = el("label"), cb = el("input"); cb.type = "checkbox"; cb.checked = sel.has(v);
+        cb.onchange = () => { if (cb.checked) sel.add(v); else sel.delete(v); draw(); };
+        lab.append(cb, el("span", "", v), el("span", "c num", n)); menu.append(lab); });
+      d.append(s, menu); fb.append(d);
+    });
+    active().forEach(([k, set]) => set.forEach((v) => { const a = el("span", "active");
+      a.append((FACET_LABEL[k] || cap(k)) + ": " + v, btn("", "×", () => { set.delete(v); vt(draw); }, "Remove filter " + v)); fb.append(a); }));
+    if (active().length) fb.append(btn("linkbtn", "Clear all", () => { Object.values(filters).forEach((s) => s.clear()); vt(draw); }));
+    fb.append(count);
+  };
+  document.addEventListener("click", (e) => { fb.querySelectorAll("details[open]").forEach((d) => { if (!d.contains(e.target)) d.open = false; }); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") fb.querySelectorAll("details[open]").forEach((d) => { d.open = false; d.querySelector("summary").focus(); }); });
+
+  // ---------- table cells ----------
+  const COL_LABEL = { stage: "Stage", tier: "Tier", company: "Company", location: "Location", score: "Score", fit: "Fit", skills: "Skills",
+    contact: "Contact", title: "Title", workplace: "Workplace", salary: "Salary", posted: "Posted", source: "Source", seniority: "Seniority",
+    hiringManager: "Hiring manager", signal: "Why now", channel: "Channel", lastTouch: "Last touch", nextStep: "Next step", industry: "Industry", size: "Size" };
+  const cell = (k, c) => {
+    if (k === "tier") return has(c.tier) ? el("span", "tier" + (isTop(c) ? " t1" : ""), c.tier) : null;
+    if (k === "stage") return C.stages ? el("span", "tag", colOf(c, C.stages)) : has(c.stage) ? el("span", "tag", c.stage) : null;
+    if (k === "skills") return skillChips(c, 3);
+    if (k === "contact") return kind === "bd" ? personNode(c.contact, true) : contactNode(c.contact);
+    if (k === "hiringManager") return personNode(c.hiringManager, true);
+    if (k === "salary") { const m = money(c.salary); return m ? el("span", "when num", m) : null; }
+    if (k === "posted") return fresh(c);
+    if (k === "lastTouch") return has(c.lastTouch) ? el("span", "when", ago(c.lastTouch)) : null;
+    if (k === "workplace") return workplace(c);
+    const v = has(c[k]) ? c[k] : c.extra ? c.extra[k] : null; return has(v) ? String(v) : null;
+  };
+  const colHas = (k) => items.some((c) => { const v = cell(k, c); return v != null && v !== ""; });
+
+  // ---------- views ----------
+  const VIEWS = {
+    cards(rows) {
+      const wrap = el("div");
+      groups(rows).forEach(([g, v]) => { const sec = el("section", "group");
+        if (g != null) { const h = el("h2", "ghead"); h.append(el("span", "", g), el("span", "num", v.length + " " + (v.length === 1 ? K.one : K.many))); sec.append(h); }
+        const grid = el("div", "grid"); v.forEach((c) => grid.append(tag(card(c, false), c))); sec.append(grid); wrap.append(sec); });
+      return wrap;
+    },
+    table(rows) {
+      const cols = C.columns.filter((k) => !(C.anonymise && kind === "candidates" && (k === "company" || k === "contact"))
+        && (k === "stage" ? !!C.stages || colHas(k) : colHas(k)));
+      const wrap = el("div", "table-wrap"), t = el("table"), thead = el("thead"), tr = el("tr"), tbd = el("tbody");
+      [[kind === "jobs" ? "title" : "name", K.first], ...cols.map((k) => [k, COL_LABEL[k] || cap(k)])].forEach(([k, lab]) => {
+        const th = el("th"), b = btn("", lab, () => { if (sortKey === k) dir = -dir; else { sortKey = k;
+          dir = (K.sorts.find(([x]) => x === k) || [, , ["score", "posted", "lastTouch", "salary"].includes(k) ? -1 : 1])[2]; } vt(draw); });
+        th.scope = "col"; if (sortKey === k || (sortKey === "name" && k === "title") || (sortKey === "title" && k === "name"))
+          th.setAttribute("aria-sort", dir > 0 ? "ascending" : "descending");
+        th.append(b); tr.append(th); });
+      rows.forEach((c) => { const r = el("tr"), who = el("div", "who"), td0 = el("td"), txt = el("div");
+        r.onclick = (e) => { if (!e.target.closest("a, button")) openSheet(c); };
+        who.append(avatar(c)); txt.append(nameNode(c, "name"));
+        const sub = kind === "candidates" ? c.title : kind === "jobs" ? [c.employment, c.seniority].filter(has).join(" · ") : [c.industry, c.size].filter(has).join(" · ");
+        if (has(sub)) txt.append(el("div", "role", sub)); who.append(txt);
+        const li = kind === "candidates" ? candLI(c, false) : null; if (li) who.append(li);
+        td0.append(tag(who, c)); r.append(td0);
+        cols.forEach((k) => { const td = el("td", ["fit", "signal", "nextStep"].includes(k) ? "wide" : ""), v = cell(k, c);
+          if (v instanceof Node) td.append(v); else if (has(v)) td.textContent = v; r.append(td); });
+        tbd.append(r); });
+      thead.append(tr); t.append(thead, tbd); wrap.append(t); return wrap;
+    },
+    kanban(rows) {
+      const cols = boardCols(); if (!cols.length) cols.push(cap(K.many));
+      const wrap = el("div"), hint = el("div", "hint"), tip = el("span");
+      if (matchMedia("(hover: none)").matches) tip.textContent = "Drag a card by its handle, or tap ‹ › to move it. Tap a card for details.";
+      else tip.append("Drag to move or reorder. Focused card: ", el("kbd", "", "←"), " ", el("kbd", "", "→"), " to move, ",
+                      el("kbd", "", "Enter"), " for details. The board keeps your own order.");
+      hint.append(tip);
+      if (dirty()) hint.append(btn("linkbtn", "Reset board", () => vt(() => {
+        items.forEach((c, i) => { c[BK] = orig[i]; }); moves = {}; order = items.map((_, i) => i); save(); draw(); })));
+      const board = el("div", "board");
+      cols.forEach((g, gi) => {
+        const inCol = order.map((i) => items[i]).filter((c) => rows.includes(c) && colOf(c, cols) === g);
+        const col = el("section", "col" + (gi === 0 ? " first" : "") + (kind === "bd" && gi === cols.length - 1 ? " last" : ""));
+        const head = el("header", "col-head"), body = el("div", "col-body");
+        col.dataset.g = g; col.setAttribute("aria-label", g + ", " + inCol.length + " " + (inCol.length === 1 ? K.one : K.many));
+        head.append(el("span", "dot"), el("h3", "", g), el("span", "n num", inCol.length));
+        inCol.forEach((c) => body.append(kcard(c, cols, gi)));
+        if (!inCol.length) body.append(el("div", "drop", "Drop " + (kind === "bd" ? "an account" : "a " + K.one) + " here"));
+        col.append(head, body); board.append(col);
+      });
+      wrap.append(hint, board); return wrap;
+    }
+  };
+
+  // ---------- board cards + physical drag ----------
+  let suppressClick = false;
+  const focusCard = (i) => { const f = document.querySelector('.kcard[data-i="' + i + '"]'); if (f) f.focus({ preventScroll: true }); };
+  const kcard = (c, cols, gi) => {
+    const i = idx(c);
+    const n = tag(el("article", "kcard" + (landed === i ? " landed" : "")), c);
+    n.tabIndex = 0; n.dataset.i = i;
+    n.setAttribute("aria-label", titleOf(c) + ". In " + cols[gi] + ". Press Enter for details.");
+    n.onclick = (e) => { if (suppressClick) { suppressClick = false; return; } if (!e.target.closest("a, button")) openSheet(c); };
+    n.onkeydown = (e) => { if (e.target !== n) return;
+      const step = (d) => { const g = cols[gi + d]; if (!g) return; e.preventDefault();
+        vt(() => { commit(c, g, null); draw(); focusCard(i); }); announce(titleOf(c) + " moved to " + g); };
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openSheet(c); }
+      else if (e.key === "ArrowRight") step(1);
+      else if (e.key === "ArrowLeft") step(-1);
+      else if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault();
+        const sib = e.key === "ArrowDown" ? n.nextElementSibling : n.previousElementSibling; if (sib && sib.classList.contains("kcard")) sib.focus(); } };
+    n.addEventListener("pointerdown", (e) => pointerDown(e, c, n));
+    const top = el("div", "ktop"), who = el("div");
+    who.append(el("p", "kname", titleOf(c)));
+    const second = kind === "candidates" ? c.title : kind === "jobs" ? c.company : c.contact && has(c.contact.name)
+      ? c.contact.name + (has(c.contact.title) ? ", " + c.contact.title : "") : c.industry;
+    if (has(second)) who.append(el("p", "ktitle", second));
+    top.append(avatar(c), who);
+    const li = kind === "candidates" ? candLI(c, false) : kind === "bd" && c.contact ? liLink(c.contact.linkedin, c.contact.name, false) : null;
+    if (li) top.append(li);
+    if (typeof c.score === "number") top.append(el("span", "kscore num", c.score));
+    const grip = btn("grip", "⋮⋮", null, "Drag " + titleOf(c)); grip.tabIndex = -1; top.append(grip);
+    n.append(top);
+    if (kind === "bd" && has(c.signal)) n.append(el("p", "kline", c.signal));
+    if (kind === "jobs" && has(c.summary)) n.append(el("p", "kline", c.summary));
+    if (kind === "candidates") { const chips = skillChips(c, 3); if (chips) n.append(chips); }
+    const meta = el("div", "kmeta");
+    if (kind === "candidates") { if (C.stages && has(c.tier)) meta.append(el("span", "tier" + (isTop(c) ? " t1" : ""), c.tier));
+      const where = has(c.company) ? c.company : c.location; if (has(where)) meta.append(el("span", "", where)); }
+    if (kind === "jobs") { const f = fresh(c); if (f) meta.append(f); if (has(c.location)) meta.append(el("span", "", c.location)); }
+    if (kind === "bd") { if (has(c.channel)) meta.append(el("span", "tag", c.channel)); const a = ago(c.lastTouch); if (a) meta.append(el("span", "", a)); }
+    const mv = el("div", "moves");
+    const l = btn("", "‹", (e) => { e.stopPropagation(); vt(() => { commit(c, cols[gi - 1], null); draw(); }); }, gi > 0 ? "Move to " + cols[gi - 1] : "");
+    const r = btn("", "›", (e) => { e.stopPropagation(); vt(() => { commit(c, cols[gi + 1], null); draw(); }); }, gi < cols.length - 1 ? "Move to " + cols[gi + 1] : "");
+    l.disabled = gi === 0; r.disabled = gi === cols.length - 1; l.tabIndex = r.tabIndex = -1;
+    mv.append(l, r); meta.append(mv); n.append(meta);
+    return n;
+  };
+
+  let drag = null;
+  const pointerDown = (e, c, n) => {
+    if (drag) return;                                                        // previous drop still settling
+    if (e.button !== 0 || (e.target.closest("a, button") && !e.target.closest(".grip"))) return;
+    if (e.pointerType === "touch" && !e.target.closest(".grip")) return;     // touch: drag by the grip, the body scrolls
+    const r = n.getBoundingClientRect();
+    drag = { c, n, sx: e.clientX, sy: e.clientY, x: e.clientX, y: e.clientY, ox: e.clientX - r.left, oy: e.clientY - r.top,
+             rect: r, started: false, vx: 0, lastX: e.clientX, pid: e.pointerId };
+    addEventListener("pointermove", pointerMove, { passive: false });
+    addEventListener("pointerup", pointerUp); addEventListener("pointercancel", cancelDrag);
+    addEventListener("keydown", escDrag);
+  };
+  const startDrag = () => {
+    const { n, rect } = drag;
+    const ghost = n.cloneNode(true); ghost.classList.add("ghost"); ghost.style.width = rect.width + "px";
+    ghost.style.viewTransitionName = "none"; ghost.removeAttribute("tabindex");
+    const slot = el("div", "slot"); slot.style.height = rect.height + "px";
+    n.after(slot); n.style.display = "none"; document.body.append(ghost); document.body.classList.add("dragging");
+    Object.assign(drag, { ghost, slot, started: true, board: n.closest(".board") });
+    ghost.animate([{ scale: 1 }, { scale: 1.035 }], { duration: reduce.matches ? 0 : 160, easing: "cubic-bezier(.22,1,.36,1)", fill: "forwards" });
+    requestAnimationFrame(tick);
+  };
+  const pointerMove = (e) => {
+    if (!drag || e.pointerId !== drag.pid) return;
+    drag.x = e.clientX; drag.y = e.clientY;
+    if (!drag.started) { if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 5) return; startDrag(); }
+    e.preventDefault();
+    drag.vx = drag.vx * .75 + (e.clientX - drag.lastX) * .25; drag.lastX = e.clientX;
+    const tilt = reduce.matches ? 0 : Math.max(-5, Math.min(5, drag.vx * .5));
+    drag.ghost.style.transform = `translate(${e.clientX - drag.ox}px, ${e.clientY - drag.oy}px) rotate(${tilt}deg)`;
+    placeSlot(e.clientX, e.clientY);
+  };
+  // FLIP: record every visible board card's box, move the slot, then glide the cards from old box to new.
+  const flip = (mutate) => {
+    const cards = [...document.querySelectorAll(".board .kcard")].filter((k) => k.style.display !== "none");
+    const before = new Map(cards.map((k) => [k, k.getBoundingClientRect()]));
+    mutate();
+    if (reduce.matches) return;
+    cards.forEach((k) => { const a = before.get(k), b = k.getBoundingClientRect(), dx = a.left - b.left, dy = a.top - b.top;
+      if (dx || dy) k.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "none" }], { duration: 220, easing: "cubic-bezier(.22,1,.36,1)" }); });
+  };
+  const placeSlot = (x, y) => {
+    const target = document.elementFromPoint(x, y), col = target && target.closest(".col");
+    document.querySelectorAll(".col.over").forEach((k) => k !== col && k.classList.remove("over"));
+    if (!col) return;
+    col.classList.add("over");
+    const body = col.querySelector(".col-body");
+    const cards = [...body.querySelectorAll(".kcard")].filter((k) => k.style.display !== "none");
+    const next = cards.find((k) => { const r = k.getBoundingClientRect(); return y < r.top + r.height / 2; }) || null;
+    const { slot } = drag;
+    if (slot.parentNode === body && (next ? slot.nextElementSibling === next : !cards.some((k) => slot.compareDocumentPosition(k) & Node.DOCUMENT_POSITION_FOLLOWING))) return;
+    flip(() => { if (next) body.insertBefore(slot, next); else body.append(slot); });
+  };
+  const tick = () => {
+    if (!drag || !drag.started) return;
+    const { x, y, board } = drag, br = board.getBoundingClientRect(), edge = 56;
+    if (x > br.right - edge) board.scrollLeft += Math.ceil((x - (br.right - edge)) / 4);
+    else if (x < br.left + edge) board.scrollLeft -= Math.ceil(((br.left + edge) - x) / 4);
+    const col = document.querySelector(".col.over .col-body");
+    if (col) { const cr = col.getBoundingClientRect();
+      if (y > cr.bottom - 40) col.scrollTop += 8; else if (y < cr.top + 40) col.scrollTop -= 8; }
+    if (y > innerHeight - 40) scrollBy(0, 10); else if (y < 40) scrollBy(0, -10);
+    requestAnimationFrame(tick);
+  };
+  const endListeners = () => { removeEventListener("pointermove", pointerMove); removeEventListener("pointerup", pointerUp);
+    removeEventListener("pointercancel", cancelDrag); removeEventListener("keydown", escDrag); };
+  const settle = (to, done) => {
+    const { ghost } = drag;
+    const dur = reduce.matches ? 0 : 240;
+    const a = ghost.animate([{ transform: ghost.style.transform, scale: 1.035 },
+                             { transform: `translate(${to.left}px, ${to.top}px) rotate(0deg)`, scale: 1 }],
+                            { duration: dur, easing: "cubic-bezier(.22,1,.36,1)", fill: "forwards" });
+    const fin = () => { ghost.remove(); document.body.classList.remove("dragging");
+      document.querySelectorAll(".col.over").forEach((k) => k.classList.remove("over")); done(); };
+    if (dur) a.onfinish = fin; else fin();
+  };
+  const pointerUp = (e) => {
+    if (!drag || e.pointerId !== drag.pid) return;
+    endListeners();
+    if (!drag.started) { drag = null; return; }
+    suppressClick = true; setTimeout(() => { suppressClick = false; }, 0);
+    const d = drag, col = d.slot.closest(".col");
+    const nextCard = d.slot.nextElementSibling && d.slot.nextElementSibling.classList.contains("kcard") ? +d.slot.nextElementSibling.dataset.i : null;
+    settle(d.slot.getBoundingClientRect(), () => {
+      drag = null;
+      if (col) { commit(d.c, col.dataset.g, nextCard); announce(titleOf(d.c) + " moved to " + col.dataset.g); }
+      draw(); focusCard(idx(d.c));
+    });
+  };
+  const cancelDrag = () => {
+    if (!drag) return; endListeners();
+    if (!drag.started) { drag = null; return; }
+    const d = drag; settle(d.rect, () => { drag = null; draw(); });
+  };
+  const escDrag = (e) => { if (e.key === "Escape") { e.preventDefault(); cancelDrag(); } };
+
+  // polite status for screen readers
+  const live = el("div"); live.setAttribute("aria-live", "polite"); live.style.cssText = "position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)";
+  document.body.append(live);
+  const announce = (msg) => { live.textContent = msg; };
+
+  function draw() {
+    Object.entries(filters).forEach(([k, s]) => { const vals = new Set(facetOptions(k).map(([v]) => v)); [...s].forEach((v) => { if (!vals.has(v)) s.delete(v); }); });
+    drawLedger(); drawMix(); drawFilters(); syncSort();
+    tb.querySelectorAll(".seg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === view)));
+    const rows = sorted(items.filter((c) => active().every(([k, set]) => facetVals(c, k).some((v) => set.has(v))) && (!q || searchText(c).includes(q))));
+    count.textContent = rows.length === items.length ? "" : rows.length + " of " + items.length + " shown";
+    const v = $("view"); v.textContent = "";
+    v.append(rows.length ? VIEWS[view](rows) : el("div", "empty", "No " + K.many + " match. Clear the search or a filter."));
+    landed = null;
+  }
+  draw();
+})();
+</script>
+</body>
+</html>

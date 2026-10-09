@@ -15,7 +15,7 @@ visibly hiring that profile.
 
 ## Capability chain
 ```
-CV/slug → PARSE (AI, multimodal fallback) → SEARCH JOBS (native scrapes ‖ + optional StepStone via Apify) → NORMALIZE+FILTER
+CV/slug → PARSE (AI, multimodal fallback) → SEARCH JOBS (native scrapes ‖ + optional Apify actors) → NORMALIZE+FILTER
         → MATCH/SCORE each job ↔ CV (AI 0-10) → FIND HIRING MANAGER (company-scoped people_search,
           size-adaptive title hierarchy + reporting-line-first) → ENRICH work email (waterfall)
         → output: ranked target companies + job + fit + hiring manager + spec-out outreach message
@@ -57,22 +57,25 @@ download résumé (`recruit-crm`/`bullhorn` candidate get) → `cv.pdf` + `candi
 - **Region + radius** — default `location.city` from CV; e.g. `"München, 30km"`. Apply the
   **location-expansion rule** (`finding-companies-and-contacts.md`): a city implies its commute belt; an explicit
   radius → enumerate the cities in it. Each board consumes this differently (below).
-- `plz` — 5-digit postal code (StepStone needs it in the URL path).
+- `plz` — 5-digit postal code (the StepStone Apify actor needs it in the URL path; native `stepstone_jobs`
+  takes the city or the postcode as `location`).
 - `city_en` — LinkedIn needs the English city name. Hardcoded map for the top German cities:
   `München→Munich, Köln→Cologne, Nürnberg→Nuremberg, Hannover→Hanover, Wien→Vienna, Zürich→Zurich`
   (others pass through).
 - `size_buckets` (optional, soft-rank). **Hard floor: drop companies < 20 employees** *only when size is
   known* (StepStone never has it → keep). One bucket → LinkedIn hard-filter; multiple/empty → soft-rank only.
 
-## STEP 3 — Job search: native scrapes (default) + StepStone via Apify (additive DACH leg)
+## STEP 3 — Job search: native scrapes (default) + Apify actors (optional)
 
-> **Default source, no key required:** `linkedin_jobs`, `indeed_jobs` and `arbeitsagentur_jobs` (the
-> German federal job board) — Hyreflow's first-party job scrapers, run in parallel, credit-metered, always
-> available. **Additive leg:** StepStone via Apify widens DACH coverage further **when the client has
-> their own Apify key connected** — StepStone has no native equivalent, so it's the one board worth
-> keeping the BYOK leg for. The native LinkedIn and Indeed scrapes cover the same ground as their Apify
-> actors below; reach for an Apify actor only when you need that actor's specific fields/filters. Run
-> whichever legs apply concurrently, then merge.
+> **Default source, no key required:** `linkedin_jobs`, `indeed_jobs`, `arbeitsagentur_jobs` (the
+> German federal job board) and `stepstone_jobs` (Germany's largest commercial board) — Hyreflow's
+> first-party job scrapers, run in parallel, credit-metered, always available. For a DACH candidate,
+> `stepstone_jobs` takes `title` (required) + `location` (city or postcode) + `radius` in km, with
+> `posted_within_days: 7` for fresh postings — see
+> [`hyreflow_native.md`](../provider-playbooks/hyreflow_native.md). The native scrapes cover the same
+> ground as the Apify actors below; reach for an Apify actor only when the client has their own Apify key
+> connected **and** you need that actor's specific fields/filters. Run whichever legs apply concurrently,
+> then merge.
 
 **LinkedIn (Apify actor, optional — the native `linkedin_jobs` scrape already covers this board)** —
 actor `vIGxjRrHqDTPuE6M4`:
@@ -85,7 +88,7 @@ actor `vIGxjRrHqDTPuE6M4`:
 - `removeAgency: false` — the server filter is too aggressive; we strip agencies ourselves (Step 4).
 - One size bucket → add `organizationEmployeesGte` / `organizationEmployeesLte`.
 
-**StepStone (Apify actor, the reason to run this leg — no native equivalent)** — actor
+**StepStone (Apify actor, optional — the native `stepstone_jobs` scrape already covers this board)** — actor
 `pIVhuvHZkW2Llfjrr` (pure-HTTP vs. the unified-resultlist JSON API, ~$1/1k, Residential proxy). Build the
 URL from titles + plz + radius:
 ```
@@ -174,9 +177,10 @@ deliverable is the message.
   agency-run / unposted hires are invisible. Add an internal leg (your own ATS open mandates) if you also
   want to place on live jobs first.
 - **Apify is BYOK-only:** without the client's own Apify token connected in Integrations, the Apify leg
-  returns `no_key` — the recipe still has a job source (the native `linkedin_jobs`/`indeed_jobs`/
-  `arbeitsagentur_jobs` scrapes, no key required), what's lost is StepStone coverage. Once connected, the
-  client's account is billed per result (StepStone ~$1/1k) → keep `limit`/`maxItems` modest (50–100).
+  returns `no_key` — the recipe still has its full job source (the native `linkedin_jobs`/`indeed_jobs`/
+  `arbeitsagentur_jobs`/`stepstone_jobs` scrapes, no key required), so nothing is lost but the actors'
+  extra fields. Once connected, the client's account is billed per result (StepStone ~$1/1k) → keep
+  `limit`/`maxItems` modest (50–100).
   Hyreflow charges 0 credits.
 - **`removeAgency:false`** on LinkedIn is deliberate — we filter agencies in Step 4, not server-side.
 - **Hiring-manager coverage:** excellent when the posting names the reporting line or the company is
@@ -190,6 +194,6 @@ deliverable is the message.
 
 ## Reusable asset
 The **Apify actor set** (LinkedIn `vIGxjRrHqDTPuE6M4` + StepStone `pIVhuvHZkW2Llfjrr` + Indeed
-`MXLpngmVpE8WTESQr`, with the payload quirks above) is reusable for *any* DACH sourcing that wants
-StepStone coverage or an Apify actor's specific fields — consider promoting it into
+`MXLpngmVpE8WTESQr`, with the payload quirks above) is reusable for *any* DACH sourcing that wants an
+Apify actor's specific fields — consider promoting it into
 `provider-playbooks/apify.md` as the canonical German job-search actor set.

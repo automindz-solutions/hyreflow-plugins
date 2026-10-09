@@ -93,13 +93,17 @@ just agree. **Reframe around recruitability signals** and offer to re-rank/re-so
 - **open-to-work** badge / "seeking" language (explicit) — narrow but high-intent
 - **tenure** — long tenure = stickier; ~18mo–3yr is often the movable window
 - **recent job-change cadence** — frequent moves = more open to a move; just-moved = cold
-- **seniority band** — over-levelled-for-employer or plateaued = more persuadable
+- **seniority band** — over-levelled-for-employer or plateaued = a credible promotion angle. For a JD-led
+  shortlist, source the same function one level below and verify the case against dated work history; a lower
+  title or long tenure alone never proves readiness or willingness to move.
 
 Where these signals already live operationally (don't restate the mechanics here — link):
 the **open-to-work** filter and routing are in
 [`finding-companies-and-contacts.md`](finding-companies-and-contacts.md) (aiark `OPEN_TO_WORK`), and the
 profile-level detection prompt is **"Detect open-to-work / job-change signals"** in
-[`prompts.json`](prompts.json). Use those; this doc just tells you *when* to reach for them.
+[`prompts.json`](prompts.json). The promotion lane and evidence gate live in
+[`recipes/jd-to-shortlist.md`](recipes/jd-to-shortlist.md), using **"Assess promotion readiness for target
+role"** from [`prompts.json`](prompts.json). Use those; this doc just tells you *when* to reach for them.
 
 ---
 

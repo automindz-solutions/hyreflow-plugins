@@ -132,6 +132,7 @@ per-row step, and the one that makes the gate mean something)*
 
 **9 — DELIVER**
 - A ranked, brief-qualified shortlist CSV (lineage `_source` tags + tier + intent + artifact link).
+  Then render it with the **`hyreflow-artifact`** skill by default (candidates view), unless the user asked for the CSV only.
 - **Optional blind MPC one-pager** — an anonymized candidate spotlight (redact name/contact; keep
   skills, headline, proof-of-work artifact, fit summary) the recruiter can send. Render with the
   **"Spec-out sequence (anonymised candidate to hiring manager)"** prompt. *(Phase-1: agent-rendered

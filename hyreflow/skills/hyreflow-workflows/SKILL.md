@@ -8,6 +8,11 @@ description: 'Build, run, and oversee recruiting/GTM workflows with Hyreflow —
 > The skill root is `$HOME/.agents/skills/hyreflow-workflows/`; relative paths are relative to it — if a
 > relative read fails, prefix it with the root.
 
+> **Connected over MCP?** If your client lists `hyreflow_*` tools, you are already authorized on the
+> Hyreflow MCP server: use those tools and skip everything below that installs or runs the `hyreflow`
+> CLI. The CLI route is for a client with a shell and no `hyreflow_*` tools; when both are present,
+> the MCP tools win — one sign-in, and results come back in the response instead of as files on disk.
+
 A **workflow** is a persisted, trigger-bound pipeline that **Hyreflow runs for you**: steps execute on
 Hyreflow's engine (metered), on an `api`, `webhook`, or `cron` trigger, with the full step DAG and run
 history in the dashboard and in `hyreflow workflows …`. There is no second orchestrator to set up.

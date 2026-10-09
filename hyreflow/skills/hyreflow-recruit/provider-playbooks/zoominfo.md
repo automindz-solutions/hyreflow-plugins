@@ -1,54 +1,58 @@
 ---
 name: zoominfo
-description: "B2B data via the ZoomInfo GTM Data API — enrich contacts & companies, search the database, pull signals (intent, scoops, news, technographics), and get company lookalikes / contact recommendations. Use when the user mentions ZoomInfo, enriching contacts/companies at scale, B2B intent/scoop signals, or net-new prospecting from ZoomInfo. Keys: BYOK-only, not self-serve yet."
+description: "B2B data via the ZoomInfo GTM Data API — enrich contacts & companies, search the database, pull signals (intent, scoops, news, technographics), and get company lookalikes / contact recommendations. Use when the user mentions ZoomInfo, enriching contacts/companies at scale, B2B intent/scoop signals, or net-new prospecting from ZoomInfo. Keys: BYOK-only — the workspace pastes its DevPortal Client ID + Client Secret in the dashboard."
 ---
 
 # ZoomInfo — Integration Meta Skill
 
 ZoomInfo is **BYOK-only** in Hyreflow — there's no Hyreflow-managed fallback, so with no ZoomInfo
-credentials in place these tools are unavailable/skipped with `no_key`. Unlike a single-key adapter such as
-Apollo, ZoomInfo's OAuth client credentials are **not a self-serve integration yet**: they can't be pasted
-into the dashboard, and they aren't held per-workspace. Do not assume Hyreflow-managed ZoomInfo credentials
-exist, and don't tell a user they can connect ZoomInfo themselves today — enabling it is a conversation
-with Hyreflow.
+credentials in place these tools are unavailable/skipped with `no_key`. A workspace connects its own
+ZoomInfo DevPortal app on the Integrations page (**Client ID** + **Client Secret**, an OAuth
+Client Credentials pair) or via `hyreflow byok set zoominfo --api-key <client-id> --field client_secret=<secret>`;
+the key check probes `user_usage`, and a BYOK-held ZoomInfo jumps to the front of the people_search and
+email/phone enrichment waterfalls.
 
-HOW in `lib/zoominfo.py`. Paths CONFIRMED from docs.zoominfo.com (2026-06-01); index: `reference/docs/zoominfo/raw/endpoints.md`.
+HOW in `lib/zoominfo.py`. Paths CONFIRMED from the live docs at docs.gtm.ai (2026-09); index: `reference/docs/zoominfo/raw/endpoints.md`.
 
 ## Auth & config — OAuth 2.0 Client Credentials
 - **Host:** `https://api.zoominfo.com/gtm` (families: `oauth/v1`, `data/v1`, `copilot/v1`).
-- **Token:** `POST /gtm/oauth/v1/token` — HTTP Basic `client_id:client_secret`, body `grant_type=client_credentials` (+ optional `scope`), `x-www-form-urlencoded` → Bearer (`expires_in` ~1h). The adapter caches the token, refreshes before expiry, and re-auths once on a 401.
-- **Env:** `ZOOMINFO_CLIENT_ID`, `ZOOMINFO_CLIENT_SECRET` (DevPortal app), optional `ZOOMINFO_SCOPE`. Never hardcode. Per-endpoint scopes (`api:data:contact`, `api:data:company`, …) must be granted to the app; omit `scope` to get all configured.
+- **Token:** `POST /gtm/oauth/v1/token` — HTTP Basic `client_id:client_secret`, body `grant_type=client_credentials`, `x-www-form-urlencoded` (no `scope`, no refresh token) → Bearer (`expires_in` ~1h). The adapter caches the token, refreshes before expiry, and re-auths once on a 401.
+- **Env:** `ZOOMINFO_CLIENT_ID`, `ZOOMINFO_CLIENT_SECRET` (DevPortal app). Never hardcode. Per-endpoint scopes (`api:data:contact`, `api:data:company`, `api:insights:read`, …) are granted to the app in DevPortal — the token request sends no scope.
+- **Bodies:** data calls are JSON:API — `Content-Type`/`Accept: application/vnd.api+json`, `{"data":{"type":"ContactEnrich","attributes":{…}}}`.
 
 ## Operations
-Enrich (CONFIRMED): `enrich_contacts`, `enrich_companies` (≤25 records, body `{"data":{matchXInput:[…], outputFields:[…]}}`), `enrich_scoops`, `enrich_intent`. Search (CONFIRMED): `search_contacts`, `search_companies` (filters in body `data`; `page[number]`/`page[size]` 1-100 + `sort` as query). Copilot (CONFIRMED): `company_lookalikes`, `contact_recommendations`. `user_usage` (credits). Pattern-inferred (verify on pilot): `enrich_news/technologies/org_charts/corporate_hierarchy/hashtags`, `search_intent/news/scoops`, `contact_lookalikes`. Everything else (lookup, insights, entitlements, agent-teams, account-summary, ICP/persona/competitor config, audiences, GTM-Studio columns/folders/rows, workflows, engagements) → generic `request("POST"|"GET", "data/v1/…"|"copilot/v1/…", json=…)`.
+Enrich: `enrich_contacts`, `enrich_companies` (≤25 records, body `{"data":{"type":"ContactEnrich","attributes":{"matchPersonInput":[…],"outputFields":[…]}}}`), `enrich_scoops`, `enrich_intent`, `enrich_news`, `enrich_technologies`, `enrich_org_charts`, `enrich_corporate_hierarchy`, `enrich_hashtags`. Search: `search_contacts`, `search_companies`, `search_intent`, `search_news`, `search_scoops` (filters in body `data.attributes`; `page[number]`/`page[size]` 1-100 + `sort` as query). Copilot: `company_lookalikes`, `contact_lookalikes` (needs `filter[referencePersonId]`), `contact_recommendations` (needs `filter[useCaseType]` + `filter[ziCompanyId]`), `company_insights`, `account_summary`. `lookup(field_name)` resolves valid filter/enrich values; `user_usage` (free) reports credits. Everything else (agent-teams, ICP/persona/competitor config, audiences, GTM-Studio columns/folders/rows, workflows, engagements) isn't wired to a typed method — not reachable via `hyreflow tools execute zoominfo <method>`.
 
 ## ⚠️ Credits + guardrail
-- Enrich/search consume ZoomInfo credits per record (failed/no-match lookups are NOT charged). `user_usage()` to check balance. Pilot a 1-record enrich first; gate bulk behind approval. Enrich is capped at 25 records/call.
+- `user_usage`, `lookup` and all `search_*` calls are free on the ZoomInfo side; `enrich_*` consumes ZoomInfo credits per matched record (intent/news also per returned signal/article; failed/no-match lookups are NOT charged). `user_usage()` to check balance. Pilot a 1-record enrich first; gate bulk behind approval. Enrich is capped at 25 records/call.
 
 ## Handoff
 Net-new sourcing + enrichment layer: `search_companies`/`search_contacts` (discover) → `enrich_*` (resolve emails/phones/firmographics) → signals (`enrich_intent`/`enrich_scoops`) for prioritization → hand to sequencers / ATS. Premium alternative/complement to [[apollo]] and the waterfall enrichers.
 
 <!-- API-SURFACE:START (auto-generated by reference/_gen_api_surface.py — do not hand-edit) -->
 ## Callable surface
-Call via the CLI: `hyreflow tools execute zoominfo <method> --payload '{...}'` (preview with `--dry-run`; `hyreflow tools get zoominfo <method>` returns the live contract + cost). Base: `https://api.zoominfo.com/gtm`. Any endpoint without a typed method is reachable through the tool's generic `request` passthrough.
+Call via the CLI: `hyreflow tools execute zoominfo <method> --payload '{...}'` (preview with `--dry-run`; `hyreflow tools get zoominfo <method>` returns the live contract + cost). Base: `https://api.zoominfo.com/gtm`. Only the methods listed below are callable.
 
-- `company_lookalikes(**params) -> Any` — GET /copilot/v1/companies/lookalikes — similar companies (CONFIRMED).
-- `contact_lookalikes(**params) -> Any` — GET /copilot/v1/contacts/lookalikes (inferred — verify on pilot).
-- `contact_recommendations(**params) -> Any` — GET /copilot/v1/contacts/recommendations — recommended contacts (CONFIRMED).
-- `enrich_companies(payload: dict) -> Any` — POST /data/v1/companies/enrich — up to 25. data.matchCompanyInput + outputFields. scope api:data:company.
-- `enrich_contacts(payload: dict) -> Any` — POST /data/v1/contacts/enrich — up to 25 records. data.matchPersonInput + outputFields. scope api:data:contact.
-- `enrich_corporate_hierarchy(payload: dict) -> Any` — POST /data/v1/corporate-hierarchy/enrich (inferred slug — verify).
-- `enrich_hashtags(payload: dict) -> Any` — POST /data/v1/hashtags/enrich (inferred).
-- `enrich_intent(payload: dict) -> Any` — POST /data/v1/intent/enrich — intent signals.
-- `enrich_news(payload: dict) -> Any` — POST /data/v1/news/enrich (inferred).
-- `enrich_org_charts(payload: dict) -> Any` — POST /data/v1/org-charts/enrich (inferred slug — verify).
-- `enrich_scoops(payload: dict) -> Any` — POST /data/v1/scoops/enrich — company scoops (signals).
-- `enrich_technologies(payload: dict) -> Any` — POST /data/v1/technologies/enrich (inferred).
-- `search_companies(payload: dict, *, page_number: int | None = None, page_size: int | None = None, sort: str | None = None) -> Any` — POST /data/v1/companies/search — page[number]/page[size] (1-100, default 25) + sort as query params.
-- `search_contacts(payload: dict, *, page_number: int | None = None, page_size: int | None = None, sort: str | None = None) -> Any` — POST /data/v1/contacts/search — body holds filters under `data`; page[number]/page[size]/sort are query params.
-- `search_intent(payload: dict, **params) -> Any` — POST /data/v1/intent/search (inferred).
-- `search_news(payload: dict, **params) -> Any` — POST /data/v1/news/search (inferred).
-- `search_scoops(payload: dict, **params) -> Any` — POST /data/v1/scoops/search (inferred).
-- `user_usage(**params) -> Any` — GET /data/v1/users/usage — API usage/credits on the caller's own ZoomInfo account (ZoomInfo is BYOK-only).
+- `account_summary(company_id) -> Any` — GET /copilot/v1/companies/{companyId}/account-summary — Copilot account summary for one ZoomInfo company ID.
+- `company_insights(payload: dict) -> Any` — POST /copilot/v1/companies/insights — type CompanyInsightsSearch, attributes {ziCompanyIds: [≤50], signalTypes?}. Sales-intelligence signals filtered by type; scope api:insights:read.
+- `company_lookalikes(**params) -> Any` — GET /copilot/v1/companies/lookalikes — ranked similar companies (≤100, page[size]).
+- `contact_lookalikes(**params) -> Any` — GET /copilot/v1/contacts/lookalikes — ranked contacts similar to a reference person.
+- `contact_recommendations(**params) -> Any` — GET /copilot/v1/contacts/recommendations — ranked contacts at a target company for a sales motion. Requires filter[useCaseType] (e.g. PROSPECTING, DEAL_ACCELERATION) and filter[ziCompanyId].
+- `enrich_companies(payload: dict) -> Any` — POST /data/v1/companies/enrich — type CompanyEnrich, attributes matchCompanyInput ≤25 (companyId|companyName|companyWebsite|…), outputFields, requiredFields.
+- `enrich_contacts(payload: dict) -> Any` — POST /data/v1/contacts/enrich — type ContactEnrich, attributes matchPersonInput ≤25 (personId|emailAddress|phone|fullName|firstName+lastName+companyName|companyId|…), outputFields, requiredFields. 1 ZoomInfo credit per matched record; scope api:data:contact.
+- `enrich_corporate_hierarchy(payload: dict) -> Any` — POST /data/v1/companies/corporate-hierarchy/enrich — type CorporateHierarchyEnrich; full corporate tree for the matched company.
+- `enrich_hashtags(payload: dict) -> Any` — POST /data/v1/companies/hashtags/enrich — type HashtagEnrich; predefined categorical labels for the matched company.
+- `enrich_intent(payload: dict) -> Any` — POST /data/v1/intent/enrich — type IntentEnrich; intent signals for a company.
+- `enrich_news(payload: dict) -> Any` — POST /data/v1/news/enrich — type NewsEnrich; company identifier (companyId|companyName|companyWebsite) required. Charges per returned article.
+- `enrich_org_charts(payload: dict) -> Any` — POST /data/v1/companies/org-chart/enrich — type OrgChartEnrich; a ZoomInfo company identifier + at least one ZoomInfo department identifier are required.
+- `enrich_scoops(payload: dict) -> Any` — POST /data/v1/scoops/enrich — type ScoopEnrich; company identifier (companyId|companyName| companyWebsite) required. Charges per returned scoop.
+- `enrich_technologies(payload: dict) -> Any` — POST /data/v1/companies/technologies/enrich — type TechnologyEnrich; technologies ZoomInfo has identified for the matched company.
+- `lookup(field_name: str, **filters) -> Any` — GET /data/v1/lookup/{fieldName} — valid values for a search/enrich field (e.g. 'management-levels', 'company-rankings'); optional filter[category] for hashtag lookups.
+- `search_companies(payload: dict, *, page_number: int | None = None, page_size: int | None = None, sort: str | None = None) -> Any` — POST /data/v1/companies/search — type CompanySearch, attributes are the filters (companyName, companyWebsite, industryCodes/Keywords, employeeRangeMin/Max, …).
+- `search_contacts(payload: dict, *, page_number: int | None = None, page_size: int | None = None, sort: str | None = None) -> Any` — POST /data/v1/contacts/search — type ContactSearch, attributes are the filters (jobTitle, managementLevel, department, jobFunction, companyName, companyWebsite, state, country, industryKeywords, employeeRangeMin/Max, revenueMin/Max, …; valid values via lookup()). page[number]/page[size] (1-100, default 25) + sort are query params.
+- `search_intent(payload: dict, *, page_number: int | None = None, page_size: int | None = None) -> Any` — POST /data/v1/intent/search — type IntentSearch; intent signals. Requires the Intent SKU.
+- `search_news(payload: dict, *, page_number: int | None = None, page_size: int | None = None) -> Any` — POST /data/v1/news/search — type NewsSearch; at least one input required.
+- `search_scoops(payload: dict, *, page_number: int | None = None, page_size: int | None = None) -> Any` — POST /data/v1/scoops/search — type ScoopSearch; real-time business intelligence signals.
+- `user_usage(**params) -> Any` — GET /data/v1/users/usage — API usage/credits on the caller's own ZoomInfo account (ZoomInfo is BYOK-only). Free call.
 
 <!-- API-SURFACE:END -->

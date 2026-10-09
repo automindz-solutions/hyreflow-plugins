@@ -6,6 +6,18 @@ deduped list of the right people. Sits between [`references/provider-precedence.
 
 > Don't have rows/criteria yet? You're upstream of this doc. Get the company/ICP/query first.
 
+## Carve-out: the user already handed you a URL that lists the people
+**Trigger**: the ask comes with a team / about / leadership / speaker / member-directory page URL
+(e.g. `https://acme.example.com/meet-the-team/`). The roster is *on the page*; you are not searching for
+it. **Do not open with `people_search`** — follow
+[`recipes/people-from-webpage.md`](recipes/people-from-webpage.md) (scrape the page with firecrawl, fill
+the LinkedIn URL with exa, enrich for sector experience). Everything below is for query-shaped asks.
+
+A **LinkedIn-sparse role** (trades/blue-collar, chefs, mechanics, care workers, nurses, doctors, mechanical
+engineers) or a German/local business owner behind an **Impressum** is a related but different carve-out —
+you don't have the page yet, you have to find the employer first. Run `people_search` as usual, and also
+follow [`recipes/linkedin-sparse-sourcing.md`](recipes/linkedin-sparse-sourcing.md).
+
 ## The one mental model — the `people_search` waterfall tool (DEFAULT)
 You source by calling the **`people_search` waterfall tool** with ONE **canonical query** — the engine
 runs the multi-provider waterfall for you:
@@ -23,11 +35,22 @@ union across every provider),
 `providers` (optional allowlist — **pin the waterfall to a subset**, house order preserved, e.g.
 `"providers":["aiark"]` for "only ai ark"; still goes through the engine's correct per-provider mapper).
 
+**Always set `limit` to the number the user asked for** (default 25). A database provider bills every
+row it returns and the engine sizes each vendor page from `limit` — "find me 5 engineers" with no
+`limit` fetches and pays for 25 rows to show 5.
+
 > **For IT/role sourcing, `skills` is the precision lever — use it over title-only filtering.** It's
 > pushed down to aiark `contact.skill` (SMART match) and **prefilters at the source**, instead of a
 > broad title-only pull + client-side filtering of the returned `skills[]` (which wastes credits on
 > off-target rows). E.g. Python/FastAPI backend engineers → pass `"skills": ["Python","FastAPI"]`
 > alongside the title rather than relying on the title alone.
+
+> **`keywords` is the free-text lever for niche or domain sourcing** ("National Security", "clinical
+> trials", "payments"). It matches the profile's own prose — headline, summary, work-history
+> descriptions (aiark `contact.keyword`, Apollo `q_keywords`, quoted into the web fallbacks). Use it for
+> domain vocabulary that isn't a listed skill; use `skills` for named tools/technologies. Providers with
+> no person-level text filter (Prospeo, Lemlist) are skipped with `outcome: "cant_scope_company"` and
+> `unsupported_fields: ["keywords"]` rather than run unfiltered.
 
 The engine walks the **house provider order** (configured in `reference/waterfalls.json` — never restate
 the order here), maps your canonical query to each provider's native shape, dedups, pages,
@@ -70,6 +93,20 @@ is cheaper and more precise than a broad pull + client-side filter. Do **not** s
 `apollo_search_people` for a broader-title retry unless the user explicitly requested Apollo-only/
 provider-native control and Apollo BYOK is configured. Do not bypass the waterfall just because the first
 canonical query missed.
+
+**Zero results from stacked filters.** Every filter narrows (AND), so `keywords` + `seniority` + company names
++ a badge or headcount band can multiply to nothing. Retry by
+dropping ONE group at a time, `keywords` first; keep `titles` and `locations`. `keywords` are short separate
+terms (`M&A`, `SaaS`) — never a sentence, never a job title (that's what `titles` is for). A search that returns
+nothing with 2+ such groups says so in `_meta.warnings` (`over_filtered`).
+
+**One company per search.** More than ~10 `company_names` in one call match fuzzily, and the rows cannot be
+attributed back to a company (`_meta.warnings` `many_companies`). `limit` is the TOTAL you want: pages are sized
+to cover it evenly, and every returned row is billed.
+
+**Flat provider tools take the provider's own body.** `aiark_people_search` wants AI Ark's `contact`/`account`
+filters plus `page` and `size`; canonical keys (`titles`, `locations`, …) are refused there. Use the
+`people_search` waterfall for the canonical query.
 
 ```
 hyreflow tools execute people_search --payload '{
@@ -127,7 +164,8 @@ company scope applied), you used the wrong native field — fix the payload, don
 - **A job-scrape shortfall is a BOARD gap, not a title gap.** The retry ladder in this doc (widen
   `titles[]`, add `seniority`/`skills`) belongs to `people_search`. When an open-roles scrape returns
   **< N**, add the next **board** and dedup the union — a Germany-scoped run adds `arbeitsagentur_jobs`
-  (the German federal board), which indexes roles the global boards don't carry. Re-running the same
+  (the German federal board) and `stepstone_jobs` (the German commercial board), which index roles the
+  global boards don't carry. Re-running the same
   board with a different title spends credits on the same index. Boards and payload shapes:
   [`provider-playbooks/hyreflow_native.md`](provider-playbooks/hyreflow_native.md).
 - **Count-before-pay.** Every people-DB returns a total (apollo `total_entries`, aiark `totalElements`,
@@ -220,7 +258,10 @@ For **on-site / hybrid / local** roles, expand the stated location to its **comm
 and pass them all in `locations[]` (people-DBs accept a city-name list; aiark also buckets metros, e.g. "Cologne Bonn Region"):
 - **A city is named** → add the realistic **daily-commute belt**, closer cities weighted higher.
   e.g. **Köln → Bonn, Leverkusen, Düsseldorf** · München → Augsburg/Ingolstadt · Frankfurt → Mainz/Wiesbaden/Darmstadt.
-- **A radius is given** ("within 50 km of X") → derive the towns/cities inside that radius and search those.
+- **A radius is given** ("within 3 miles of SW1A 1AA", "within 20 km of Marburg") → run `postcode_radius`
+  (`hyreflow_native.places_within_radius`, free; `postcode` or `place` as the centre) for the towns inside it and pass its `locations` plus the metro
+  label (up to 25 km; wider → metro labels). No people database filters a person by radius, so this town list IS the
+  radius search — say so to the user.
 - **Remote** with no geo/language requirement → location doesn't matter (see `provider-precedence.md` remote rule).
 - **Match the expansion to the work model** — don't pull a 90-min-away city for a strict daily-on-site role; widen more for hybrid.
 
@@ -257,6 +298,46 @@ term in `titles[]` (never retry with an empty title list on a company-scoped sea
 - **Design:** `Product Designer, UX Designer, UI Designer, Interaction Designer, UX Researcher`.
 - **Sales/GTM ICs:** `Account Executive, AE, Sales Development Representative, SDR, Business Development
   Representative, BDR, Customer Success Manager, CSM`.
+
+## Company list → the leader of each function, with LinkedIn links
+Ask shape: "for each company in this sheet, put the head of each finance area (CFO, controller, treasury,
+FP&A, tax …) with their LinkedIn link" — a headhunter mapping an org from a list of companies.
+
+1. **`people_search` finds the people AND their LinkedIn URLs** — that is the whole job. Do not reach for
+   `leadmagic_profile_search`, `linkedin_profile` or `hyreflow_native_get_linkedin_profile` to *find* anyone:
+   they enrich a `linkedin_url` you already hold, and `leadmagic_profile_search` rejects a call without
+   `profile_url` (400 `invalid_payload`). Use them only afterwards, to verify or deepen a profile you found.
+2. **One `people_search` per company** (`company_domains` when the sheet has them, else `company_names`),
+   `locations` set to the market, `limit` ~25. Keep `titles[]` as the union of every function you want — never
+   empty (see the retry rule above) — then **sort the results into functions yourself** by title. A single
+   call across many companies cannot be split back per company.
+3. **Titles are local-language — adapt to the market, don't assume English.** For each function send the
+   English title family AND the equivalents people in that market actually carry (the language of the target
+   country or company), or you miss the leaders whose profiles are not in English. Derive the local variants
+   from the user's language and the `locations` you are searching; if you are unsure of the local wording,
+   ask the user or run a small company-scoped search without a title filter on one company and read the
+   titles it returns. Example for finance leadership — `CFO, Chief Financial Officer, VP Finance` +
+   `Director de Finanzas` (Spanish) / `Finanzleiter` (German) / `Directeur Financier` (French) — and the same
+   idea for controller, treasury, FP&A, tax and investor relations.
+4. **The leader of an area = the most senior match** (rank by title seniority, then current role). Put
+   one name + title + LinkedIn URL per area per company; leave the cell blank rather than fill it with a
+   weaker match, and say it was blank.
+5. **Price it first.** Run the first company with `dry_run: true`, multiply by the number of companies, and
+   quote the total before running the sheet.
+
+### Executive talent map with no company list ("CFO in <city>, from 50–250-person SaaS companies, with M&A")
+`people_search` has **no industry filter**, so a business-model constraint (subscription/licence tech) cannot ride
+the query. Headcount can, but only AI Ark applies it: `company_employee_min` / `company_employee_max`.
+1. Build the target-company list first (`exa_search` / `aiark_company_search` for subscription/licence-model tech
+   companies in the market, then check each against the headcount band), keep the verified domains. If the band
+   alone is enough, skip this and pass `company_employee_min`/`_max` straight to `people_search`.
+2. Then run the per-company search above with the executive title family (English plus the local-language
+   equivalents, see step 3 above) and `locations` set to the metro as the user named it. Put the soft
+   criteria that live in the profile text in `keywords` (`M&A`, `SaaS`, and the local-language phrasing of
+   them) — an extra AND filter, so run a pass without it too and rank by it instead if the pool is thin.
+3. Past-employer fit (a candidate who *used to* work at a qualifying company) is a `linkedin_profile`
+   job-history check on the URLs `people_search` already returned — never a reason to call a profile tool
+   without a URL.
 
 ## Hiring-manager identification — reporting-line first (UNIVERSAL RULE)
 When the task is "find the hiring manager for this role" (BD, competitor-intel, or any JD-driven search):

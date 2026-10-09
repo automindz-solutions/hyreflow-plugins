@@ -107,9 +107,11 @@ dotted. Placeholders `{{col}}` pull from the input row; `extract_js` flattens th
 **3 — People-DB leg** *(breadth — the devs not on GitHub; runs on every IT role, not just the infra ones)*
 - **Target: at least `1.5×N` people-DB rows before you merge** (N = the count the user asked for). This leg is
   volume-matched to the GitHub pool, not a spot check — a handful of rows is an under-run, not a completed step.
-  `limit` is the lever: `people_search` bills **per result** (aiark 0.1 cr/row — current rates in `cost-card.json`;
-  if the chain falls through to prospeo, that leg bills 0.4 cr per request instead — one charge per page
-  of up to 25), so `limit: 15` for N=10 is ~1.5 cr on aiark. The leg is cheap; the missed candidates are not.
+  `limit` is the lever: `people_search` bills **per result** (aiark's per-row rate is a fraction of a credit —
+  read the current number from `cost-card.json` (`aiark.people_search`); if the chain falls through to prospeo,
+  that leg bills per request instead — one charge per page, and the page is sized from `limit`, never more
+  than you asked for), so `limit: 15` for N=10 costs under a credit on aiark. The leg is cheap; the missed
+  candidates are not.
 - **Under-target → widen and re-query before merging.** Drop the narrowest filter first (`min_experience_years`,
   then `seniority`, then extra `skills`), and search **city variants** the way you do for GitHub
   (`Germany` / `Berlin` / `Munich`). Only continue to step 4 once you hit the target or you have run out of
@@ -171,7 +173,7 @@ unconsented). See `writing-outreach.md`.
 | Step | Metered? |
 |---|---|
 | GitHub leg (search, dossier, email) | **free** (token; ~$0) |
-| people-DB leg | metered **per result** (aiark people_search 0.1 cr/row → ~1.5 cr for a 15-row pull; current costs in cost-card.json) — if the chain falls through to prospeo, that leg bills 0.4 cr/request instead |
+| people-DB leg | metered **per result** (aiark `people_search` per-row rate × rows — current costs in `cost-card.json`) — if the chain falls through to prospeo, that leg bills per request instead |
 | deep context (Firecrawl + AI) | metered — **gate to finalists** |
 | qualify (AI) | metered (tokens) |
 So GitHub sourcing + emails are free margin; you meter the people-DB breadth + the Firecrawl/AI enrichment. Free

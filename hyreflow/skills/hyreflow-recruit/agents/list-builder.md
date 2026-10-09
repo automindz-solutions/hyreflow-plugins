@@ -40,7 +40,7 @@ Mandatory workflow:
      control or the user named one provider.
    - Signal/BD (company-first): find the accounts/signals first — open-roles signals go to
      `hyreflow_native`'s job scrapes (`linkedin_jobs` / `indeed_jobs` / `career_pages`, `arbeitsagentur_jobs`
-     for Germany) before `theirstack`; `layoffsignal` and `predictleads` keep their own triggers — THEN the
+     + `stepstone_jobs` for Germany) before `theirstack`; `layoffsignal` and `predictleads` keep their own triggers — THEN the
      contacts at them (people_search scoped by `company_domains`).
    - Known companies, need contacts: people_search with `company_domains` (or a company-scoped flat search).
 5. If the task becomes row-level enrichment (email/phone/LinkedIn), hand off to
@@ -53,12 +53,15 @@ Execution rules:
 - One provider, then top up: call your first choice; if it returns < N, call the next and **dedup the
   union** (key on `linkedin_url`). Don't fire every provider blindly in parallel.
 - **Job scrapes top up by BOARD, not by title.** A scrape returning < N means the board doesn't carry
-  those roles — add the next board (Germany-scoped ⇒ `arbeitsagentur_jobs`) and dedup on the apply URL.
+  those roles — add the next board (Germany-scoped ⇒ `arbeitsagentur_jobs`, then `stepstone_jobs`) and dedup on the apply URL.
   Re-running the same board with a different title re-queries the same index.
 - **Expand titles to the job FUNCTION** — one exact title under-searches. Pass the spelling variants
   (VP↔Vice President, SVP/EVP) AND functional equivalents (VP of Sales → CRO, Head of Sales, VP Revenue)
   in `titles[]`, or use seniority + a function keyword. See the title-expansion rule in
   `finding-companies-and-contacts.md`.
+- In `jd-to-shortlist`, run the recipe's **promotion lane** as its own `people_search`: same function one
+  level below, same hard requirements, separate lower titles/seniority. Tag its lineage and hand it off for
+  dated-history assessment; do not claim a lower title means the person is ready or willing to move.
 - If a narrow `people_search` returns 0 rows (or too few), retry through `people_search` by **expanding
   `titles[]`** with more role variants (canonical lists in `finding-companies-and-contacts.md`
   §Title handling), and/or adding `seniority`/`skills` — **never by dropping `titles[]` entirely** to

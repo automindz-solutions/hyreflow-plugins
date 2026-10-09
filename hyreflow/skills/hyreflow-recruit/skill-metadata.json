@@ -30,6 +30,18 @@
       ],
       "providers": []
     },
+    "shortlist.md": {
+      "kind": "guide",
+      "title": "Screening and Shortlisting",
+      "tags": [
+        "shortlist",
+        "screening",
+        "qualify",
+        "scoring",
+        "decision questions"
+      ],
+      "providers": []
+    },
     "enriching-and-researching.md": {
       "kind": "guide",
       "title": "Enriching and Researching",
@@ -155,7 +167,10 @@
         "job spec",
         "shortlist",
         "vacancy",
-        "competitor poach"
+        "competitor poach",
+        "promotion",
+        "promotion ready",
+        "career progression"
       ],
       "providers": []
     },
@@ -169,6 +184,29 @@
         "displaced",
         "downsizing",
         "job cuts"
+      ],
+      "providers": []
+    },
+    "recipes/multi-ats-job-posting.md": {
+      "kind": "specialized-workflow",
+      "title": "Multi-ATS job posting \u2014 one role, every connected ATS",
+      "tags": [
+        "post a job",
+        "post this job",
+        "post the job",
+        "multi post",
+        "multi poster",
+        "multi ats",
+        "multiple ats",
+        "all ats",
+        "all our ats",
+        "every ats",
+        "post everywhere",
+        "post it everywhere",
+        "out everywhere",
+        "publish a role",
+        "open a requisition",
+        "job board"
       ],
       "providers": []
     },
@@ -224,6 +262,48 @@
         "filter list"
       ],
       "providers": []
+    },
+    "recipes/people-from-webpage.md": {
+      "kind": "specialized-workflow",
+      "title": "People From a Webpage",
+      "tags": [
+        "team page",
+        "meet the team",
+        "about page",
+        "leadership page",
+        "roster",
+        "employees on this page",
+        "people on this page",
+        "scrape people",
+        "member directory"
+      ],
+      "providers": [
+        "firecrawl",
+        "exa"
+      ]
+    },
+    "recipes/linkedin-sparse-sourcing.md": {
+      "kind": "specialized-workflow",
+      "title": "LinkedIn-Sparse Roles → Employer Pages → Impressum",
+      "tags": [
+        "linkedin-sparse",
+        "blue-collar",
+        "nurses",
+        "care workers",
+        "chefs",
+        "mechanics",
+        "doctors",
+        "impressum",
+        "team page",
+        "about us",
+        "geschäftsführer",
+        "local business"
+      ],
+      "providers": [
+        "exa",
+        "firecrawl",
+        "openmart"
+      ]
     },
     "recipes/tradeshow-to-bd.md": {
       "kind": "specialized-workflow",

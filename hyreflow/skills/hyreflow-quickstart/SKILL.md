@@ -12,8 +12,11 @@ description: 'Run a quick Hyreflow demo recipe to show the user how Hyreflow wor
 > CLI does not apply — this connection is already authorized, and the skill documents are served to
 > you directly. Skip to the steps and use the `hyreflow_*` tools your client lists.
 >
-> Two things below read differently there: results come back in the response rather than as a CSV on
-> disk, so show the rows themselves instead of a file path; and `/hyreflow-recruit` is a command for a
+> Two things below read differently there. Results come back in the response rather than as a CSV on
+> disk, so show the rows themselves instead of a file path — but anything over 50 rows comes back as a
+> 5-row sample plus a `ds_…` dataset id. Show the sample, then call `hyreflow_dataset_export` and give
+> the user the download link (`hyreflow_dataset_read` first if you need a bigger slice;
+> `hyreflow_datasets_list` finds an id you no longer have). And `/hyreflow-recruit` is a command for a
 > client with a shell — offer to go deeper with the tools instead.
 
 ## Quick Start

@@ -1,18 +1,31 @@
 ---
 name: jobadder
-description: "Read/write JobAdder (recruiting ATS/CRM) via its v2 API — find/get/create/update candidates, jobs, companies, contacts, applications, placements, job ads, requisitions; notes, statuses, identity search. Use when the user mentions JobAdder, pushing candidates into the ATS, attaching candidates to jobs, or reading jobs/companies/placements. Keys: OAuth app credentials, not a self-serve dashboard BYOK key."
+description: "Read/write JobAdder (recruiting ATS/CRM) via its v2 API — find/get/create/update candidates, jobs, companies, contacts, applications, placements, job ads, requisitions; notes, statuses, identity search. Use when the user mentions JobAdder, pushing candidates into the ATS, attaching candidates to jobs, or reading jobs/companies/placements. Keys: one-click OAuth connect from the dashboard (Connect → authorize in JobAdder; no app registration)."
 ---
 
 # JobAdder — Integration Meta Skill
 
-HOW in `lib/jobadder.py`. Built from the official OpenAPI v2 (spec-verified; not yet live-confirmed — needs a client OAuth app + refresh token for a read-only pilot).
+HOW in `lib/jobadder.py`. Built from the official OpenAPI v2 (spec-verified; not yet live-confirmed — needs a connected workspace for a read-only pilot).
 
-## Auth & config (OAuth2, region-aware base)
-- **Auth:** OAuth2 **authorization-code** flow; this client runs the **refresh-token** grant to mint ~60-min access tokens (Bearer).
-- **Env:** `JOBADDER_CLIENT_ID`, `JOBADDER_CLIENT_SECRET`, `JOBADDER_REFRESH_TOKEN`. Optional pre-minted-token shortcut: `JOBADDER_ACCESS_TOKEN` (+ `JOBADDER_API_BASE`). Never hardcode. Because this is an OAuth credential rather than a single key, JobAdder is **not a self-serve integration yet** — it can't be pasted into the dashboard and isn't held per-workspace; enabling it is a conversation with Hyreflow.
-- **⚠️ Base URL is returned by the token endpoint** (`api` field), region-specific (AU/EU/US shards differ — default `https://api.jobadder.com/v2`). The client reads it from the refresh response automatically — don't hardcode a region.
-- **Refresh-token rotation:** JobAdder may return a new `refresh_token` on each refresh — the client keeps the latest in memory for the session; persist it back to `JOBADDER_REFRESH_TOKEN` if you run long-lived.
-- **One-time setup:** authorize at `id.jobadder.com/connect/authorize` with **`offline_access`** (required for a refresh token) + the read/write scopes you need → exchange `code` at `id.jobadder.com/connect/token` → store the `refresh_token`. Scopes are granular (`read_candidate`, `write_candidate`, `read_job`, `write_job`, …) plus broad `read`/`write`.
+## Auth & config (OAuth2, region-aware base, self-serve)
+- **Auth:** OAuth2 **authorization-code** flow, connected per workspace from the dashboard — not an
+  engine-level credential. The user opens Integrations → **Connect JobAdder**, signs in to JobAdder and
+  authorizes Hyreflow. No JobAdder developer account, no app to register, nothing to paste. From then on
+  the engine runs the **refresh-token** grant to mint ~60-min access tokens (Bearer) automatically —
+  nothing to configure per call.
+- **Own-app option:** the dashboard card offers Hyreflow's app (the default) or the workspace's own.
+  Choosing its own means pasting a Client ID + Client Secret registered against the redirect URI the card
+  shows; that choice is stored and honoured until it is switched back. Switching either way drops the
+  live connection and needs a re-authorize — a refresh token only works against the app that issued it.
+- **A connection is required to run anything.** An unconnected workspace gets a 0-credit result with
+  `_meta.error = "no_key"` naming the fix; the tool never falls back to another account, so the answer is
+  always "connect it", never "try again".
+- **⚠️ Base URL is returned by the token endpoint** (`api` field), region-specific (AU/EU/US shards differ — default `https://api.jobadder.com/v2`). Handled automatically — don't hardcode a region.
+- **Refresh-token rotation:** JobAdder returns a new `refresh_token` on each refresh — the engine persists
+  it immediately, so a connected workspace stays live with no action needed.
+- **Scopes:** the connect flow authorizes with **`offline_access`** (required for a refresh token) plus
+  the read/write scopes the operations below need. Granular (`read_candidate`, `write_candidate`,
+  `read_job`, `write_job`, …) plus broad `read`/`write`.
 
 ## Operations (ALL spec-verified from OpenAPI v2)
 - **Pilot (safe, read-only):** `get_current_user` (`/users/current`) — cheapest call; confirms auth + resolves the region base.
@@ -32,14 +45,14 @@ HOW in `lib/jobadder.py`. Built from the official OpenAPI v2 (spec-verified; not
 
 ## Guardrails
 - Production ATS writes — **pilot one record, confirm, then bulk.** Request the **minimum scopes** needed.
-- Secrets env-only; never commit the client secret or refresh token.
+- Client secret and refresh token are stored encrypted server-side once connected; never ask a user to paste them anywhere but the dashboard's Connect JobAdder card.
 
 ## Handoff
 ATS write target: enriched/qualified candidates → `add_candidate` → `add_candidates_to_job` (attach to the open req). Pairs with the multi-source candidate-search recipe (source → enrich → load into JobAdder).
 
 <!-- API-SURFACE:START (auto-generated by reference/_gen_api_surface.py — do not hand-edit) -->
 ## Callable surface
-Call via the CLI: `hyreflow tools execute jobadder <method> --payload '{...}'` (preview with `--dry-run`; `hyreflow tools get jobadder <method>` returns the live contract + cost). Any endpoint without a typed method is reachable through the tool's generic `request` passthrough.
+Call via the CLI: `hyreflow tools execute jobadder <method> --payload '{...}'` (preview with `--dry-run`; `hyreflow tools get jobadder <method>` returns the live contract + cost). Only the methods listed below are callable.
 
 - `add_candidate(payload: dict, *, allow_duplicates: str | None = None) -> Any` — POST /candidates — AddCandidateCommand. On 409 (duplicate email) the response header X-Allow-Duplicates carries an override code; pass it back as allow_duplicates to force-create.
 - `add_candidate_note(candidate_id: int, text: str, *, type: str | None = None, created_by_integration: bool | None = None) -> Any` — POST /candidates/{id}/notes — text required (<=65535 chars).

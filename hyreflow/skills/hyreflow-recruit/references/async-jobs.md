@@ -16,17 +16,35 @@ and so on — first hit still wins per row. On a provider that accepts a batch (
 contacts) the whole pending set becomes **one vendor job and one poll loop**, not one job per row. The
 engine tags each contact with a correlation key and maps results back by that echo (never by position);
 billing stays **per row** — one charge per hit, misses free, and a shared HTTP call never charges twice.
-Twelve candidates that used to take twelve serial ~50s jobs finish in roughly one.
+Twelve candidates finish in roughly one ~50s job, not twelve serial ones.
 
 ## A stalled job comes back with its identity — resume it, don't resend
-When the poll budget runs out first, the step reports `still_enriching` and carries
-`job_id` + `resume: {tool, method, id_arg}`. Resume with
+When the poll budget runs out first, the step reports `still_enriching` and **ends that row's chain**: no
+further provider is started or paid. The job is persisted and a background sweeper polls it to completion
+server-side, so the row settles even if nothing resumes it. Resume manually with
 `hyreflow tools execute <resume.tool> <resume.method> --payload '{"<id_arg>": "<job_id>"}'` — a **poll, not
 a new job** (`charge_on_miss: false`): free while the job runs; the poll that finds it finished charges
-each revealed row once (keyed on job + row, so polling again is free). Re-sending the original row would start, and pay for, a
-second job. In a batch, every stalled row shares the same `job_id`; one resume call answers all of them
-(the CLI prints the exact command per stalled row). Jobs are owner-gated: only the workspace that started
-a job can poll it.
+each revealed row once (keyed on job + row, so polling again is free, and it's the same dedup the sweeper
+uses — a manual poll and the sweeper never double-bill the same job). Re-sending the original row would
+start, and pay for, a second job. In a batch, every stalled row shares the same `job_id`; one resume call
+answers all of them (the CLI prints the exact command per stalled row). Jobs are owner-gated: only the
+workspace that started a job can poll it.
+
+A `still_enriching` job usually finishes within 1–2 minutes of starting — check it every 20–30 seconds
+with the same resume command rather than waiting minutes between polls; still never resend the row.
+
+**If the job settles with no result (a miss, not one still running),** the chain stopped before trying the
+later providers for that row — pick up with the next provider yourself (see
+[`provider-precedence.md`](provider-precedence.md), "per-row fallback on a miss").
+
+A multi-row call also persists its rows to a dataset (`_meta.dataset_id`). A `still_enriching` row fills
+in there on its own once the sweeper settles its job — no manual resume needed to complete the dataset,
+only to get that row's answer back in the current conversation sooner.
+
+If the whole call returned nothing — a connector timeout, a dropped connection — resending the identical
+batch IS the recovery: within ~15 minutes it replays the first call's dataset for free
+(`_meta.replayed: true`, `charged: 0`) rather than billing a second run. That is the batch shape only;
+re-sending one pending row's payload still starts and bills a second job.
 
 ## The rule
 **Adapters never block.** They expose two thin, synchronous-per-HTTP-call methods:
@@ -47,7 +65,7 @@ TERMINAL[(tool, fetch_method)] -> predicate      # per-endpoint "is it done?"  (
 | Context | How it drives await_job | Notes |
 |---|---|---|
 | **Local test** | `cli.py <tool> <start> ... --await <fetch> [--poll-interval N --poll-timeout N]` | injects `time.sleep` (blocking loop). Proven on BetterContact. |
-| **Server — background runner** | same `await_job`, inject an async sleeper (`asyncio.sleep`) or drive from a queue tick | **do NOT block a request worker** — return the job id to the orchestrator (the host agent) and resolve via a `get_status`/`get_result` tool, or run the poll in a background task. |
+| **Server — background runner** | same `await_job`, inject an async sleeper (`asyncio.sleep`) or drive from a queue tick | **do NOT block a request worker** — return the job id to the orchestrator (the host agent) and resolve via a `get_status`/`get_result` tool, or run the poll in a background task. This is now real, not just a pattern: a worker loop sweeps every unfinished managed async job to completion and bills it on settle, so a `still_enriching` row resolves even with no manual resume. |
 | **Server — push-only providers** | webhook receiver resolves the job; no poll | AI Ark email-finder is **webhook-mandatory** (no poll endpoint). Server hosts a receiver, stores results by id; the host agent reads the local store. Persistent server CAN do this (a stateless agent can't). |
 
 ## Async endpoints today (terminal states LIVE-confirmed where noted)
