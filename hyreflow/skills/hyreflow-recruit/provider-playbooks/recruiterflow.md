@@ -8,12 +8,12 @@ description: "Read/write Recruiterflow (recruiting ATS/CRM) via its external API
 HOW in `lib/recruiterflow.py`.
 
 ## Auth & config
-- **Base URL:** `https://recruiterflow.com/api/external` · **Auth:** header `RF-Api-Key` (env `RECRUITERFLOW_API_KEY`; never hardcode). `get_info()` = safe read-only pilot.
+- **Base URL:** `https://api.recruiterflow.com/api/external` · **Auth:** header `RF-Api-Key` (env `RECRUITERFLOW_API_KEY`; never hardcode). `get_info()` = safe read-only pilot.
 - **ALL paths CONFIRMED** from the official Swagger spec (api.recruiterflow.com, 2026-06-01 — pasted by user). Full endpoint index: `reference/docs/recruiterflow/raw/endpoints.md`. RF terminology: **client = company**, plus candidate/contact/job/deal/placement.
 - **Paths & params (exact):** account info is `get_info()` → `POST /info` (there is no `/account`); candidate read is `get_candidate()` → `GET /candidate/get`; `get_job`'s param is `job_id` (not `id`); job statuses is `GET /job-status/list` (hyphenated); there is no resume-parse method (`/resume/parse` is not in the spec).
 
-## Operations (36 methods)
-Candidates: `list/get/search/add/update_candidate`, `add_candidate_to_job`, `move_candidate_to_stage`, `disqualify_candidate`, `add_candidate_note`. Jobs: `list/get/search/create/update_job`, `close_job`, `open_job`, `get_job_pipeline`, `list_job_statuses`. Clients(companies): `list/get/add/update/search_clients`. Contacts: `list/get/add/update/search_contacts`, `add_contact_note`. Campaigns: `list_campaigns`, `add_to_campaign`, `remove_from_campaign`. Also `get_info`, `list_users`, `get_user`, `create_placement`. Everything else (activities, calls, emails, tasks, custom-fields, files, deals, placements, reference lists, locations, tags) isn't wired to a typed method — not reachable via `hyreflow tools execute recruiterflow <method>`; see the cached index.
+## Operations (41 methods)
+Candidates: `list/get/search/add/update_candidate`, `add_candidate_to_job`, `move_candidate_to_stage`, `disqualify_candidate`, `add_candidate_note`. Jobs: `list/get/search/create/update_job`, `close_job`, `open_job`, `get_job_pipeline`, `list_job_statuses`. Clients(companies): `list/get/add/update/search_clients`. Contacts: `list/get/add/update/search_contacts`, `add_contact_note`. Campaigns: `list_campaigns`, `add_to_campaign`, `remove_from_campaign`. Also `get_info`, `list_users`, `get_user`, `create_placement`. Batch pushes: `batch`, `add_candidates_batch`, `add_clients_batch`, `add_contacts_batch`, `create_jobs_batch`. Everything else (activities, calls, emails, tasks, custom-fields, files, deals, placements, reference lists, locations, tags) isn't wired to a typed method — not reachable via `hyreflow tools execute recruiterflow <method>`; see the cached index.
 
 ## Guardrail
 Writes go to a production ATS — pilot one record, show payload+response, confirm before bulk.
@@ -73,5 +73,5 @@ Call via the CLI: `hyreflow tools execute recruiterflow <method> --payload '{...
 
 For large pushes use `add_candidates_batch`, `add_contacts_batch`, `add_clients_batch`,
 `create_jobs_batch`. They pace calls to a conservative **60 req/min** default and return
-`{created, failed, total, elapsed_ms}`. Override with `RECRUITERFLOW_RATE_LIMIT_RPM`. See
-`crm-bulk-pushes.md` for the cross-CRM guide.
+`{created, failed, total, elapsed_ms}`. Need a higher rate? [Contact us](mailto:support@hyreflow.ai) and
+we'll see what we can do. See `crm-bulk-pushes.md` for the cross-CRM guide.

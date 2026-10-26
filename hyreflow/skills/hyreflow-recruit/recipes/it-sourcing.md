@@ -23,7 +23,7 @@ candidate shortlist with a rich dossier. A pattern the agent composes; not a har
 ```
 IT JD/role → PARSE (AI) →  ┌─ GitHub leg:    search_users → candidate_dossier/user_dossier (or GraphQL dossier) → [Firecrawl+AI deep context]
                            └─ people-DB leg: people_search (aiark → … )
-           → MERGE + dedup (GitHub wins a tie) → QUALIFY 0-10 → shortlist (LinkedIn-first + personal email)
+           → MERGE + dedup (GitHub wins a tie) → QUALIFY 0-10 → shortlist (LinkedIn-first + personal email from the free GitHub harvest only)
 ```
 Docs: [`provider-playbooks/github.md`](../provider-playbooks/github.md) (the dossier + email rules), [`finding-people.md`](../finding-people.md),
 [`enriching.md`](../enriching.md), [`references/provider-precedence.md`](../references/provider-precedence.md).
@@ -158,7 +158,8 @@ context) **plus the dated employment history from 5b**, then **deliver exactly t
 surfaced to the user as-is — never subbed with your own guess.** Don't hand back the whole pool — N is the
 deliverable.
 
-**7 — OUTREACH handoff** — candidate channel = **LinkedIn-first → personal email** (GDPR-aware; harvested emails are
+**7 — OUTREACH handoff** — candidate channel = **LinkedIn-first → personal email** — the personal email is the
+free GitHub commit harvest only; people-DB rows get no paid `personal_email` lookup unless the user asks (GDPR-aware; harvested emails are
 unconsented). See `writing-outreach.md`.
 
 ## Gates

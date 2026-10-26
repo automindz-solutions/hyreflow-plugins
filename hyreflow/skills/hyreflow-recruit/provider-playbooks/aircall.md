@@ -13,7 +13,7 @@ HOW in `lib/aircall.py`. Docs: developer.aircall.io/api-references.
 - **Rate limit:** 120 req/min/company (watch `X-AircallApi-Remaining`).
 
 ## Operations
-Calls: `list_calls`/`iter_calls`, `get_call`, `search_calls`, `tag_call`, `comment_call`, `get_transcription`, `get_call_summary`. Contacts: list/iter/search/get/create/update/delete (phone_numbers & emails are `[{label,value}]`). Also `list_users`, `dial`, `list_numbers`, `list_tags`, webhooks, `send_message` (SMS). `request()` covers the rest.
+Calls: `list_calls`/`iter_calls`, `get_call`, `search_calls`, `tag_call`, `comment_call`, `get_transcription`, `get_call_summary`. Contacts: list/iter/search/get/create/update/delete (phone_numbers & emails are `[{label,value}]`). Also `list_users`, `dial`, `list_numbers`, `list_tags`, `ping`, webhooks, `send_message` (SMS). These are the only callable methods.
 
 ## Guardrail
 `dial`, `send_message`, `tag_call`, `comment_call` are write/outbound actions on a live phone system — confirm before bulk; pilot one.

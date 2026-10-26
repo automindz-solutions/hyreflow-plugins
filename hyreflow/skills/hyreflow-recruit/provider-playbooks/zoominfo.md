@@ -10,7 +10,7 @@ credentials in place these tools are unavailable/skipped with `no_key`. A worksp
 ZoomInfo DevPortal app on the Integrations page (**Client ID** + **Client Secret**, an OAuth
 Client Credentials pair) or via `hyreflow byok set zoominfo --api-key <client-id> --field client_secret=<secret>`;
 the key check probes `user_usage`, and a BYOK-held ZoomInfo jumps to the front of the people_search and
-email/phone enrichment waterfalls.
+email/phone enrichment waterfalls. Connecting a key needs the Essential plan or above: on Free/Starter the connect is refused with a plan-required error, so tell the user to upgrade rather than retrying.
 
 HOW in `lib/zoominfo.py`. Paths CONFIRMED from the live docs at docs.gtm.ai (2026-09); index: `reference/docs/zoominfo/raw/endpoints.md`.
 

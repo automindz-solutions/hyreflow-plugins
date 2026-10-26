@@ -64,5 +64,6 @@ Call via the CLI: `hyreflow tools execute loxo <method> --payload '{...}'` (prev
 ## Bulk writes & rate limits
 
 For large pushes use `create_people_batch`, `create_jobs_batch` and `create_companies_batch`. They pace calls to a
-conservative **60 req/min** default and return `{created, failed, total, elapsed_ms}`. Override with
-`LOXO_RATE_LIMIT_RPM`. See `crm-bulk-pushes.md` for the cross-CRM guide.
+conservative **60 req/min** default and return `{created, failed, total, elapsed_ms}`. Need a higher
+rate? [Contact us](mailto:support@hyreflow.ai) and we'll see what we can do. See
+`crm-bulk-pushes.md` for the cross-CRM guide.

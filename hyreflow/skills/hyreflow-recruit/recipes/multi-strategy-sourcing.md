@@ -9,7 +9,7 @@ agent composes from existing capabilities — **no new engine primitives**.
 > angles first, **merge + qualify for free**, and only THEN spend per-row credits (signal scans, enrich)
 > on the candidates that survived. Never pay to scan or enrich a `no_fit`.
 
-> **Not this recipe?** For a plain cross-DB structured merge (one title set across AI Ark · Lemlist ·
+> **Not this recipe?** For a plain cross-DB structured merge (one title set across AI Ark ·
 > Prospeo, dedup + qualify — no semantic/competitor/intent angles) use
 > [`multi-source-candidate-search.md`](multi-source-candidate-search.md). This recipe is the superset:
 > use it when the ask is "leave no stone unturned", a **talent / market map**, or "find the passive
@@ -21,7 +21,8 @@ Brief → PARSE (AI) → [ STRUCTURED people_search  +  SEMANTIC exa_search ]  (
       → COMPETITOR talent map (tiered, angle 2) → LOOKALIKE expansion (angle 3)
       → PASSIVE-INTENT mine (aiark OPEN_TO_WORK + pool signals, angle 4)
       → MERGE + dedup (linkedin_url) + RANK → ENRICH PROFILES (work history) → QUALIFY (AI, free)  ← the pay gate
-      → SIGNAL scan (exa, survivors only) → ENRICH (personal email + LinkedIn) → DELIVER (+ blind MPC one-pager)
+      → SIGNAL scan (exa, survivors only) → shortlist delivered (LinkedIn + blind MPC one-pager)
+      → [ENRICH (personal email) — opt-in, only on explicit request] → (outreach)
 ```
 Docs this leans on: [`finding-companies-and-contacts.md`](../finding-companies-and-contacts.md) (search /
 company-scoping / OPEN_TO_WORK), [`enriching-and-researching.md`](../enriching-and-researching.md)
@@ -32,7 +33,7 @@ company-scoping / OPEN_TO_WORK), [`enriching-and-researching.md`](../enriching-a
 ## Inputs
 - **Brief** (JD text or a structured ask, any language). Optional: target count N (default 10),
   location override, **strategy mix** (default: all angles; drop any the brief doesn't warrant),
-  competitor list (else discovered), `signal_scan` cap (default top-N tier_1/tier_2 only).
+  competitor list (else discovered), `signal_scan` cap (default top-N survivors only).
 
 ## Steps
 
@@ -107,8 +108,8 @@ per-row step, and the one that makes the gate mean something)*
   answered — often empty, so read an absence as unknown, not as a gap.
 
 **6b — QUALIFY against the brief — THE PAY GATE** *(AI step, free on the host agent)*
-- Score each candidate **on the dated work history from 6a**, not on the current title → `tier_1 | tier_2 |
-  no_fit`; **drop `no_fit`**. For this many×one pool, the batch `/qualify` endpoint is the standard call
+- Score each candidate **on the dated work history from 6a**, not on the current title → a 0-10
+  `qualify.score`; **drop candidates below your bar** (or below `min_score` if set). For this many×one pool, the batch `/qualify` endpoint is the standard call
   (use the **"Qualify candidate against role"** prompt only for a single one-off score):
   → `hyreflow qualify --job @brief.md --candidates @pool.json [--min-score N]`
   `/qualify` reports `qualify.basis` (`work_history` | `title_only`) per candidate and **refuses a batch in
@@ -119,19 +120,16 @@ per-row step, and the one that makes the gate mean something)*
   runs on survivors only.
 
 **7 — ANGLE 2-signal · proof-of-work scan** *(metered; survivors only; capped)*
-- For the top-N `tier_1`/`tier_2` only (honor the `signal_scan` cap), run an Exa proof-of-work scan
+- For the top-N survivors only (honor the `signal_scan` cap), run an Exa proof-of-work scan
   (talks, podcasts, posts, webinars). **Boost** candidates with a surfaced artifact and **carry the
   artifact** into the DM mandate below.
   → `hyreflow tools execute exa_search --payload '{"query":"<name> <company> talk OR podcast OR post","category":"people","numResults":5}'`
   (`exa_contents` to pull the page text of a promising hit.)
 
-**8 — ENRICH (candidate channel)** *(`enriching-and-researching.md`; gated)*
-- **Personal email + LinkedIn — NEVER work email** (candidates). `personal_email` waterfall
-  (order in `reference/waterfalls.json`), first-hit, verify deliverability.
-  → `hyreflow enrich --input <ds_id|csv> --with '{"alias":"personal_email","tool":"personal_email","payload":{...}}'`
-
-**9 — DELIVER**
-- A ranked, brief-qualified shortlist CSV (lineage `_source` tags + tier + intent + artifact link).
+**8 — DELIVER**
+- A ranked, brief-qualified shortlist CSV (lineage `_source` tags + tier + intent + artifact link +
+  LinkedIn — already known from sourcing/profile enrichment, free). **The shortlist itself ends here** —
+  contact details (personal email) are step 9's separate, opt-in enrichment.
   Then render it with the **`hyreflow-artifact`** skill by default (candidates view), unless the user asked for the CSV only.
 - **Optional blind MPC one-pager** — an anonymized candidate spotlight (redact name/contact; keep
   skills, headline, proof-of-work artifact, fit summary) the recruiter can send. Render with the
@@ -141,11 +139,21 @@ per-row step, and the one that makes the gate mean something)*
   from step 7, a shared company, a specific project) — **never generic**. Use the **"Candidate outreach
   first line (LinkedIn)"** prompt.
 
+**9 — ENRICH (candidate channel)** *(opt-in — `enriching-and-researching.md`; gated)*
+- Only run this step when the user explicitly asks for contact details and names the channel — never as
+  a default continuation of delivering the shortlist. A bare "enrich" is ambiguous: ask which channel; for
+  screening/context (not contact details) the `linkedin_profile` data from step 6a already covers it.
+- **Personal email + LinkedIn — NEVER work email** (candidates). `personal_email` waterfall
+  (order in `reference/waterfalls.json`), first-hit, verify deliverability.
+  → `hyreflow enrich --input <ds_id|csv> --with '{"alias":"personal_email","tool":"personal_email","payload":{...}}'`
+
 ## Gates
 - **Count-before-pay** (structured / company-scoped legs) and **small-`numResults` pilot** (Exa legs)
   before any depth.
 - **Pilot → approval → full** for the paid full run (see SKILL.md credit-and-approval gate).
-- **Qualify before per-row spend** — signal scans (step 7) and enrich (step 8) run on survivors only.
+- **Qualify before per-row spend** — signal scans (step 7) run on survivors only. **Contact enrichment
+  (step 9) is opt-in and out of scope for delivering the shortlist** — run it only when the user
+  explicitly asks for contact details.
 - **Candidate channel** = personal email + LinkedIn (never work email). **EEO:** never filter on
   age/gender/marital status/etc. — role/skill/location/intent only.
 - **Over-provision ~1.4×N**, single-source-default.
@@ -160,18 +168,20 @@ per-row step, and the one that makes the gate mean something)*
 | 4 open-to-work | aiark ~0.5/result |
 | 5 merge + rank / 6b qualify | AI tokens (free on the host agent) |
 | 6a profile enrich | per-hit (`linkedin_profile` providers; a miss costs 0) — cap to the ranked pool |
-| 8 enrich | per-hit (personal-email providers) |
+| 9 enrich (opt-in) | per-hit (personal-email providers) — only if the user asks |
 Free: dedup, ranking, bench-concentration table, intent classification, the channel/EEO rules.
 
 ## Output
 A **ranked, brief-qualified shortlist** drawn from five angles — competitor- and intent-boosted first,
-lookalike/semantic profiles filling the rest — each with LinkedIn + personal email and a proof-of-work
-artifact, ready for a personalized candidate sequence. Plus an optional **competitor Market Map**
+lookalike/semantic profiles filling the rest — each with LinkedIn and a proof-of-work artifact. **The
+shortlist itself ends here** — personal email is step 9's separate, opt-in enrichment, run only when the
+user explicitly asks for contact details. Plus an optional **competitor Market Map**
 (bench-concentration / raid-targets) and a **blind MPC one-pager** per spotlight candidate.
 
 ## Notes from live runs
 - **Run the cheap angles, enrich the profiles, qualify, THEN spend.** The expensive per-row work (signal
-  scans, contact enrich) is step 7–8 on purpose — surviving the qualify gate is what earns it.
+  scans) is step 7 on purpose — surviving the qualify gate is what earns it. Contact enrich (step 9) is a
+  further, separate opt-in — never bundled into delivering the shortlist.
 - **A title snapshot ranks the wrong people.** Sourcing output shows the current role only, so recent joiners
   at strong employers float up and specialists behind a generic title sink. The dated history from 6a is what
   makes tier_1 mean tier_1.

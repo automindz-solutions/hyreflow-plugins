@@ -29,7 +29,10 @@ Both endpoints score on the history the row carries. **Enrich before you screen*
 has the current title, employer and location only, so run the `linkedin_profile` waterfall over the
 pool first and screen on dated `experience[]`. A pasted resume in `profile.about` is also read in
 full when no structured history is present. Each row reports its `basis`: `work_history`,
-`resume_text`, or `title_only`. A batch where every row is `title_only` is refused (422
+`resume_text`, or `title_only` (a web row's page text in `text` counts as resume text). A row carrying the
+candidate's own site (`portfolio`, `website`, or a non-LinkedIn `url`) is scored with it and returns it as
+`portfolio_url`; show it to the recruiter, it is often the strongest evidence for a designer. A batch
+where every row is `title_only` is refused (422
 `no_work_history`); pass `allow_thin_profiles: true` for a pool that will never have richer evidence
 (a referral list, for example) to rank it on the sourcing fields instead.
 
@@ -48,7 +51,7 @@ Every screen runs in the background; there is no mode to pick. The call waits ab
 it, then answers one of two ways:
 
 - **Finished** — the ranking: `{run_id, status: "completed", candidates: [{row, full_name, title, …,
-  shortlist: {score, tier, categories{}, holistic{}, must_haves[], basis}}], scored, count, _meta}`.
+  shortlist: {score, tier, categories{}, holistic{}, must_haves[], unverified[]?, basis}}], scored, count, _meta}`.
   Each ranked row carries who the candidate is, `row` (its position in `_meta.dataset_id`) and the
   verdict — not the profile you sent. The full rows are in the dataset.
 - **Still running** — a handle: `{run_id, dataset_id, status, progress: {done, total},
@@ -184,24 +187,28 @@ model returns the option plus its confidence.
    as `shortlist.holistic` — useful as a second opinion, and worth a look when it disagrees sharply
    with the composite. It does **not** decide the order. (When you supply your own `questions`, there
    are no categories, so your `score` question ranks exactly as before.)
-3. **A `noul` named `must_have_1`, `must_have_2`, … is a HARD GATE.** Below 0.5 the row is `no_fit`
-   whatever its score, and it comes back under `shortlist.must_haves` with its probability. Its
-   `requirement` label is your `must_haves` entry when you passed one, otherwise the question's own
-   `instructions`. **Generation never creates a gate** — a gate rejects people, so it stays something
-   you asked for. With no `must_haves`, nothing is auto-rejected.
+3. **A `noul` named `must_have_1`, `must_have_2`, … is a HARD GATE.** It is asked as how likely the
+   candidate is to meet the requirement. Below 0.4 the row is `no_fit` whatever its score. From 0.4 to
+   0.7 it can't be told from the profile: the row keeps the tier its score earns and lists the
+   requirement under `shortlist.unverified`, for you or the recruiter to check. Every gate comes back
+   under `shortlist.must_haves` with its probability. Its `requirement` label is your `must_haves`
+   entry when you passed one, otherwise the question's own `instructions`. A `must_have_<n>` you write
+   into your own `questions` is cut at the same 0.4 / 0.7, so word it as a likelihood ("how likely is
+   it that the candidate …"), not "does the profile show …" — asked that way, silence reads as a no.
+   **Generation never creates a gate** — a gate rejects people, so it stays something you asked for. With no `must_haves`, nothing is auto-rejected.
 4. **Everything else reports without gating.** With a generated set the per-question probabilities are
    written to the output dataset and left out of the inline response — ~100 numbers a row is around
    900 tokens of context per candidate, and `categories` says the same thing in ten. Read the dataset
    when you want the question-by-question audit trail.
 
-Tiers are code, not judgement, and any failed gate is `no_fit` whatever the score. On a generated
-set they are drawn against the job's own ideal candidate: `tier_1` at ≥ 60% of the score the ideal
-CV earns on this set, `tier_2` at ≥ 40% (`_meta.tier_thresholds` gives the numbers — about 5.5 and
-3.7 for a typical set). A real pool rarely gets near the ideal: on 100 sourced engineers the best
-scored 4.3, so expect a few `tier_2` and little `tier_1`, and read the ranking, not the label. A set
+Tiers are code, not judgement, and a clearly failed gate is `no_fit` whatever the score. On a generated
+set they are drawn against the job's own ideal candidate: `tier_1` at ≥ 75% of the score the ideal
+CV earns on this set, `tier_2` at ≥ 55% (`_meta.tier_thresholds` gives the numbers — about 7.1 and
+5.2 for a typical set). A set
 you wrote yourself keeps the fixed bars, `tier_1` ≥ 7.5 and `tier_2` ≥ 5. With `min_score`,
-`candidates` holds every row at or above that score that passed every gate — the tier never filters;
-a high score never overrides a failed must-have.
+`candidates` holds every row at or above that score that no gate clearly failed — the tier never
+filters; a high score never overrides a failed must-have. An `unverified` row stays in: say which
+requirement it is missing evidence for when you present it.
 The poll applies the `min_score` the screen was sent with (`?min_score=` overrides it).
 
 A row comes back `unscored`, and is reported in `_meta.not_scored` rather than ranked, when the batch
@@ -210,10 +217,13 @@ either), or when too little of the instrument answered to rank on. None of those
 
 ## Reading the scores honestly
 
-> **These figures were measured on the single-ladder scorer**, the one that ranked on one holistic
-> `score` question — which is still exactly how a screen behaves when you supply your own `questions`.
-> The generated multi-category composite has **not** been measured on a graded pool yet, so treat the
-> shape of the advice below as sound and the specific numbers as not yet re-established for it.
+> **The generated composite was graded in 2026-10** against a blind senior-recruiter read of 160 real
+> candidates over 8 jobs: rank agreement ~0.84, and `tier_1`+`tier_2` matched the reader's shortlist
+> at precision ~0.8 / recall ~0.95. Every question is asked as what is *likely* true of the candidate,
+> not what the profile states — asked literally, a profile that doesn't name a tool the role implies
+> scored like a weak one, and the same shortlist caught only half the reader's picks. The figures
+> below were measured earlier on the single-ladder scorer, which is still how a screen behaves when
+> you supply your own `questions`.
 
 Measured on a 52-candidate graded pool, screened live:
 
@@ -275,7 +285,13 @@ they want must-haves, and screen on what they confirm** — the JD usually impli
 pinned list makes the screen auditable against something they agreed to.
 
 Use gates only for requirements that genuinely disqualify. A hard gate on a nice-to-have silently
-throws away good candidates: on a real 82-applicant pool, two gates eliminated 66 of them. At most 8
+throws away good candidates: on a real 82-applicant pool, two gates eliminated 66 of them (under an
+earlier, stricter cutoff).
+
+**Gate only what a profile can show.** A gate on something a profile rarely states mostly comes back
+`unverified` and tells you nothing: language level ("Advanced English"), team size ("led 15+
+people"), a degree on a profile with no education section, an exact total-years window. Leave those to the ranking or to `/qualify`, and gate on what a work
+history shows — the role, the domain, the location, the stack. At most 8
 (a 9th is a 422 `too_many_must_haves`, not a silent truncation) — screen on the hard ones and judge
 the rest in `/qualify`.
 

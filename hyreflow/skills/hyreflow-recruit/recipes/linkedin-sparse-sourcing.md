@@ -26,7 +26,9 @@ find local employers in the region (exa_search / openmart / company_search)
   → find each employer's team/about/Impressum pages (firecrawl_map or exa_search)
   → firecrawl_extract names + titles as printed
   → qualify vs role
-  → contact: candidate rows → personal_email waterfall; Impressum owner → hiring-manager work email
+  → deliver the qualified list
+  → [contact — opt-in, only on explicit request: candidate rows → personal_email waterfall;
+     Impressum owner → hiring-manager work email]
 ```
 
 Provider details: [`../provider-playbooks/exa.md`](../provider-playbooks/exa.md) ·
@@ -83,7 +85,11 @@ Title and location come **off the page** — the same rule as `people-from-webpa
 experience or seniority from a bio blurb, it's marketing copy. Keep only rows whose printed title matches
 the role you're sourcing for (nurse, cook, mechanic, …) and whose page places them in the target region.
 
-## Step 5 — contact: candidates vs the Impressum owner (different channel)
+## Step 5 — contact: candidates vs the Impressum owner (different channel) — opt-in
+Deliver the qualified list from step 4 first. Run this step only when the user asks for contact details —
+a sourcing ask ("find care workers in Munich") is not a contact ask, and a bare "enrich" means ask which
+channel before spending.
+
 Once a row carries `first_name + last_name`, the **employer domain** is the lookup identifier for
 enrichment — no LinkedIn URL required (see the identifier rule in
 [`../enriching-and-researching.md`](../enriching-and-researching.md)).
@@ -94,7 +100,10 @@ enrichment — no LinkedIn URL required (see the identifier rule in
 - **The Impressum's Geschäftsführer / Inhaber / managing director** → treat as the **hiring manager / BD
   decision-maker**, not a candidate, even when that name also functions as CEO. Small local businesses
   often have the owner as the *only* hiring decision-maker, so this name is frequently your best (and only)
-  contact at the employer. Use `email_enrichment` (work email) with name + domain.
+  contact at the employer. Use `email_enrichment` (work email) with name + domain. The printed Impressum
+  inbox is almost always a shared mailbox (`info@`, `kanzlei@`, …), not the owner's own address — for the
+  full play that turns the printed name into a verified personal work email plus a matched LinkedIn
+  profile, follow [`local-business-hiring-managers.md`](local-business-hiring-managers.md).
 
 ```bash
 hyreflow tools execute personal_email --rows '[{"first_name":"Anna","last_name":"Schmidt","company_domain":"pflegeheim-example.de"}]'

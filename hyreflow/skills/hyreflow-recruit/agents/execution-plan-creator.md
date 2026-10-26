@@ -33,7 +33,7 @@ Mandatory workflow:
    - Enrichment, research, waterfall, column-level work → `../enriching-and-researching.md`
    - Outreach, personalization, scoring, copy → `../writing-outreach.md`
 2. Check `../recipes/` for an exact-match playbook before inventing a plan (`jd-to-shortlist.md`,
-   `it-sourcing.md`, `qualify-against-icp.md`, `funding-to-bd.md`, `layoff-signal-to-poach.md`,
+   `it-sourcing.md`, `designer-portfolios.md`, `qualify-against-icp.md`, `funding-to-bd.md`, `layoff-signal-to-poach.md`,
    `multi-source-candidate-search.md`, `campaign-plays.md`). For **max-coverage / talent-map /
    raid-target / "source from every angle"** asks use `multi-strategy-sourcing.md` (5-angle superset:
    structured ∥ semantic + tiered competitor map + lookalike + open-to-work intent); for a plain

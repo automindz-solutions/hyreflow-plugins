@@ -43,14 +43,22 @@ row it returns and the engine sizes each vendor page from `limit` — "find me 5
 > pushed down to aiark `contact.skill` (SMART match) and **prefilters at the source**, instead of a
 > broad title-only pull + client-side filtering of the returned `skills[]` (which wastes credits on
 > off-target rows). E.g. Python/FastAPI backend engineers → pass `"skills": ["Python","FastAPI"]`
-> alongside the title rather than relying on the title alone.
+> alongside the title rather than relying on the title alone. Only AI Ark filters on `skills`: if it finds
+> nobody, the other providers run once more without the skill (see `filters_relaxed` below).
 
 > **`keywords` is the free-text lever for niche or domain sourcing** ("National Security", "clinical
 > trials", "payments"). It matches the profile's own prose — headline, summary, work-history
 > descriptions (aiark `contact.keyword`, Apollo `q_keywords`, quoted into the web fallbacks). Use it for
-> domain vocabulary that isn't a listed skill; use `skills` for named tools/technologies. Providers with
-> no person-level text filter (Prospeo, Lemlist) are skipped with `outcome: "cant_scope_company"` and
-> `unsupported_fields: ["keywords"]` rather than run unfiltered.
+> domain vocabulary that isn't a listed skill; use `skills` for named tools/technologies.
+>
+> Several `keywords` match ANY of them; pass a list, or a single string joined with ` OR `
+> (`"fintech OR B2B"` is split into two terms). Providers that can't express a field (`skills`: every
+> provider but AI Ark; `keywords`: Prospeo and Apollo when there are several) are skipped with
+> `outcome: "unsupported_fields"`. If AI Ark answered and the whole search found no one, those providers
+> run once more without `skills`/`keywords` (never after an AI Ark error). Those rows are **billed**, carry
+> `filters_relaxed: [...]`, and are **not confirmed to match the dropped filter**: screen them and tell the
+> recruiter the filter was relaxed. Web rows whose location is outside `locations` carry
+> `outside_locations: true`; flag them, never present them as in-region.
 
 The engine walks the **house provider order** (configured in `reference/waterfalls.json` — never restate
 the order here), maps your canonical query to each provider's native shape, dedups, pages,
@@ -136,7 +144,7 @@ hyreflow tools execute apollo_search_people --payload '{
 
 Each provider's exact native payload is in its `provider-playbooks/<tool>.md`; the company-scope field
 per provider is the table below (`aiark_people_search`, `prospeo_search_person`,
-`lemlist_search_people_database`, `apollo_search_people`).
+`apollo_search_people`).
 
 ## Two shapes of query (know which you have)
 1. **Open query** — titles + location (e.g. "CTOs in Germany"). No company anchor.
@@ -152,9 +160,8 @@ you picked. Prefer **domain** (every provider supports it); fall back to company
 | **`apollo_search_people`** | `q_organization_domains_list` (**domain only**) | **domain** |
 | **`aiark_people_search`** | `account.domain` \| `account.linkedin` \| `account.name` | any one |
 | **`prospeo_search_person`** | `company` (name) — geo needs pre-resolve | name |
-| **`lemlist_search_people_database`** | `currentCompanyWebsiteUrl` (domain) \| `currentCompanyLinkedInUrl` \| `currentCompany` (name) | any one |
 
-→ Have only a **name**? Use aiark/prospeo/lemlist (apollo people-search needs a domain). Have a
+→ Have only a **name**? Use aiark/prospeo (apollo people-search needs a domain). Have a
 **domain**? Any of them works; use the `people_search` waterfall by default. If a search returns global/title-only noise (no
 company scope applied), you used the wrong native field — fix the payload, don't ship the rows.
 
@@ -169,7 +176,7 @@ company scope applied), you used the wrong native field — fix the payload, don
   board with a different title spends credits on the same index. Boards and payload shapes:
   [`provider-playbooks/hyreflow_native.md`](provider-playbooks/hyreflow_native.md).
 - **Count-before-pay.** Every people-DB returns a total (apollo `total_entries`, aiark `totalElements`,
-  prospeo `pagination.total_count`, lemlist `total`). `--dry-run` or peek the count before pulling
+  prospeo `pagination.total_count`). `--dry-run` or peek the count before pulling
   depth — never blind-paginate a paid source. The count sits under the `result` envelope every
   `tools execute` returns (`{ _meta, result }`), so read it as `result.totalElements` /
   `result.total_entries` / etc. — a top-level read returns `None`.
@@ -202,8 +209,6 @@ company scope applied), you used the wrong native field — fix the payload, don
   matches nobody** (tiny/new co, or a title spelled differently than the company stores it) is a **clean
   miss** — the waterfall just falls through to the next provider; not an outage. Widen with the title rule
   below before assuming there's no coverage.
-- **lemlist** — People DB scopes by domain/LinkedIn/name; current company is `current_exp_company_name` (NOT
-  `experiences[0]`, which can be a past role). `currentTitle` accepts free text.
 - **apollo** — free net-new preview but **obfuscates PII** (no LinkedIn/last name until you enrich); scopes by
   **domain only**. Good as a coverage fallback, weaker as a primary for company-targeted.
 

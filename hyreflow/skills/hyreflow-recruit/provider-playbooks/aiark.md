@@ -133,6 +133,7 @@ Returned `totalElements` 761,948 vs baseline 72,155,668.
 ## Async flows
 - **Export people:** `export_people` → trackId → poll `export_statistics` (DONE) → `export_results` (paginated).
 - **Find emails:** `people_search` (returns trackId) → `find_emails({trackId, webhook})`. ⚠️ **`webhook` is REQUIRED** (verified live: omitting → 400 'webhook is required') — results are **pushed to your webhook**, there is NO local poll-and-fetch, so this needs a hosted receiver. trackId single-use, ~6h.
+- **One person:** `find_emails({url})` (or `linkedin`/`id`, no `trackId`) runs `export_single` inline and is priced as it: charged only when an email is found, **free on a miss**. The bulk `trackId` start keeps the `find_emails` price.
 
 ## ⚠️ WORK EMAIL ONLY — not for candidate workflows
 AI Ark's email-finder returns **work / professional emails only — NOT personal emails.** Do **not** use AI Ark
@@ -140,7 +141,8 @@ for personal-email or **candidate-acquisition** workflows. **Personal emails com
 `leadmagic` or `wiza` only.** AI Ark is for sourcing + work-email/mobile enrichment.
 
 ## Guardrails
-- `mobile_phone_finder` is expensive relative to email/profile lookups — use only on high-confidence matches; check `hyreflow tools get aiark mobile_phone_finder` for the live rate. Budget the run against `hyreflow billing balance`, not `fetch_credit()` — that reads AI Ark's own account meter and is callable only when the workspace has connected its own AI Ark key. Pilot small; gate bulk export/find-emails.
+- `mobile_phone_finder` is expensive relative to email/profile lookups — use only on high-confidence matches; check `hyreflow tools get aiark mobile_phone_finder` for the live rate. Budget the run against `hyreflow billing balance`, not `fetch_credit()` — that reads AI Ark's own account meter and is callable only when the workspace has connected its own AI Ark key. Pilot small; gate bulk export/find-emails. A miss (no phone found) is not charged.
+- In a waterfall: AI Ark leads the `people_search`, `linkedin_profile` and `phone_enrichment` chains, and is 2nd (`export_single`) in `email_enrichment`.
 
 ## Handoff
 Sourcing + enrichment: company→people search → email/phone (export/find-emails or mobile finder) → ATS/sequencer. Discover companies first, then people.
@@ -156,10 +158,12 @@ Sourcing + enrichment: company→people search → email/phone (export/find-emai
 
 **Credit costs:** company search 0.01/result; people search 0.05/result; reverse lookup 1.4/req;
 **mobile phone finder 0.332/req** (use only after a high-confidence match); export people/export single
-0.06/result; email-finder results/find emails 0.034/result;
+0.06/result; one-person find emails (no `trackId`) 0.06/found email, free on a miss;
+bulk find emails (`trackId`) 0.034/start; email-finder results 0.034/result;
 people analysis 0.266/req; polling, statistics, export results = **free**.
 
-**Async (export_people / find_emails):** launch -> `trackId` -> poll `*_statistics` until `state:"DONE"` -> fetch `*_results` (paginated).
+**Async export_people:** launch -> `trackId` -> poll `export_statistics` until `state:"DONE"` -> fetch `export_results` (paginated).
+**Async bulk find_emails:** launch with a `webhook` -> results are pushed there, no local poll.
 `find_emails` trackId is **single-use, expires 6h** after the `people_search` that generated it.
 
 **Pagination:** zero-based `page` + `size` (search/export use JSON body; results browsing uses query params).

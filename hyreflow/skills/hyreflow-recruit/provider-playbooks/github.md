@@ -1,6 +1,6 @@
 ---
 name: github
-description: "Developer sourcing via the GitHub API — search users/repos/code, read profiles + repos (languages, stars, activity), list repo contributors, and run GraphQL for rich candidate dossiers. Use when the user wants to source engineers/developers for IT roles, find contributors to specific tech/projects, or assess a developer's skills from their GitHub. Keys: hyreflow-managed credits or BYOK."
+description: "Developer sourcing via the GitHub API — search users/repos/code, read profiles + repos (languages, stars, activity), list repo contributors, and run GraphQL for rich candidate dossiers. Use when the user wants to source engineers/developers for IT roles, find contributors to specific tech/projects, or assess a developer's skills from their GitHub. Keys: free (0 Hyreflow credits); optionally connect your own GitHub token for higher rate limits (connecting your own token needs the Essential plan or above)."
 ---
 
 # GitHub — Integration Meta Skill

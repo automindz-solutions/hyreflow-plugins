@@ -41,6 +41,15 @@ A multi-row call also persists its rows to a dataset (`_meta.dataset_id`). A `st
 in there on its own once the sweeper settles its job — no manual resume needed to complete the dataset,
 only to get that row's answer back in the current conversation sooner.
 
+A `hyreflow enrich --with` step that polls a job directly (e.g. `fullenrich_get_bulk_enrichment` on a
+job id column) works the same way: a job still running stamps the row `still_enriching`, and the row
+fills in once the job finishes, through the step's own `extract_js`. One case is different: a poll
+inside a `--with-waterfall` group, or of a job the sweeper doesn't poll, stamps `job_still_running`.
+Nothing fills that row in on its own. Wait about 20 seconds, then send the same `enrich` run again: it
+re-polls only those rows (free while the job runs, charged once when it finishes), and keeps every row
+already done. Repeat until no row reads `job_still_running` or 5 minutes pass, then report how many are
+still running.
+
 If the whole call returned nothing — a connector timeout, a dropped connection — resending the identical
 batch IS the recovery: within ~15 minutes it replays the first call's dataset for free
 (`_meta.replayed: true`, `charged: 0`) rather than billing a second run. That is the batch shape only;

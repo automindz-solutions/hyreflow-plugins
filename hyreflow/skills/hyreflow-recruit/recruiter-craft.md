@@ -67,7 +67,7 @@ company's market per [`prompts.json`](prompts.json), even when the user briefed 
   written in English and print the rate as `$0.10` — restate that figure in the user's format when you
   quote it, don't paste the card's rendering.
 - **Never hand back a raw machine code as copy.** Engine outcomes (`no_key`, `skip`, `cant_scope_company`,
-  `session_limit`) and provider-side messages arrive in English because they are contract values, not
+  `unsupported_fields`, `identity_mismatch`, `session_limit`) and provider-side messages arrive in English because they are contract values, not
   wording. Explain what happened in the user's language, in a full sentence, and keep the code itself
   only where it's useful for a support conversation (e.g. in parentheses).
 
@@ -121,6 +121,8 @@ plan — don't re-describe it here; no-loss rule).
    - *Executes via:* [`finding-companies-and-contacts.md`](finding-companies-and-contacts.md);
      [`recipes/jd-to-shortlist.md`](recipes/jd-to-shortlist.md) (JD in hand),
      [`recipes/it-sourcing.md`](recipes/it-sourcing.md) (engineering),
+     [`recipes/designer-portfolios.md`](recipes/designer-portfolios.md) (digital designers; the portfolio is
+     an add-on by default, since "own portfolio site required" keeps only ~30% of qualified designers),
      [`recipes/multi-source-candidate-search.md`](recipes/multi-source-candidate-search.md) (wide coverage).
    - *Next move:* enrich work history before you qualify — the engine refuses a whole batch with no
      dated work history at all, and otherwise scores thin rows on title/employer/location alone
@@ -132,8 +134,9 @@ plan — don't re-describe it here; no-loss rule).
    - *Executes via:* enrich `linkedin_profile` (dated work history) on the sourced pool first, then
      [`recipes/qualify-against-icp.md`](recipes/qualify-against-icp.md); qualify prompts in
      [`prompts.json`](prompts.json).
-   - *Next move:* only now enrich contacts (candidate channel — personal email + LinkedIn, **never**
-     work email) → [`enriching-and-researching.md`](enriching-and-researching.md).
+   - *Next move:* deliver the ranked shortlist and offer contact details — don't run them. Enrich
+     contacts (candidate channel — personal email + LinkedIn, **never** work email) only when the user
+     asks → [`enriching-and-researching.md`](enriching-and-researching.md).
 
 3. **Outreach** — sell the move to (mostly passive) people.
    - *Decision:* confirm cadence with the user first; personalize the opener on a real profile detail;
@@ -171,6 +174,9 @@ The highest-skill recruiting: source people who haven't raised a hand and make t
 - *Executes via:* [`recipes/layoff-signal-to-poach.md`](recipes/layoff-signal-to-poach.md) (displacement
   trigger); the competitor-priority leg of [`recipes/jd-to-shortlist.md`](recipes/jd-to-shortlist.md).
   Outreach must be softer and more personalized than for active candidates (lower baseline reply rate).
+  A company **reposting** the same role, keeping one open for months, or relisting it every month is the
+  mirror signal on the BD side (a standing need for the role, not displaced talent) — see
+  [`recipes/repost-signal-to-bd.md`](recipes/repost-signal-to-bd.md).
 
 ---
 

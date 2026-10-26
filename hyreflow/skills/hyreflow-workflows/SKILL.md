@@ -12,6 +12,9 @@ description: 'Build, run, and oversee recruiting/GTM workflows with Hyreflow —
 > Hyreflow MCP server: use those tools and skip everything below that installs or runs the `hyreflow`
 > CLI. The CLI route is for a client with a shell and no `hyreflow_*` tools; when both are present,
 > the MCP tools win — one sign-in, and results come back in the response instead of as files on disk.
+> If the tools are listed but deferred (not yet loaded), load them before anything else and do the work
+> yourself — never delegate a hyreflow request to a web-research agent, and never tell the user hyreflow
+> is "not connected" before you have tried to load them.
 
 A **workflow** is a persisted, trigger-bound pipeline that **Hyreflow runs for you**: steps execute on
 Hyreflow's engine (metered), on an `api`, `webhook`, or `cron` trigger, with the full step DAG and run

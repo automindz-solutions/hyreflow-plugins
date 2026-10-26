@@ -6,13 +6,13 @@ description: "Read from and write to SourceWhale (recruiting outreach sequencer)
 # SourceWhale — Integration Meta Skill
 
 Routing layer for all SourceWhale public-API work. This file is WHAT/guardrails; the HOW
-lives in `reference/endpoints.md` and the Python client `lib/sourcewhale.py`.
+lives in `reference/docs/sourcewhale/raw/endpoints.md` and the Python client `lib/sourcewhale.py`.
 
 ## 1) What this skill governs
 
 - Routing, auth, and safety gates for SourceWhale calls.
 - Canonical execution surface: the Python client `lib/sourcewhale.py` (Python-only stack).
-- Per-endpoint detail lives in `reference/endpoints.md`.
+- Per-endpoint detail lives in `reference/docs/sourcewhale/raw/endpoints.md`.
 
 ## 2) Auth & config
 
@@ -61,7 +61,7 @@ Don't guess field names. The candidate object for `add_candidates` looks like th
 
 1. **STOP and tell the user explicitly:** *"SourceWhale has no API to create campaigns, so you need to
    create the campaign (and its message steps) manually in the SourceWhale app first. Tell me once it
-   exists."* Do **not** attempt to create it via `request()` or any other call — there is no such endpoint.
+   exists."* Do **not** attempt to create it via any call — there is no such endpoint.
 2. **Wait for the user to confirm** the campaign has been created in the UI.
 3. **Then discover its id:** `list_campaigns(user_email=…)` → find the campaign by name → use its id as
    `campaign_id` in `add_candidates`. (If `list_campaigns` doesn't show it, the user created it under a

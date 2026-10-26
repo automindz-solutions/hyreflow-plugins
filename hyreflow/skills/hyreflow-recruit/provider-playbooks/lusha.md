@@ -43,6 +43,8 @@ an explicit choice of method.
 
 Intent signals come from `lusha_contact_signals` / `lusha_company_signals`, not a flag on enrich.
 
+`lusha_enrich_person_email` is a member of the `email_enrichment` waterfall; `lusha_enrich_person_phone` is a member of the `phone_enrichment` waterfall.
+
 ### lusha_enrich_company
 
 Enriches a company from domain, name, or Lusha company ID. Returns size, revenue, industry, technologies.

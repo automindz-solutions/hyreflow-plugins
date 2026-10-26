@@ -2,9 +2,9 @@ Use LeadMagic as a contact-resolution, verification, and intent layer.
 
 - Start with cheaper gates: `leadmagic_email_validation`, `leadmagic_company_search`, and `leadmagic_job_change_detector`.
 - Escalate to premium contact discovery only after the target is worth it: `leadmagic_email_finder`, `leadmagic_mobile_finder`, `leadmagic_profile_search`, `leadmagic_b2b_profile`, and `leadmagic_personal_email_finder`.
-- For role-based discovery, use `leadmagic_role_finder` for a single decision-maker and `leadmagic_employee_finder` when you need a wider company roster. `leadmagic_employee_finder` returns **10 employees unless you pass `limit`** (1-1000, so set it to the roster size you actually want) — check the response's `total_count` to see how many exist beyond what came back. There is no page/offset on this endpoint, so **re-calling it with the same payload returns the same 10 rows**; widen `limit` instead of retrying. `leadmagic_people_search` pages differently: `limit` maxes at 100 (default 25) plus `offset`. Both bill per returned row (0.05 credits per employee on employee finder; 1 credit per person on people search), so pick a deliberate `limit` rather than maxing it by default.
+- For role-based discovery, use `leadmagic_role_finder` for a single decision-maker and `leadmagic_employee_finder` when you need a wider company roster. `leadmagic_employee_finder` returns **10 employees unless you pass `limit`** (1-1000, so set it to the roster size you actually want) — check the response's `total_count` to see how many exist beyond what came back. There is no page/offset on this endpoint, so **re-calling it with the same payload returns the same 10 rows**; widen `limit` instead of retrying. `leadmagic_people_search` pages differently: `limit` maxes at 100 (default 25) plus `offset`. Both bill per returned row (0.1 credits per employee on employee finder; 0.6 credits per person on people search), so pick a deliberate `limit` rather than maxing it by default.
 - `leadmagic_email_validation` is the final outbound validity gate for this layer. Default acceptance rule is `email_status == valid`; treat `catch_all` and `unknown` as unresolved unless the user explicitly accepts risk.
-- LeadMagic is **conservative on catch-all domains** (many Google Workspace and corporate domains). `email_status: "invalid"` with a populated `mx_record` + `mx_provider` usually means "mailbox not provable," not "does not deliver." Don't auto-discard these rows — fall back to a second validator (`enrichley`, `bettercontact`) before giving up on the lead.
+- LeadMagic is **conservative on catch-all domains** (many Google Workspace and corporate domains). `email_status: "invalid"` with a populated `mx_record` + `mx_provider` usually means "mailbox not provable," not "does not deliver." Don't auto-discard these rows — give them a second check with `enrichley` `validate_email` (or `bettercontact`) before giving up on the lead. Not `verify_emails`: the default verifier withholds catch-all addresses too (it only names them, in `result.catch_all`), so it would charge for the same unresolved answer.
 - A lookup that matches nobody comes back as an empty result with `error_code: "NOT_FOUND"`, not an error, and costs nothing — LeadMagic bills only found data. Treat it as a miss and let the next provider in the waterfall try, rather than retrying the same row.
 - **`leadmagic_profile_search` enriches a LinkedIn URL you already have — it does not find people.** It needs `profile_url` (a LinkedIn URL or username); an email won't do (use `leadmagic_b2b_profile` for email → profile). To find people at a company, use the `people_search` waterfall first, then enrich the URLs it returns. A call with no `profile_url` is refused with a 400 before any spend.
 - `leadmagic_role_finder` and `leadmagic_employee_finder` each need `company_domain` **or** `company_name` (either one, or both); `leadmagic_role_finder` also takes `job_title`. `leadmagic_email_finder` needs a name (`first_name`+`last_name`, or `full_name`) **and** a company (`domain` or `company_name`).
@@ -25,6 +25,9 @@ hyreflow enrich --input contacts.csv --output contacts.csv.out.csv \
   --end-waterfall
 ```
 
+Sits in the `personal_email` (`personal_email_finder`), `phone_enrichment` (`mobile_finder`),
+`linkedin_profile` (`profile_search`), and `email_enrichment` (`email_finder`, 3rd) waterfalls.
+
 Related docs:
 
 - [LeadMagic reference](https://hyreflow.ai/tools/leadmagic)
@@ -41,7 +44,8 @@ Call via the CLI: `hyreflow tools execute leadmagic <method> --payload '{...}'` 
 - `employee_finder(payload: dict) -> dict` — POST /v1/people/employee-finder — list employees at a company; `limit` defaults to **10** and accepts **1-1000**, so a bare call returns only 10 employees no matter how large the company is.
 - `get_credits() -> dict` — GET /v1/credits — current credit balance on the caller's own LeadMagic account; requires the workspace's own key.
 - `job_change_detector(payload: dict) -> dict` — POST /v1/people/job-change-detector — detect recent job changes.
-- `mobile_finder(payload: dict) -> dict` — POST /v1/people/mobile-finder — mobile phone from profile_url or name+domain.
+- `mobile_finder(payload: dict) -> dict` — POST /v1/people/mobile-finder — mobile phone from profile_url, work_email or personal_email (no name+domain mode).
+  - example: `{"profile_url":"linkedin.com/in/johndoe"}`
 - `people_search(payload: dict) -> dict` — POST /v3/people/search — people search (v3); `limit` is page size (max **100**, default 25) and paging is via `offset`.
 - `personal_email_finder(payload: dict) -> dict` — POST /v1/people/personal-email-finder — personal email from a profile.
 - `profile_search(payload: dict) -> dict` — POST /v1/people/profile-search — find/enrich a LinkedIn profile.

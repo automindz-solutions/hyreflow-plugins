@@ -19,8 +19,8 @@ Calling it:
 
 - The payload key is `query`, not `q`. Optional: `num` (depth), `gl` / `hl` (country / language — results
   default to US English, so set both for any other market), `location`, `page`.
-- Every method costs 0.1 credits per call and is charged whether or not the search finds anything, so
-  budget per query rather than per usable hit.
+- Every method except `ping` and `get_credits` costs 0.1 credits per call and is charged whether or not the
+  search finds anything, so budget per query rather than per usable hit.
 
 ```
 hyreflow tools execute serper search --payload '{"query":"\"Acme\" site:linkedin.com/company","num":3}'
@@ -44,10 +44,11 @@ Practical guidance:
 Call via the CLI: `hyreflow tools execute serper <method> --payload '{...}'` (preview with `--dry-run`; `hyreflow tools get serper <method>` returns the live contract + cost). Base: `https://google.serper.dev`. Only the methods listed below are callable.
 
 - `autocomplete(query: str, **opts) -> dict`
+- `get_credits() -> dict` — GET /account — current credit balance on the caller's own Serper account; requires the workspace's own key.
 - `images(query: str, **opts) -> dict`
 - `maps(query: str, **opts) -> dict` — POST /maps — Google Maps results.
 - `news(query: str, **opts) -> dict`
-- `ping() -> dict` — Key-verification probe. Serper has no free account endpoint, so this fires the cheapest real query (1 result) to confirm the key authenticates — it spends ~1 Serper credit on whichever account the key belongs to (hyreflow charges 0).
+- `ping() -> dict` — Connectivity probe, NOT the BYOK key check (that is `get_credits`). Fires the cheapest real query — it spends ~1 Serper credit on whichever account runs it, the managed one included (hyreflow charges 0).
 - `places(query: str, **opts) -> dict` — POST /places — Google Places results (local businesses).
 - `reviews(query: str, **opts) -> dict`
 - `scholar(query: str, **opts) -> dict`

@@ -2,8 +2,10 @@
 
 **The most-requested recruiter play.** Paste a job description → extract searchable filters → source candidates
 (**general search + prioritized competitor profiles + a promotion lane**) → enrich the profiles (work history) →
-qualify against the JD → assess credible next-step candidates → enrich contact details (candidate channel) → ready
-for outreach. A pattern the agent composes from the capabilities below — not a hard-coded pipeline.
+qualify against the JD → assess credible next-step candidates → rank into a shortlist. **Contact enrichment
+(candidate channel) is a separate, opt-in stage** — run it only when the user explicitly asks for contact
+details, never as a default continuation of building the shortlist. A pattern the agent composes from the
+capabilities below — not a hard-coded pipeline.
 
 > **What's next + why:** this is the *source → shortlist* leg; the funnel continues to outreach → slate.
 > See [`../recruiter-craft.md`](../recruiter-craft.md) §B for the recruiter decision at each stage.
@@ -22,13 +24,15 @@ for outreach. A pattern the agent composes from the capabilities below — not a
 JD → PARSE (AI) → [DISCOVER COMPETITORS (exa)]
    → SEARCH (direct-fit + promotion lanes across general + competitor pools) → MERGE
    → ENRICH PROFILE (linkedin_profile — work history with dates) → QUALIFY + PROMOTION ASSESSMENT (AI) → RANK
-   → ENRICH CONTACT (personal email) → (outreach)
+   → shortlist delivered
+   → [ENRICH CONTACT (personal email) — opt-in, only on explicit request] → (outreach)
 ```
 > **Enrich the profile BEFORE you score.** Search output is a snapshot — current title, employer, location —
 > and a title cannot tell a 20-year specialist from a 14-month career changer, nor find the relevant
 > experience sitting behind an unrelated current title. Score on the dated work history (`linkedin_profile`,
 > step 4) the way [`crm-matching.md`](crm-matching.md) scores on CRM history. Contact enrichment stays *after*
-> qualification — you pay for emails only for survivors.
+> qualification AND is opt-in — never run it as a default continuation of building or refining a shortlist;
+> pay for emails only when the user explicitly asks for them, for the survivors.
 
 Docs this leans on: [`finding-people.md`](../finding-people.md) (search), [`enriching.md`](../enriching.md) (contact),
 `prompts.json` (parse / qualify / competitors / outreach), [`references/provider-precedence.md`](../references/provider-precedence.md).
@@ -95,8 +99,9 @@ Docs this leans on: [`finding-people.md`](../finding-people.md) (search), [`enri
 - Rows already carrying history (a CRM/ATS record, `atlas.get_person`) don't need this step.
 
 **5 — QUALIFY + ASSESS PROMOTION READINESS against the JD** *(AI step)*
-- Score each candidate's profile vs the JD must-haves → `tier_1 | tier_2 | no_fit`; **drop `no_fit`**. This is the
-  precision step (raw search is recall). Competitor-sourced candidates usually score higher but still get qualified.
+- Score each candidate's profile vs the JD must-haves → a 0-10 `qualify.score`; **drop candidates below your bar**
+  (or below `min_score` if set). This is the precision step (raw search is recall). Competitor-sourced
+  candidates usually score higher but still get qualified.
   → `POST /provider-playbooks/hyreflow_agent/infer` per candidate (or batch).
   - **For a batch, use the `/qualify` endpoint** (the standard way to score all candidates in one call):
     `POST /qualify {"job_spec": <JD text>, "candidates": [Person, …], "min_score": <0-10 optional>}` →
@@ -131,7 +136,12 @@ Docs this leans on: [`finding-people.md`](../finding-people.md) (search), [`enri
   promotion boost; drop `not_supported` when the person entered only through the promotion path. A promotion-path
   candidate never outranks a stronger fit merely because their current title is lower.
 
-**6 — ENRICH CONTACT (candidate channel)** *(`enriching.md`)*
+**6 — ENRICH CONTACT (candidate channel)** *(opt-in — `enriching.md`)*
+- **The shortlist itself ends at step 5's ranked list.** Only run this step when the user explicitly asks
+  for contact details and names the channel — never as part of building or refining a shortlist. A bare
+  "enrich" ("enrich these candidates") is ambiguous: ask which channel before spending; if the ask is
+  really screening/context rather than contact details, re-read the `linkedin_profile` data already pulled
+  in step 4 instead of reaching for `personal_email`.
 - **Personal email + LinkedIn — NEVER work email** (candidates). `personal_email` waterfall (order in `reference/waterfalls.json`),
   first-hit; verify deliverability (`catch_all_safe` usable). → `POST /enrich/personal_email`.
 
@@ -139,9 +149,11 @@ Docs this leans on: [`finding-people.md`](../finding-people.md) (search), [`enri
 - Personalize (candidate first-line prompt) → enroll in a recruiting sequence. See `writing-outreach.md` (when built).
 
 ## Gates
-- **Enrich the profile before you qualify** (a score on 3 sourcing fields is a guess), **and qualify before you
-  enrich contact details** (don't pay for a `no_fit`'s email).
-- **Credit & approval gate** — pilot one candidate end-to-end (steps 3→6 on one) → approval → full run. (SKILL.md)
+- **Enrich the profile before you qualify** (a score on 3 sourcing fields is a guess). **Contact enrichment
+  (step 6) is opt-in and out of scope for building/refining the shortlist** — run it only when the user
+  explicitly asks for contact details (don't pay for a `no_fit`'s email either way).
+- **Credit & approval gate** — pilot one candidate end-to-end (steps 3→5 on one) → approval → full run. (SKILL.md)
+  Contact enrichment (step 6), when the user asks for it, gets its own pilot-one-then-approve pass.
 - **Candidate channel** = personal email + LinkedIn (never work email). **EEO:** never filter on age/gender/etc.
 - **Over-provision the direct path ~1.4×N plus a bounded ~0.5×N promotion pool**, count-before-pay,
   single-source-default. No fixed promotion quota in the final shortlist.
@@ -159,7 +171,9 @@ Free: dedup, ranking, the location/channel rules.
 
 ## Output
 A **ranked, JD-qualified shortlist** containing direct-fit and credible promotion-ready candidates — with source
-lineage, `_candidate_path`, promotion evidence/gaps, LinkedIn and personal email — ready for a candidate sequence.
+lineage, `_candidate_path`, promotion evidence/gaps and LinkedIn (already known from sourcing + step 4, free).
+**The shortlist itself ends here** — personal email is step 6's separate, opt-in enrichment, run only when
+the user explicitly asks.
 Then render it with the **`hyreflow-artifact`** skill by default (candidates view, table first), unless the user asked for the CSV only.
 
 ## Notes from live runs

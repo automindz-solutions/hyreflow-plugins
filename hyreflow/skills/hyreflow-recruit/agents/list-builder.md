@@ -27,6 +27,7 @@ Mandatory workflow:
 3. Read the matching recipe when applicable:
    - `../recipes/jd-to-shortlist.md` (job description → shortlist + competitor-poach)
    - `../recipes/it-sourcing.md` (engineering roles: GitHub ground-truth + people-DBs)
+   - `../recipes/designer-portfolios.md` (designers: portfolio lookup as an add-on for screen/visual roles; portfolio-first only when it is a must-have)
    - `../recipes/layoff-signal-to-poach.md` / `../recipes/funding-to-bd.md` (signal-driven)
    - `../recipes/multi-source-candidate-search.md` (cross-DB structured coverage completion)
    - `../recipes/multi-strategy-sourcing.md` (max-coverage 5-angle superset: structured ∥ semantic +

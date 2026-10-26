@@ -97,7 +97,8 @@ building against a provider.
   `get_actor_input_schema`, `get_run`, `get_dataset_items`). Those reads stay free on Apify's own side; they
   just need the client's key routed through. Hyreflow charges 0 credits for every Apify call — actor
   compute bills the client's own Apify account directly. Same BYOK class as Apollo, Shovels, BuiltWith, and
-  ZoomInfo.
+  ZoomInfo. Connecting any of these keys needs the Essential plan or above; a Free/Starter workspace gets a
+  plan-required refusal, so tell the user to upgrade rather than retrying.
 - Auth is Bearer, base URL `https://api.apify.com/v2`. Apify bills compute units only on actor RUNS
   (`run_actor_sync`/`run_actor`) — the read/discovery endpoints (`list_store_actors`,
   `get_actor_input_schema`, `get_run`, `get_dataset_items`) are free and safe to call for exploration.
@@ -221,22 +222,6 @@ building against a provider.
 - Conditional branching: `add_conditional_step(seq, "linkedinInviteAccepted", delay_type="within",
   delay=3)` returns `conditions:[{sequenceId:<accepted>}, {sequenceId, fallback:true}]` — add follow-ups
   into those branch sequence ids.
-- People-search real endpoint is `POST /api/database/people` (not the docs-summary-implied
-  `/people-database/search`); schema at `GET /api/schema/people`; filters at `GET /api/database/filters`
-  (39 filterIds — contact title/location are `currentTitle`/`location`). **Each filter needs BOTH `in` AND
-  `out`** — omitting `out` produces a 400 "Parameter filters is invalid".
-- Location filters need a superset of metro labels plus language variants and towns — people list the
-  metro, not the suburb, so a narrow list under-matches (dropping the English form of a city name alone
-  can lose most of the pool).
-- Dedupe key: `lead_linkedin_url` is often empty — reconstruct the slug from `canonical_shorthand_name`
-  (→ `linkedin.com/in/<name>`) or `linkedin_short`; without this, merge-by-name drops or mis-tags
-  Lemlist-only people. For sources with no LinkedIn URL at all (e.g. an external-scrape source), dedupe by
-  name instead.
-- `skills` populates on only a minority of Lemlist records — don't rely on Lemlist alone to surface
-  skill-qualified candidates. Don't qualify on `experiences[].company_description` — it's employer
-  marketing copy, not the candidate's own skill signal. Candidate-level signal is `skills`/
-  `inferred_skills`/`headline`/experience `title` only (Lemlist experience entries use
-  `company_description`; there's no candidate-level description field).
 
 ## Lusha
 - **Lusha runs on V3** (`api.lusha.com/v3`, search-then-enrich model) — the deprecated V2 (`/v2/person`)
@@ -292,8 +277,8 @@ building against a provider.
 
 ## PredictLeads
 - **Billing is not uniform across company endpoints — check the rate before assuming it.**
-  `similar_companies` bills PER RECORD returned, so an unbounded top-20 default racks up 20x the
-  per-record rate — always cap `limit`. `financing_events`/`job_openings`/`news_events`/
+  `similar_companies` is a company endpoint: one flat rate per request whatever it returns (up to 50
+  with `limit`), while `discover_*` bills per record. `financing_events`/`job_openings`/`news_events`/
   `technology_detections` each return a single record per call, so they bill once per response
   regardless of what's inside it. Check `hyreflow tools get predictleads <method>` for the live rate on
   each.
@@ -332,7 +317,7 @@ building against a provider.
   are also under vendor maintenance as of the same check — re-verify before relying on any of them.
 - `person_location_search` values MUST come from `search_suggestions` — arbitrary strings return
   `INVALID_FILTERS`. A ZONE suggestion (e.g. "Greater Munich Metropolitan Area, Germany") covers a metro
-  radius in one value — unlike AI Ark's `contact.location` or Lemlist's `location`, which need enumerated
+  radius in one value — unlike AI Ark's `contact.location`, which needs enumerated
   city lists. A location suggestion string can carry a `" #<COUNTRY_CODE>"` suffix in the UI; that suffix
   is UI-internal only — the API accepts and returns plain canonical suggestion names.
 - Seniority enum spelling matters: `"C-Suite"`, not `"C-Level"` (wrong spelling → `INVALID_FILTERS`). Full
@@ -418,8 +403,8 @@ building against a provider.
 
 ## Multi-source sourcing (cross-provider)
 > Full workflow and every gotcha in one place: **`recipes/multi-source-candidate-search.md`**.
-- **Count-peek before paying.** All three people-DBs return a total, nested under the `result` envelope —
-  AI Ark `result.totalElements`, Lemlist `result.total`, Prospeo `result.pagination.total_count` (every
+- **Count-peek before paying.** Both people-DBs return a total, nested under the `result` envelope —
+  AI Ark `result.totalElements`, Prospeo `result.pagination.total_count` (every
   `tools execute` returns `{ _meta, result }`, so a top-level read yields `None`). A `size:1` / `page:1`
   call reads the total cheaply: you pay per page/result, never for the whole pool up front. Billing
   differs by provider — check `hyreflow tools get <tool> <method>` for the live rate before scaling up.

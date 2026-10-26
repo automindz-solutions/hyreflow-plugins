@@ -10,7 +10,9 @@ HOW in `lib/shovels.py`. Paths from docs.shovels.ai (2026-06-01); index: `refere
 ## Auth & config
 - **Base URL:** `https://api.shovels.ai/v2` · **Auth:** header `X-API-Key` (env `SHOVELS_API_KEY`; never hardcode).
 - **Pagination:** cursor — `size` (≤100, default 50) + `cursor` → `next_cursor`; `iter_permits`/`iter_contractors` auto-walk it.
-- **Credit-metered** — `get_usage()` reads your own Shovels account (Shovels is BYOK-only). Budget a run against `hyreflow billing balance`.
+- **Connecting a key needs Essential or above:** on Free/Starter the connect is refused with a plan-required error, so tell the user to upgrade rather than retrying.
+- **Credit-metered on Shovels' side, not Hyreflow's** — Shovels is BYOK-only, so every call is 0 Hyreflow
+  credits. `get_usage()` reads your own Shovels account; budget a run against that, not `hyreflow billing balance`.
 
 ## Core workflow (geo_id first)
 Everything keys off a **`geo_id`**. Resolve the place first — `search_addresses` / `search_cities` /
@@ -19,7 +21,7 @@ then pass `geo_id` to `search_permits` / `search_contractors`. **Both searches R
 `permit_from` + `permit_to` (YYYY-MM-DD).**
 
 ## Operations
-Geo: `search_addresses/cities/counties/jurisdictions/states/zipcodes`. Permits: `search_permits`/`iter_permits`, `get_permit`. Contractors: `search_contractors`/`iter_contractors`, `get_contractor`, `get_contractor_employees`, `get_contractor_permits`, `get_contractor_metrics`. Residents/metrics: `get_address_residents`, `get_address_metrics_current/monthly`, plus city/county/jurisdiction details + metrics. Lists/meta: `list_tags`, `list_zip_codes`, `data_release_date`, `get_usage`. **CONFIRMED:** the two searches + usage; per-record detail/metrics sub-paths are pattern-inferred — verify on first pilot, `request()` covers any that differ.
+Geo: `search_addresses/cities/counties/jurisdictions/states/zipcodes`. Permits: `search_permits`/`iter_permits`, `get_permit`. Contractors: `search_contractors`/`iter_contractors`, `get_contractor`, `get_contractor_employees`, `get_contractor_permits`, `get_contractor_metrics`. Residents/metrics: `get_address_residents`, `get_address_metrics_current/monthly`, plus city/county/jurisdiction details + metrics. Lists/meta: `list_tags`, `list_zip_codes`, `data_release_date`, `get_usage`. **CONFIRMED:** the two searches + usage; per-record detail/metrics sub-paths are pattern-inferred — verify on first pilot.
 
 ## Recruitment use (why it's here)
 The contractor record has a rich 34-field schema; **how much is populated scales with contractor SIZE.** A **solo operator** returns sparse — name + phone + trade + activity, with email/linkedin/license/revenue/employee_count null. An **established firm** (e.g. ~1,150 permits, 10-49 emp) returns it ALL: **`linkedin_url`** (company), **`email`** (often MULTIPLE, comma-separated — e.g. `…@gmail.com,owner@acme.example.com` → parse the non-free-mail one for the **corporate domain**), multi-value **`phone`**, `dba`, `license`+`classification`+dates, `revenue`, `employee_count`, `primary_industry`, full `address`+`latlng`, `rating`/`review_count`, `tag_tally`. So **email/linkedin/domain ARE provided for real companies** — don't assume they're absent, and don't generalise from a single sparse solo record. → Enrichment routing: **rich record** → parse domain from corporate email + use `linkedin_url` → people-DBs directly (no Exa-resolve needed); **sparse solo record** → name+phone + Exa-resolve+verify. Parsing: `email`/`phone` can be comma-multi-value.
