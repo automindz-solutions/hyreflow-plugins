@@ -63,7 +63,10 @@ Enrichment layer (**work email**): shortlist → Prospeo for work emails/phones 
     Information Technology · Legal · Marketing · Medical & Health · Consulting · Sales · Operations
     (full hierarchy incl. sub-departments in the cached raw docs). A top-level value auto-includes all
     its sub-departments; a specific sub-level value (e.g. `"Graphic / Visual / Brand Design"`) targets
-    just that niche. `person_year_of_experience`: `{min, max}` (years).
+    just that niche. `person_year_of_experience`: `{min, max}` (years, max 1-60) ← canonical
+    `min/max_experience_years`. `person_time_in_current_company` / `person_time_in_current_role`: `{min, max}`
+    (**months**, 0-600) ← canonical `company_tenure_*_months` / `role_tenure_*_months`. No `Junior` seniority
+    value exists: canonical `junior` maps to `Entry`, which is title-derived — pair it with `max_experience_years`.
   - **⚠️ NO person-level profile-keyword/skills filter (verified live 2026-07-02).** `person_search` is
     NOT profile-wide (C-Suite + SF + `person_search:["Python"]` → NO_RESULTS; it appears to match
     names/titles only), and `company_keywords` scopes COMPANIES, not people. "People with `<skill>` in

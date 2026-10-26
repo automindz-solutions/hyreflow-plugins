@@ -48,14 +48,16 @@ People search body = `{account, contact, lists, page, size}`; **`page` (0-based)
 
 **Canonical waterfall fields → AI Ark filter.** Beyond the portable fields (`titles`, `locations`,
 `seniority`, `skills`, `certifications`, `min_experience_years`, `company_names/domains/linkedin_urls`), the
-waterfall now maps these **AI-Ark-only** fields — passing any of them **pins the chain to AI Ark** (the other
-providers can't honor them, so they're skipped rather than silently returning non-matching people):
+waterfall maps these capability-gated fields — passing any of them **skips providers that can't honor it**
+(rather than silently returning non-matching people). Tenure and `max_experience_years` also run on Prospeo;
+the rest pin the chain to AI Ark:
 
 | Canonical field | AI Ark filter | Notes |
 |---|---|---|
 | `company_tenure_min_months` / `_max_months` | `contact.experience.current.duration.currentCompany` | tenure AT the company; **`max` = "joined ≤ N months ago"** (the newly-hired filter) |
 | `role_tenure_min_months` / `_max_months` | `…duration.currentJob` | tenure in the current title (resets on internal move) |
 | `min_experience_years` (existing) | `…duration.total.min.year` | whole-career experience, years |
+| `max_experience_years` | `…duration.total.max.year` | whole-career experience, years — the junior filter |
 | `profile_badges` | `contact.profileBadge` | enum[]: VERIFIED / OPEN_TO_WORK / HIRING / INFLUENCER / CREATOR / PREMIUM |
 | `departments` | `contact.departmentAndFunction` | enum[] (200+): e.g. `master_sales`, `business_development`, `software_development` |
 | `company_founded_year_min` / `_max` | `account.foundedYear` | RANGE — **single `{start,end}` object**: `{"type":"RANGE","range":{start,end}}` — the one exception to the array-under-`range` pattern below, don't copy it for employeeSize/revenue |
