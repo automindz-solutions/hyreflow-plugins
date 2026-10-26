@@ -25,8 +25,8 @@ IT JD/role → PARSE (AI) →  ┌─ GitHub leg:    search_users → candidate_
                            └─ people-DB leg: people_search (aiark → … )
            → MERGE + dedup (GitHub wins a tie) → QUALIFY 0-10 → shortlist (LinkedIn-first + personal email from the free GitHub harvest only)
 ```
-Docs: [`provider-playbooks/github.md`](../provider-playbooks/github.md) (the dossier + email rules), [`finding-people.md`](../finding-people.md),
-[`enriching.md`](../enriching.md), [`references/provider-precedence.md`](../references/provider-precedence.md).
+Docs: [`provider-playbooks/github.md`](../provider-playbooks/github.md) (the dossier + email rules), [`finding-companies-and-contacts.md`](../finding-companies-and-contacts.md),
+[`enriching-and-researching.md`](../enriching-and-researching.md), [`references/provider-precedence.md`](../references/provider-precedence.md).
 
 ## Steps
 

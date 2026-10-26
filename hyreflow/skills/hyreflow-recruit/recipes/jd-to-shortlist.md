@@ -34,7 +34,7 @@ JD → PARSE (AI) → [DISCOVER COMPETITORS (exa)]
 > qualification AND is opt-in — never run it as a default continuation of building or refining a shortlist;
 > pay for emails only when the user explicitly asks for them, for the survivors.
 
-Docs this leans on: [`finding-people.md`](../finding-people.md) (search), [`enriching.md`](../enriching.md) (contact),
+Docs this leans on: [`finding-companies-and-contacts.md`](../finding-companies-and-contacts.md) (search), [`enriching-and-researching.md`](../enriching-and-researching.md) (contact),
 `prompts.json` (parse / qualify / competitors / outreach), [`references/provider-precedence.md`](../references/provider-precedence.md).
 
 ## Inputs
@@ -47,7 +47,7 @@ Docs this leans on: [`finding-people.md`](../finding-people.md) (search), [`enri
   feeder_seniority, skills[] (must-haves only), certifications[], min_experience_years, locations[], keywords[] }`
   **plus** the **hiring company** `{name, domain, category}` **plus `reports_to`** (the manager role named in
   any reporting line / interview-panel title — used by the reporting-line-first hiring-manager rule in
-  [`finding-people.md`](../finding-people.md)).
+  [`finding-companies-and-contacts.md`](../finding-companies-and-contacts.md)).
 - **Build the promotion lane deliberately:** `feeder_titles[]` names the same function at one conventional
   level below the vacancy, and `feeder_seniority` carries that lower band. Examples: Senior Software Engineer
   → Software Engineer / Mid-level Software Engineer; Engineering Manager → Tech Lead / Engineering Lead;
@@ -87,7 +87,7 @@ Docs this leans on: [`finding-people.md`](../finding-people.md) (search), [`enri
   calls. Do not rank on title or promotion potential until dated work history arrives. Count-before-pay and put
   every added promotion-path call inside the same pilot/approval estimate as the direct path.
 
-**4 — ENRICH PROFILE (work history) — the input QUALIFY scores on** *([`enriching.md`](../enriching.md))*
+**4 — ENRICH PROFILE (work history) — the input QUALIFY scores on** *([`enriching-and-researching.md`](../enriching-and-researching.md))*
 - `POST /enrich/linkedin_profile {"rows":[{"linkedin_url": …}, …]}` → each row gets a normalized
   `profile` = `{headline, current_title, current_company, experience[{company, title, start, end, is_current,
   duration_months?, description?}], about?, skills?, certifications?, education?}`, newest role first.
@@ -136,7 +136,7 @@ Docs this leans on: [`finding-people.md`](../finding-people.md) (search), [`enri
   promotion boost; drop `not_supported` when the person entered only through the promotion path. A promotion-path
   candidate never outranks a stronger fit merely because their current title is lower.
 
-**6 — ENRICH CONTACT (candidate channel)** *(opt-in — `enriching.md`)*
+**6 — ENRICH CONTACT (candidate channel)** *(opt-in — `enriching-and-researching.md`)*
 - **The shortlist itself ends at step 5's ranked list.** Only run this step when the user explicitly asks
   for contact details and names the channel — never as part of building or refining a shortlist. A bare
   "enrich" ("enrich these candidates") is ambiguous: ask which channel before spending; if the ask is
