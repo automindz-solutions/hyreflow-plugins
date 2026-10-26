@@ -5,8 +5,8 @@ description: "Read from and write to Spott (recruiting CRM/ATS — candidates, c
 
 # Spott — Integration Meta Skill
 
-> Every path is taken straight from Spott's own OpenAPI spec (cache:
-> `reference/docs/spott/raw/endpoints.md`). Base `https://api.gospott.com`, `x-api-key` header.
+> Every path is taken straight from Spott's own OpenAPI spec (the cached copy is not shipped with this
+> skill; this playbook is the source). Base `https://api.gospott.com`, `x-api-key` header.
 
 Routing layer for all Spott API work. This file tells you WHERE to go and the guardrails to respect;
 the HOW lives in the callable-surface block below and the Python client's docstrings.

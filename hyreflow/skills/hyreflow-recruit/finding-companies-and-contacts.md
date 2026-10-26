@@ -375,5 +375,5 @@ This is more precise and cheaper than sweeping all leadership — the JD usually
 - **Credit & approval gate** for any sizable paid run (pilot → approval → full). See SKILL.md.
 
 ## Hand-off
-Sourced list → enrich `linkedin_profile` (work history, if thin) → qualify → **[`enriching.md`](enriching.md)**
+Sourced list → enrich `linkedin_profile` (work history, if thin) → qualify → **[`enriching-and-researching.md`](enriching-and-researching.md)**
 (add email/phone/LinkedIn) → outreach.

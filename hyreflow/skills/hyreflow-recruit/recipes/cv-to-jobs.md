@@ -24,7 +24,7 @@ CV/slug → PARSE (AI, multimodal fallback) → SEARCH JOBS (native scrapes ‖ 
 ## Channel (hard rule)
 Hiring-manager outreach is **BD toward the company** → **WORK email** (email_enrichment waterfall).
 The candidate is *yours* (consented) — no candidate-channel concern. See
-[`enriching.md`](../enriching.md).
+[`enriching-and-researching.md`](../enriching-and-researching.md).
 
 ## Output dir (set up first)
 `clients/<client-slug>/runs/cv-to-jobs-<candidate-slug>/` (or `<cwd>/hyreflow-runs/...` ad-hoc).
