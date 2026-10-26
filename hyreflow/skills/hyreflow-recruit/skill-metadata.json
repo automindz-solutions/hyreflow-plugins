@@ -145,6 +145,23 @@
       ],
       "providers": []
     },
+    "recipes/designer-portfolios.md": {
+      "kind": "specialized-workflow",
+      "title": "Designer Sourcing with Portfolios",
+      "tags": [
+        "designer",
+        "design portfolio",
+        "product designer",
+        "ux designer",
+        "ui designer",
+        "ux researcher",
+        "ux writer",
+        "motion designer",
+        "behance",
+        "dribbble"
+      ],
+      "providers": []
+    },
     "recipes/it-sourcing.md": {
       "kind": "specialized-workflow",
       "title": "IT / Developer Sourcing",
@@ -248,6 +265,20 @@
       ],
       "providers": []
     },
+    "recipes/team-network-sourcing.md": {
+      "kind": "specialized-workflow",
+      "title": "Team Network Sourcing (warm intros)",
+      "tags": [
+        "team network",
+        "our network",
+        "my network",
+        "linkedin network",
+        "warm intro",
+        "who do we know",
+        "upload connections"
+      ],
+      "providers": []
+    },
     "recipes/qualify-against-icp.md": {
       "kind": "specialized-workflow",
       "title": "Qualify Against ICP",
@@ -262,6 +293,24 @@
         "filter list"
       ],
       "providers": []
+    },
+    "recipes/repost-signal-to-bd.md": {
+      "kind": "specialized-workflow",
+      "title": "Repost Signal → BD",
+      "tags": [
+        "repost",
+        "reposted jobs",
+        "hard to fill",
+        "hiring signal",
+        "job reposting",
+        "stale roles",
+        "long-open roles",
+        "evergreen roles",
+        "struggling to fill"
+      ],
+      "providers": [
+        "predictleads"
+      ]
     },
     "recipes/people-from-webpage.md": {
       "kind": "specialized-workflow",
@@ -303,6 +352,28 @@
         "exa",
         "firecrawl",
         "openmart"
+      ]
+    },
+    "recipes/local-business-hiring-managers.md": {
+      "kind": "specialized-workflow",
+      "title": "Local Business Hiring Managers — Openmart → Impressum → Verified Work Email + LinkedIn",
+      "tags": [
+        "impressum",
+        "geschäftsführer",
+        "kanzlei",
+        "local business",
+        "germany",
+        "dach",
+        "work email",
+        "hiring manager",
+        "openmart"
+      ],
+      "providers": [
+        "openmart",
+        "firecrawl",
+        "exa",
+        "serper",
+        "enrichley"
       ]
     },
     "recipes/tradeshow-to-bd.md": {

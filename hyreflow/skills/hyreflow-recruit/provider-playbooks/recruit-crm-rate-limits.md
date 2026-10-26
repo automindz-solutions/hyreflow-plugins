@@ -23,7 +23,7 @@ There is **no native bulk-create endpoint**. Creating 1,000 records means 1,000 
 - `recruit_crm.create_contacts_batch(payloads)`
 - `recruit_crm.create_companies_batch(payloads)`
 
-Each helper loops single `POST` calls and respects `RECRUITCRM_RATE_LIMIT_RPM` (default `60`). It returns `created`, `failed`, `total`, `elapsed_ms` so you can resume from failures.
+Each helper loops single `POST` calls and paces them to a 60 req/min default. It returns `created`, `failed`, `total`, `elapsed_ms` so you can resume from failures.
 
 ### Sizing a batch
 
@@ -33,13 +33,8 @@ Each helper loops single `POST` calls and respects `RECRUITCRM_RATE_LIMIT_RPM` (
 | 10 | 100 | 1,000 | ~10 min |
 | 50 | 500 | 1,000 | ~2 min |
 
-Use `RECRUITCRM_RATE_LIMIT_RPM` to override the default for accounts with more licenses:
-
-```bash
-# 10 licenses → 100 rpm
-RECRUITCRM_RATE_LIMIT_RPM=100 hyreflow tools execute recruit-crm create_candidates_batch \
-  --payload '{"payloads": [...]}'
-```
+If your account has more than 6 licenses (and so a higher contractual rate limit), [contact
+us](mailto:support@hyreflow.ai) and we'll see about raising it to match.
 
 ### Resilience
 

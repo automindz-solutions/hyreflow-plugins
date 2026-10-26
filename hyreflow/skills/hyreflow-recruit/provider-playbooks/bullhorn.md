@@ -18,7 +18,7 @@ Then every call hits `{restUrl}<path>` with `BhRestToken`. The client re-logs in
 - `ping()` = safe read-only pilot.
 
 ## Operations (CONFIRMED from bullhorn.github.io/rest-api-docs, 2026-06-01)
-`search(entity, query, fields)` — `GET /search/{Entity}` Lucene (indexed: Candidate, JobOrder, ClientContact, ClientCorporation…). `query(entity, where, fields)` — `GET /query/{Entity}` SQL-style (non-indexed). `get_entity` (`GET /entity/{Entity}/{id}`), `create_entity` (`PUT /entity/{Entity}`), `update_entity` (`POST /entity/{Entity}/{id}`). `request()` covers the rest. BhRestToken via query param is valid (also accepted as a header). All path patterns verified.
+`search(entity, query, fields)` — `GET /search/{Entity}` Lucene (indexed: Candidate, JobOrder, ClientContact, ClientCorporation…). `query(entity, where, fields)` — `GET /query/{Entity}` SQL-style (non-indexed). `get_entity` (`GET /entity/{Entity}/{id}`), `create_entity` (`PUT /entity/{Entity}`), `update_entity` (`POST /entity/{Entity}/{id}`). Typed single-entity creators (`create_candidate`, `create_client_contact`, `create_client_corporation`, `create_job_order`) and their `*_batch` helpers, plus `ping` and the generic `batch(method, calls)`, are also exposed — there is no `request()` passthrough. BhRestToken via query param is valid (also accepted as a header). All path patterns verified.
 
 ## Guardrail
 Production ATS writes — pilot one record, confirm, then bulk.
@@ -52,5 +52,6 @@ Call via the CLI: `hyreflow tools execute bullhorn <method> --payload '{...}'` (
 
 For large pushes use `create_candidates_batch`, `create_client_contacts_batch`,
 `create_client_corporations_batch`, `create_job_orders_batch`. They pace calls to the **1,500 req/min**
-per OAuth Client ID limit and return `{created, failed, total, elapsed_ms}`. Override with
-`BULLHORN_RATE_LIMIT_RPM`. See `crm-bulk-pushes.md` for the cross-CRM guide.
+per OAuth Client ID limit and return `{created, failed, total, elapsed_ms}`. Need a higher rate?
+[Contact us](mailto:support@hyreflow.ai) and we'll see what we can do. See
+`crm-bulk-pushes.md` for the cross-CRM guide.

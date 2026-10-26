@@ -58,7 +58,7 @@ hyreflow tools execute lemlist_delete_sequence_step --payload '{"sequence_id":"s
 
 ### Leads
 
-`add_to_campaign` adds **one lead per call** with top-level fields — there is no `contacts:[…]` array
+`add_lead_to_campaign` adds **one lead per call** with top-level fields — there is no `contacts:[…]` array
 (that shape 400s). Provide at least one of `email` / `linkedin_url`; standard fields go in `payload`.
 A lead already in the campaign comes back as a provider error with
 `provider_error_code: "LEAD_ALREADY_IN_CAMPAIGN"` — nothing changed on lemlist's side. Treat it as
@@ -84,7 +84,7 @@ hyreflow tools execute lemlist_remove_lead_from_campaign --payload '{"campaign_i
 
 To render `{{personalization}}` (or any non-standard field) in a sequence, set it as a **custom
 variable** — lemlist rejects unknown names as standard lead fields. Either pass `variables` to
-`add_to_campaign` (set automatically after the lead is created) or call `add_lead_variables` directly.
+`add_lead_to_campaign` (set automatically after the lead is created) or call `add_lead_variables` directly.
 
 - **Create-only:** you cannot re-set a name that already exists on the lead (default OR custom) — it
   errors. Set each custom variable once, when the lead is first added.
@@ -143,12 +143,9 @@ Call via the CLI: `hyreflow tools execute lemlist <method> --payload '{...}'` (p
 - `get_campaign_stats(campaign_id: str, *, start_date: str, end_date: str, **params) -> Any` — GET /api/campaigns/{campaignId}/stats — campaign performance over a date window.
 - `get_campaigns(*, version: str = 'v2', **params) -> Any` — GET /api/campaigns — list campaigns. `version=v2` is REQUIRED (defaulted here); supports offset/limit (max 100)/page, sortBy=createdAt, sortOrder, status, createdBy.
 - `get_contacts(**params) -> Any`
-- `get_people_database_filters() -> Any` — GET /database/filters — available filterIds for the People DB (e.g. `currentTitle`, `location` (lead's city/state = CONTACT location), `country`, `seniority`, `department`, `currentCompany*`…). Each is `autocomplete`/`select` typed.
-- `get_people_schema() -> Any` — GET /schema/people — the People-DB record schema (available fields). Read-only pilot.
 - `get_team() -> Any` — GET /team — team info (safe read-only pilot).
 - `pause_campaign(campaign_id: str) -> Any`
 - `remove_lead_from_campaign(campaign_id: str, email: str) -> Any`
-- `search_people_database(filters: list[dict], *, search: str | None = None, page: int = 1, size: int = 25, excludes: list[str] | None = None) -> Any` — POST /database/people — search lemlist's People DB. `filters`: list of `{filterId, in:[...], out:[...]}` — **BOTH `in` and `out` are REQUIRED per filter** (omit `out` → 400 "Parameter filters is invalid"); this method injects `out:[]` if you leave it off.
 - `start_campaign(campaign_id: str) -> Any` — POST /campaigns/{id}/start — starts sending (outreach!). Approval-gate.
 - `update_sequence_step(sequence_id: str, step_id: str, **fields) -> Any` — PATCH /api/sequences/{sequenceId}/steps/{stepId} — update a step (subject, message, delay, …).
 - `upsert_contact(payload: dict) -> Any` — Create/update a contact (see api-reference/endpoints/contacts/upsert-contact).

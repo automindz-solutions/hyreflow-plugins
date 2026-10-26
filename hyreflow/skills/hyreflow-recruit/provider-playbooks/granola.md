@@ -20,7 +20,7 @@ The API returns **only notes that have a generated AI summary AND transcript.** 
 - **`list_notes(created_after=, created_before=, updated_after=, folder_id=, page_size≤30)`** → `{notes:[{id 'not_…', title, owner, created_at, updated_at}], hasMore, cursor}`. Dates accept `YYYY-MM-DD` or ISO datetime. `folder_id` (`fol_…`) includes child folders.
 - **`get_note(note_id, include="transcript")`** → full note: `summary_text`, `summary_markdown`, `attendees[]`, `calendar_event` (title/organiser/scheduled times/invitees), `folder_membership[]`, `web_url`, and (with `include`) **`transcript[]`**. Use the **`not_…` id** from list (not a UUID). Convenience: **`get_note_transcript(note_id)`**.
 - **`list_folders(page_size≤30)`** → `{folders:[{id 'fol_…', name, parent_folder_id}], hasMore, cursor}`. `parent_folder_id` null = top-level.
-- **Pagination:** cursor-based (`hasMore` + `cursor`). `iter_notes(**filters)` / `iter_folders()` auto-walk it (bounded by `max_items`). Anything else → generic `request("GET", path, params=...)`.
+- **Pagination:** cursor-based (`hasMore` + `cursor`). `iter_notes(**filters)` / `iter_folders()` auto-walk it (bounded by `max_items`). These are the only callable methods.
 
 ## Transcript shape (read carefully)
 `transcript[]` items = `{speaker:{source, diarization_label?}, text, start_time, end_time}`.

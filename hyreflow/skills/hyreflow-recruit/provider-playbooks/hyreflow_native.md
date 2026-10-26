@@ -1,6 +1,6 @@
 ---
 name: hyreflow_native
-description: "Hyreflow Native tools — first-party, credit-metered, no subscription or API key. JOB SCRAPES (`scrape_*`/`get_*`) from company career pages, LinkedIn, Indeed and the two German boards (Arbeitsagentur, the federal board; StepStone, the commercial one) — async launch→poll, charged per job — for 'find open jobs at / for X'. POST FEEDS (`get_profile_posts`/`get_company_posts`) for a person or company — one call, 50 posts a page, charged per request — for 'what has X been posting' and launch / hiring / funding / exec-commentary / layoff signals. POST SEARCH (`search_posts`) — keyword search over public LinkedIn posts, past week by default, `author_title` to narrow to recruiters, 10 posts a page — for 'who is posting about X'. POST REACTIONS (`get_post_reactions`) — the people who reacted to a post, 10 reactors a page, per request — for 'who engaged with this post'. PROFILE LOOKUP (`get_linkedin_profile`) — one person's LinkedIn profile and dated work history by URL, no contact detail, charged per request; the second step of the `linkedin_profile` waterfall. POSTCODE RADIUS (`places_within_radius`, free) — turns 'within N miles of <postcode>' into the town list a people search `locations` filter takes."
+description: "Hyreflow Native tools — first-party, credit-metered, no subscription or API key. JOB SCRAPES (`scrape_*`/`get_*`) from company career pages, LinkedIn, Indeed and the two German boards (Arbeitsagentur, the federal board; StepStone, the commercial one) — async launch→poll, charged per job — for 'find open jobs at / for X'. POST FEEDS (`get_profile_posts`/`get_company_posts`) for a person or company — one call, 50 posts a page, charged per request — for 'what has X been posting' and launch / hiring / funding / exec-commentary / layoff signals. POST SEARCH (`search_posts`) — keyword search over public LinkedIn posts, past week by default, `author_title` to narrow to recruiters, 10 posts a page — for 'who is posting about X'. POST REACTIONS (`get_post_reactions`) — the people who reacted to a post, 10 reactors a page, per request — for 'who engaged with this post'. PROFILE LOOKUP (`get_linkedin_profile`) — one person's LinkedIn profile and dated work history by URL, no contact detail, charged per request; the second step of the `linkedin_profile` waterfall. POSTCODE RADIUS (`places_within_radius`, free) — turns 'within N miles of <postcode>' into the town list a people search `locations` filter takes. REPOST SCAN (`repost_scan`, free; its PredictLeads history pages bill at their own rate) — a company's reposted, long-open and monthly-relisted roles from its job-opening history, for 'is this company struggling to fill X'. EMAIL VERIFICATION (`verify_emails`/`get_verified_emails`) — inbox-level, async, charged per address submitted at launch, returns ONLY the addresses safe to send to; the default for every verify/validate ask, and what `email_enrichment` already runs on every email it finds."
 ---
 
 # hyreflow_native — Hyreflow Native tools
@@ -12,7 +12,7 @@ HOW in `lib/hyreflow_native.py`.
 - **No BYOK, no API key.** You never bring or hold a key — every call is metered in Hyreflow credits, so
   you don't need a separate scraper subscription. One tool sits in a waterfall: profile lookup (second in
   `linkedin_profile`); the rest run on their own.
-- **Six capabilities, three billing shapes — check which one you're calling.**
+- **Eight capabilities, five billing shapes — check which one you're calling.**
   - **Job scrapes** (`scrape_*` / `get_*`): async, pay-on-match. Launching is **free**; charged **per job
     returned** on the retrieval poll (an empty or still-running result costs nothing).
   - **Post feeds** (`get_profile_posts` / `get_company_posts`): a single call, charged **per request** —
@@ -22,38 +22,48 @@ HOW in `lib/hyreflow_native.py`.
   - **Profile lookup** (`get_linkedin_profile`): a single call, charged **per request** — one profile,
     including a URL that resolves to no profile.
   - **Postcode radius** (`places_within_radius`): free — no credits.
+  - **Email verification** (`verify_emails` → `get_verified_emails`): async like a job scrape, but charged
+    **per address submitted, at launch** (polling is free), and only the addresses safe to send to come back.
+  - **Repost scan** (`repost_scan`): the scan is free; each PredictLeads history page it pulls is charged
+    at the PredictLeads `job_openings` rate (one page per domain, a page holds 1,000 listings — up to three
+    pages when a domain's history runs past 1,000 listings), and costs nothing on the workspace's own
+    PredictLeads key. `--dry-run` quotes one page per domain, and a scan above the confirmation threshold
+    asks first like any paid call.
 
 ## Job scrapes: the two-call (async) flow
 Every job scraper is asynchronous — a scrape takes a few minutes:
 1. **Launch** with `scrape_*` (or its short alias) → returns `{request_id, status: "QUEUED"}`. Free.
 2. **Poll** with `get_*` passing that `request_id` → `status` moves QUEUED → RUNNING → COMPLETED. When
-   COMPLETED, `result` carries the scraped roles plus counts (see below). Poll every **~10s** until
-   COMPLETED or FAILED — re-polls dedup per job, so a tighter loop costs nothing and only shortens the dead
-   wait; the terminal poll bills the same page whenever it lands.
+   COMPLETED, `result` carries the scraped roles plus counts (see below). A LinkedIn run can also end
+   **PARTIAL**: finished, but some postings failed to load — treat it as done (see below). Poll every
+   **~10s** until COMPLETED, PARTIAL or FAILED — re-polls dedup per job, so a tighter loop costs nothing
+   and only shortens the dead wait; the terminal poll bills the same page whenever it lands.
 
 Billing is pay-on-match, **per unique job**: each job in a scrape is billed exactly once. Re-polling,
 widening the `limit`, or overlapping/re-paged windows never double-charge — paging forward bills only the
 newly-delivered jobs. (You don't have to page cleanly; the engine dedups per job.)
 
-- **⚠️ A poll that returns COMPLETED bills whatever `result.jobs` it carries — waiting is not free once
-  the scrape is done.** `get_*` delivers a page on every poll (default `limit: 10`), so a wait loop that
+- **⚠️ A poll that returns COMPLETED (or PARTIAL) bills whatever `result.jobs` it carries — waiting is
+  not free once the scrape is done.** `get_*` delivers a page on every poll (default `limit: 10`), so a wait loop that
   just re-polls **bills that page the moment the scrape finishes** — even if you only meant to check
   status. There is no zero-cost "status-only" poll shape (`limit` must be 1–50, so `limit: 0` is
   rejected). To avoid pre-billing before an approval gate: don't loop `get_*` eagerly once you suspect
-  it's done; do one poll to confirm COMPLETED and treat the jobs it returns as **already billed and
+  it's done; do one poll to confirm COMPLETED (or PARTIAL) and treat the jobs it returns as **already billed and
   already yours** — don't discard them and re-fetch later expecting a fresh charge (dedup makes the
   re-fetch free, which also means you shouldn't tell the user the pilot was free just because that call
   reported 0).
 - **Read `_meta.billed_jobs` and `_meta.already_billed` on every poll, not just `credits_charged`.**
   `credits_charged: 0` is ambiguous on its own — it means either "nothing delivered yet" (`billed_jobs: 0`,
   `already_billed: 0`) or "this poll's jobs were already billed on an earlier poll" (`already_billed > 0`).
-  When summarizing a pilot's real cost at an approval gate, add up `billed_jobs` across *every* poll you
-  made for that run (including earlier wait-loop polls), not just the last one — the last poll reporting 0
-  does not mean the pilot was free.
+  When summarizing a pilot's real cost at an approval gate, add up `credits_charged` across *every* poll
+  you made for that run (including earlier wait-loop polls), not just the last one — the last poll
+  reporting 0 does not mean the pilot was free. Report that sum, not `billed_jobs` x the per-job rate:
+  a job with a surcharge (an Arbeitsagentur job returned with recruiter details) costs more than the rate,
+  so the multiplication under-reports it. `billed_jobs` is the job COUNT.
 
 ### Running several scrapes in parallel
 **Reach for this once the shape of the run is settled — after the pilot, past the approval gate above.**
-Every run that reaches COMPLETED bills its page the moment you poll it, so a wide batch commits N pages of
+Every run that reaches COMPLETED or PARTIAL bills its page the moment you poll it, so a wide batch commits N pages of
 spend at once; that's the same pre-billing the ⚠️ caution above is guarding against, just multiplied by the
 size of the batch.
 
@@ -66,14 +76,14 @@ launch the next: that serial shape multiplies the wait by the number of scrapes.
   of roughly **20** is a practical working size, not a system ceiling — result volume and the credit burst
   from polling that many runs to completion are what bound you, not any concurrency limit.
 - **Poll round-robin on the ~10s cadence:** walk the outstanding `request_id`s once per cycle, dropping
-  each one from the list as it reaches COMPLETED or FAILED.
+  each one from the list as it reaches COMPLETED, PARTIAL or FAILED.
 - **One run failing doesn't touch the others** — a FAILED status is per `request_id`; relaunch just that
   one.
 - **Twenty full pages at once is a lot of text, so keep `limit` deliberate and page only the runs still
   short of what you need.** That's also why a wide batch is riskier on spend than serial scraping: a batch
   can stop partway when a session spend cap or the workspace balance is reached mid-batch, since the engine
-  enforces the cap after counting each page and withholds that result. Sum `_meta.billed_jobs` /
-  `_meta.already_billed` across every poll (per the accounting rule above) to know a batch's real cost —
+  enforces the cap after counting each page and withholds that result. Sum `_meta.credits_charged`
+  across every poll (per the accounting rule above) to know a batch's real cost —
   that gets harder, not easier, with twenty runs in flight.
 - **A single board-wide query rarely fills a large, country-wide target on its own.** Widen with a
   parallel batch of angles instead of one scrape at a time — the same titles across `linkedin_jobs` /
@@ -103,8 +113,9 @@ hyreflow tools execute hyreflow_native_get_stepstone_jobs --payload '{"request_i
 
 ### Reading a COMPLETED result
 `result` shape: `jobs` (the page of postings), `jobs_total` (everything the scrape found),
-`jobs_returned` (how many are in this page — `len(jobs)`), `jobs_filtered_out` (matched but excluded by
-your `filters`/`target_titles*` — deliberate, these are the rows your filters rejected), `limit`/`offset` (the window you got
+`jobs_returned` (how many are in this page — `len(jobs)`), `jobs_filtered_out` on sources that report it
+(matched but excluded by your `filters`/`target_titles*`; LinkedIn and Indeed don't report it, their filters
+run upstream), `limit`/`offset` (the window you got
 back), `has_more` (more pages exist), and `warnings` (non-fatal issues with this poll, if any — a poll
 always returns valid JSON, including on a transient upstream hiccup, so check `warnings` rather than
 assuming silence means clean). The root object also carries `credits_consumed`, `credits_left`,
@@ -117,7 +128,8 @@ assuming silence means clean). The root object also carries `credits_consumed`, 
   defaults to the upstream default, Indeed to **25**); `limit` on the `get_*` poll bounds what a page hands
   back (**10**). They are independent: `rows: 15` with a default poll returns 10, and a default `rows` with
   `limit: 50` hands back up to 50. For "find me 15 roles", send `rows: 15` on the launch **and**
-  `limit: 15` on the poll — then one poll delivers the ask and bills exactly it.
+  `limit: 15` on the poll — then one poll delivers the ask and bills exactly it. `limit` maxes at 50 on
+  every poller and Indeed `rows` at 100, so a `rows: 100` run takes two polls: `offset` 0, then 50.
   `scrape_arbeitsagentur_jobs` and `scrape_career_pages` take **no `rows`** (`max_pages`/`page_size` and
   `max_pages` bound them instead), so there the poll's `limit` plus stopping at the ask is the only guard.
   `scrape_stepstone_jobs` takes `rows` but only in **whole pages of 25** (25/50/75/100, default 25 —
@@ -132,6 +144,32 @@ assuming silence means clean). The root object also carries `credits_consumed`, 
   first poll reporting 10 jobs is just the page size, not the find. Read `jobs_total` and `has_more`
   before concluding the scrape came up thin, and only widen with another scrape (or a parallel batch —
   above) when `jobs_total` really is short of the target, not when the first page merely looked short.
+
+- **Lean output on `get_linkedin_jobs` / `get_indeed_jobs`:** `fields` (list) keeps only those job fields —
+  names differ by source: LinkedIn `["title","company_name","job_url"]`, Indeed
+  `["job_title","company_name","job_url"]` — and `max_description_chars` (e.g. 300) truncates descriptions.
+  Both are applied after the response, never sent upstream, and don't change billing (jobs are counted, not
+  bytes). A name that is not a job field of that source (and on no job of the page) is refused before the
+  page is billed, and the error lists the valid names: fix the name and re-poll. A valid name a job doesn't
+  carry (e.g. `salary`, or a company field on a run without company details) is just absent from that job,
+  so the same `fields` works on every page. Only top-level `description` / `job_description` are truncated, so drop
+  company detail with `fields` too when context is tight.
+- **PARTIAL (LinkedIn) is terminal, not "still running".** The run finished, but `result.failed_scrapes`
+  postings could not be loaded. `result.jobs` holds what was scraped and bills
+  like COMPLETED (failed postings are not in it, so they cost nothing). Stop polling on PARTIAL: a loop that
+  waits only for COMPLETED never ends. When `result.errors` lists the failed postings by URL or id (at most
+  100 per argument), recover them once per run by relaunching only those as `linkedin_job_urls` /
+  `linkedin_job_ids` on their own (a direct fetch takes no other input); `_meta.warnings` says which applies.
+  When it doesn't, tell the user the list is incomplete. Never re-run the whole search: a new run is a
+  new `request_id`, so every job already delivered would bill again.
+- **A page carrying `result.warnings` is not the last page.** A LinkedIn walk stops early when 3 result
+  pages in a row had no job passing your filters, and says so in `warnings`; a short run with that
+  warning means "maybe more" (relaunch more broadly or with fewer filters), not "nothing left". Only a
+  short run with no `warnings` is the end.
+- **Upstream scrape problems reach `_meta.warnings`:** on the first page (`offset` 0) of a finished
+  LinkedIn / Indeed poll, `failed_scrapes`, `errors` and `partial` appear there as `job_scrape_partial`, and
+  the first few upstream `warnings` entries as `job_scrape_warning`. Later pages don't repeat them; the raw
+  fields stay in `result` on every page.
 
 ### Paging through `result.jobs`
 `get_*` pollers take `limit`/`offset` (**default 10, max 50** — deliberately smaller than a single
@@ -325,6 +363,79 @@ It narrows to **towns**, not doorsteps: a profile says "London", never a postcod
 in a town inside the circle". Tell the user that, and keep the metro label in the list — most people list
 the metro, not their suburb, so a suburb-only list under-matches.
 
+## Email verification: only safe-to-send addresses come back
+
+**The default for every "verify / validate / clean these emails" ask** — 0.05 cr per address submitted,
+first-party, no vendor key. Route to `enrichley`, `leadmagic` or `icypeas` only when the user names one.
+
+- **`email_enrichment` already verifies.** Every work email the waterfall finds is checked this way
+  before it reaches the row, and one that isn't safe to send to is dropped (the chain then tries the next
+  provider). If the verifier can't answer for an address, or finds its domain is catch-all, Enrichley
+  checks it instead. A row carrying `"email_verifier": "enrichley"` (the user named Enrichley) is checked
+  by Enrichley alone. Don't
+  re-verify enrichment output — call `verify_emails` for addresses from anywhere else.
+- `verify_emails(emails)` — 1 to 50,000 addresses, each checked down to the mailbox. Returns
+  `{request_id, status: "QUEUED", submitted, duplicates_removed, rejected}`. Poll
+  `get_verified_emails(request_id)` every ~10 s (a few hundred addresses finish in minutes; tens of
+  thousands take longer) until `status` is `COMPLETED` or `FAILED`.
+- **Reading a COMPLETED poll:** `result.emails` holds **only** the addresses safe to send to
+  (`is_safe_to_send: true`). Every other address — invalid, catch-all, role account (`info@`), disposable,
+  full or disabled inbox, spam trap, or no verdict — is withheld and never returned as a result;
+  `result.withheld` counts them. Tell the user how many were withheld. Two kinds are named, bare, in case
+  the user wants a second opinion on them: `result.catch_all` (the domain accepts any mailbox, so this one
+  can't be confirmed) and `result.unknown` (no verdict). Page with `limit`
+  (1–1000, default 100) and `offset += limit` while `has_more`.
+- **Cost:** 0.05 cr per address submitted, charged at launch whatever the verdict (duplicates and
+  malformed addresses the launch drops are free). Polling is free. Quote it at the approval gate (2,000
+  addresses = 100 cr). The launch is refused (402) unless the balance covers every address.
+
+```bash
+# launch (charged per address), then poll (free)
+hyreflow tools execute verify_emails --payload '{"emails":["jane@acme.example.com","joe@acme.example.com"]}'
+#    → {"request_id":"ev_...", "status":"QUEUED", "submitted":2, ...}
+hyreflow tools execute hyreflow_native_get_verified_emails --payload '{"request_id":"ev_..."}'
+#    → COMPLETED: result.emails [{email: "jane@acme.example.com", is_safe_to_send: true, ...}], result.withheld 1
+```
+
+## Repost scan: hard-to-fill roles in a company's history
+
+`repost_scan` reads a company's PredictLeads job-opening history for the lookback and returns only the roles
+that show a hard-to-fill signal, strongest first, each with its listings as evidence (ids, first/last-seen
+dates, URLs). It applies the same rules as Step 5 of
+[`../recipes/repost-signal-to-bd.md`](../recipes/repost-signal-to-bd.md):
+
+- `repost` — a listing first seen in the last `fresh_days` days (default 2; 30 for a backfill), after an
+  earlier listing of the same role at the same site ran 21+ days and stopped. `cycles` counts the earlier
+  listings that ran that long.
+- `long-open` — the role has been live 90+ days, through relists that picked up within 3 days.
+- `evergreen` — three or more back-to-back relists about a month apart, the latest live.
+
+Two listings are the same role when the titles match once seniority words and gender tags are dropped
+(PredictLeads' English `normalized_title` carries a language switch) and they sit in the same town.
+Apprenticeship, student and intern listings never count. An ATS switch or a same-site mass relist
+continues the old listing rather than reading as a repost (`not_signals.ats_migration`).
+
+- `domain` — the company's domain. `related_domains` — its parent or subsidiary domains (up to 4), read
+  as one history; the result's `parent_company_domain` names a parent PredictLeads knows of. A group parent
+  usually owns many unrelated companies, so add it only when the role could be posted under it.
+- `titles` (`["Account Executive"]`) or `onet_codes` (`["41-3091.00"]`) narrow the scan to one role; with
+  neither, every role is checked. The per-listing O*NET code is unreliable, so prefer `titles`.
+- `lookback_months` (default 12, at most 24); `limit` (default 20, at most 100) caps `signals`, and
+  `signals_total` has the full count.
+- `needs_review` — pairs the titles can't settle: a rename or a new qualifier at the same site where
+  joining the two would raise a signal (`would_be`), or country-only listings of a role the company posts
+  at several branches. Fetch the two descriptions (`predictleads get_job_opening`) and decide.
+- `stale: true` — the company's newest listing was last seen 14+ days ago, so nothing counts as live and
+  long-open and evergreen aren't reported. `warnings` says so, and also when a history ran past 3,000
+  listings and was cut off, or PredictLeads' crawl may be blocked. With any warning, a role missing
+  from `signals` is not a "no".
+
+```bash
+hyreflow tools execute hyreflow_native repost_scan --payload '{"domain":"acme.example.com","titles":["Account Executive"],"fresh_days":30}'
+# → signals: [{signal:"repost", title, site, cycles, open_since, listings:[…earlier…, {role:"new", …}]}],
+#   needs_review, not_signals, stale, warnings, history_pages
+```
+
 ## Operations
 
 | Post feed / search | Alias | Reads |
@@ -343,6 +454,7 @@ the metro, not their suburb, so a suburb-only list under-matches.
 | `scrape_indeed_jobs` | `indeed_jobs` | `get_indeed_jobs` |
 | `scrape_arbeitsagentur_jobs` | `arbeitsagentur_jobs` | `get_arbeitsagentur_jobs` |
 | `scrape_stepstone_jobs` | `stepstone_jobs` | `get_stepstone_jobs` |
+| `verify_emails` | `verify_emails` | `get_verified_emails` |
 
 - **Career pages** — `scrape_career_pages(company_url, …)`: maps a company's site, follows its ATS
   (Greenhouse/Lever/Workday/Ashby), returns every posting. Narrow with `target_titles` (a list) **or**
@@ -358,7 +470,7 @@ the metro, not their suburb, so a suburb-only list under-matches.
   scrape, a link from a jobs page — instead of guessing a title/location search that may not surface it.
   It runs no search, so no other search input goes with it (no `country`, no `rows`), and it always
   returns job detail. `len(result.jobs)` can be smaller than the references you sent: a dead or
-  unfetchable posting costs nothing, and `jobs_filtered_out` is always 0 (there are no filters). In
+  unfetchable posting costs nothing. In
   search mode `country` only picks the regional site — it never substitutes for `locations`.
   **Clinical / healthcare searches:** a title keyword like "physician" or "doctor" also matches pharma,
   CRO and med-tech roles, which crowd out hospital postings. Search the local-language titles too
@@ -372,7 +484,11 @@ the metro, not their suburb, so a suburb-only list under-matches.
   country Indeed has no site for comes back with no jobs and a `warnings` entry saying so (nothing is
   billed); use `linkedin_jobs` for that market instead.
 - **Arbeitsagentur** — `scrape_arbeitsagentur_jobs(title=…, location=…)` for the German federal job
-  board (Bundesagentur für Arbeit). `radius` is in km. Need `title` and/or `location`.
+  board (Bundesagentur für Arbeit). `radius` is in km. Need `title` and/or `location`. Recruiter details
+  only appear with `include_recruiter_details: true` (slower); the poll bills
+  **+0.1 credits** per job with recruiter details, up to 0.15 credits per job
+  including the per-job rate. A job returned without recruiter details
+  bills the per-job rate only. Re-polling never re-bills the surcharge.
 - **StepStone** — `scrape_stepstone_jobs(title=…, location=…)` for Germany's largest commercial job
   board. `title` is **required** (there is no location-only search); omit `location` for all of Germany,
   `radius` is in km. Optional filters: `posted_within_days` (`1` or `7` only), `work_type`
@@ -396,7 +512,7 @@ hyreflow tools execute company_posts --payload '{"username":"acme","start":50}'
 hyreflow tools execute linkedin_jobs --payload '{"titles_query":"recruiter","locations":["London"],"rows":15}'
 #    → {"request_id":"...", "status":"QUEUED"}
 
-# 2. poll until COMPLETED (charged per job in result.jobs — 15 here, not the default page of 10)
+# 2. poll until COMPLETED, PARTIAL or FAILED (charged per job in result.jobs — 15 here, not the default page of 10)
 hyreflow tools execute hyreflow_native_get_linkedin_jobs --payload '{"request_id":"<id>","limit":15}'
 ```
 
@@ -442,9 +558,17 @@ activity directly.
 week", "agency staff announcing a search", "anyone mentioning a new Berlin office". Search finds the
 people; a feed then reads one of them.
 
+**Repost scan** — "which of these companies keep reposting the role", "is Acme struggling to fill its
+AE role": one call per company after discovery and the company gate in the repost recipe. It replaces
+reading the job-opening history in the chat; read the history by hand only for `needs_review` pairs.
+
 **Profile lookup** — who someone is and where they've worked: "pull her work history", "is he open to
 work", "what's this person's current title". For more than one person, run the `linkedin_profile`
 waterfall rather than this method directly.
+
+**Email verification** — every "verify / validate / clean these emails" ask, and the verify step before
+any sequence or campaign send for addresses that didn't come out of `email_enrichment` (those are
+already verified). Only safe-to-send addresses come back.
 
 ## Anti-patterns
 - **Don't judge coverage from `jobs_returned`.** It's this page only (default `limit: 10`), not the find —
@@ -475,7 +599,7 @@ waterfall rather than this method directly.
 
 ## Gotcha
 - **A job scrape is async — always poll.** The launch call returns a handle, not jobs. Don't treat the
-  QUEUED response as the result; call the matching `get_*` until `status` is `COMPLETED`.
+  QUEUED response as the result; call the matching `get_*` until `status` is `COMPLETED` (or `PARTIAL` / `FAILED`).
 - **A post feed is not.** There is no `scrape_*` half to launch and no `request_id` to poll — calling
   `get_profile_posts` / `get_company_posts` IS the fetch, and it charges on that one call.
 
@@ -486,20 +610,23 @@ Call via the CLI: `hyreflow tools execute hyreflow_native <method> --payload '{.
 - `get_arbeitsagentur_jobs(request_id: str, *, limit: int = 10, offset: int = 0) -> dict` — GET /v1/scrape-arbeitsagentur-jobs/async/{request_id} — poll a German hiring-signal scrape for open roles on Germany's Bundesagentur für Arbeit board (paginated result.jobs).
 - `get_career_pages(request_id: str, *, limit: int = 10, offset: int = 0) -> dict` — GET /v1/scrape-career-pages/async/{request_id} — poll a career-page hiring-signal scrape for open roles (paginated result.jobs).
 - `get_company_posts(username: str, start: int = 0, limit: int = 50) -> dict` — GET /v1/linkedin-company-posts — a company page's recent LinkedIn posts, newest first.
-- `get_indeed_jobs(request_id: str, *, limit: int = 10, offset: int = 0) -> dict` — GET /v1/scrape-indeed-jobs/async/{request_id} — poll an Indeed hiring-signal scrape for open roles (paginated result.jobs).
-- `get_linkedin_jobs(request_id: str, *, limit: int = 10, offset: int = 0) -> dict` — GET /v1/scrape-linkedin-jobs/async/{request_id} — poll a LinkedIn hiring-signal scrape for open roles (paginated result.jobs).
+- `get_indeed_jobs(request_id: str, *, limit: int = 10, offset: int = 0, fields: list | None = None, max_description_chars: int | None = None) -> dict` — GET /v1/scrape-indeed-jobs/async/{request_id} — poll an Indeed hiring-signal scrape for open roles (paginated result.jobs).
+- `get_linkedin_jobs(request_id: str, *, limit: int = 10, offset: int = 0, fields: list | None = None, max_description_chars: int | None = None) -> dict` — GET /v1/scrape-linkedin-jobs/async/{request_id} — poll a LinkedIn hiring-signal scrape for open roles (paginated result.jobs).
 - `get_linkedin_profile(linkedin_url: str) -> dict` — GET /v1/linkedin-profile — one person's LinkedIn profile by URL: headline, location, about, dated work history (newest first), education, skills.
 - `get_post_reactions(url: str, page: int = 1, reaction_type: str | None = None, limit: int = 10) -> dict` — POST /v1/linkedin-post-reactions — the people who reacted to a LinkedIn post.
 - `get_profile_posts(username: str, start: int = 0, limit: int = 50) -> dict` — GET /v1/linkedin-profile-posts — a person's recent LinkedIn posts, newest first.
-- `get_run(run_id: str) -> dict` — GET /v1/runs/{run_id} — generic job poller ({run_id, status, result} when COMPLETED).
+- `get_run(run_id: str) -> dict` — GET /v1/runs/{run_id} — generic poller ({run_id, status, result} when COMPLETED) for runs you own that are not native scrapes. Scrape jobs are polled with their typed poller (get_X for scrape_X), never this.
 - `get_stepstone_jobs(request_id: str, *, limit: int = 10, offset: int = 0) -> dict` — GET /v1/scrape-stepstone-jobs/async/{request_id} — poll a German hiring-signal scrape for open roles on StepStone (paginated result.jobs).
+- `get_verified_emails(request_id: str, *, limit: int = 100, offset: int = 0) -> dict` — GET /v1/verify-emails/async/{request_id} — poll a bulk email verification (paginated result.emails: only the addresses safe to send to).
 - `places_within_radius(postcode: str | None = None, *, radius: float, unit: str = 'mi', country: str | None = None, limit: int = 50, place: str | None = None) -> dict` — GET /v1/places-within-radius — towns, villages and suburbs within a radius of a postcode or a city, ready to pass as a people search `locations` list.
-- `scrape_arbeitsagentur_jobs(title: str | None = None, location: str | None = None, radius: int = 25, job_type: str | None = None, max_pages: int = 3, page_size: int = 25, include_details: bool = True, solve_captcha: bool = False) -> dict` — POST /v1/scrape-arbeitsagentur-jobs/async — start a German hiring-signal scrape of open roles on Germany's Bundesagentur für Arbeit board. Returns {request_id, status}.
+- `repost_scan(domain: str, *, related_domains: list | None = None, titles: list | None = None, onet_codes: list | None = None, fresh_days: int = 2, lookback_months: int = 12, limit: int = 20) -> dict` — GET /v1/repost-scan — find a company's hard-to-fill roles in its job-opening history: reposts, roles open 90+ days, and roles relisted every month.
+- `scrape_arbeitsagentur_jobs(title: str | None = None, location: str | None = None, radius: int = 25, job_type: str | None = None, max_pages: int = 3, page_size: int = 25, include_details: bool = True, include_recruiter_details: bool = False) -> dict` — POST /v1/scrape-arbeitsagentur-jobs/async — start a German hiring-signal scrape of open roles on Germany's Bundesagentur für Arbeit board. Returns {request_id, status}.
 - `scrape_career_pages(company_url: str, company_name: str | None = None, max_pages: int = 10, target_titles: list | None = None, target_titles_prompt: str | None = None, target_locations: list | None = None, filters: dict | None = None, known_career_page_url: str | None = None, known_career_page_urls: list | None = None) -> dict` — POST /v1/scrape-career-pages/async — start a hiring-signal scrape of a named company's own career site/ATS for open roles. Returns {request_id, status}.
 - `scrape_indeed_jobs(titles_query: Any, locations: list, country: str = 'United States', rows: int = 25, start: int = 0, radius: int | None = None, job_types: list | None = None, max_age_days: int | None = None, include_job_details: bool = True, include_company_details: bool = False) -> dict` — POST /v1/scrape-indeed-jobs/async — start a hiring-signal scrape of Indeed open roles by title + location across companies. Returns {request_id, status}.
 - `scrape_linkedin_jobs(titles_query: Any = None, company_url: str | None = None, locations: list | None = None, country: str | None = None, rows: int | None = None, distance: str | None = None, hours: int | None = None, job_types: list | None = None, work_types: list | None = None, experience_levels: list | None = None, excluded_companies: list | None = None, excluded_titles: list | None = None, excluded_industries: list | None = None, include_company_details: bool | None = None, include_job_details: bool | None = None, linkedin_job_urls: list | None = None, linkedin_job_ids: list | None = None) -> dict` — POST /v1/scrape-linkedin-jobs/async — start a hiring-signal scrape of LinkedIn open roles by title/location, for one company, or for specific job postings. Returns {request_id, status}.
 - `scrape_stepstone_jobs(title: str, location: str | None = None, radius: int | None = None, rows: int = 25, start_page: int = 1, work_type: str | None = None, posted_within_days: int | None = None, work_from_home: str | None = None, job_language: str | None = None, application_method: str | None = None, discipline: str | None = None, include_details: bool = True) -> dict` — POST /v1/scrape-stepstone-jobs/async — start a German hiring-signal scrape of open roles on StepStone, Germany's largest commercial job board. Returns {request_id, status}.
 - `search_people(filters: dict, page: int = 0, size: int = 25) -> dict` — POST /v1/people-search — filtered search over a licensed contact database; rows carry work emails where known.
 - `search_posts(keyword: str, date_posted: str | None = None, sort_by: str = 'date_posted', page: int = 1, limit: int = 10, author_title: str | None = None, from_members: list | None = None, content_type: str | None = None) -> dict` — POST /v1/linkedin-post-search — keyword search across public LinkedIn posts, newest first, scoped to a date window.
+- `verify_emails(emails: list) -> dict` — POST /v1/verify-emails/async — start an inbox-level verification of 1 to 50,000 email addresses. Returns {request_id, status}.
 
 <!-- API-SURFACE:END -->

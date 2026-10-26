@@ -12,7 +12,7 @@ HOW in `lib/atlas.py`.
 - **ALL paths CONFIRMED** from the official OpenAPI 3.1 spec (recruitwithatlas.com, pasted by the user on 2026-07-14). Full endpoint index: `reference/docs/atlas/raw/endpoints.md`.
 - Atlas terminology: **person** (one record, many roles — candidate/contact/lead), **company**, **contact** (= a `company_contacts` junction, at most one live per person), **project** (= job), **candidate** (= a person's candidacy within a project's pipeline), **opportunity** (= deal), **placement**.
 
-## Operations (30 methods; long tail via `request()`)
+## Operations (30 methods; long tail not yet exposed)
 Companies (dedup/enrichment): `list/get/find/create/update_company`. Contacts: `list_contacts`. People
 (candidates/leads): `search/lookup_people`, `get/create/update_person`, `add_person_note`. Projects
 (jobs): `list/get/create_project`, `list_project_stages`, `list_project_candidates`,
@@ -20,7 +20,7 @@ Companies (dedup/enrichment): `list/get/find/create/update_company`. Contacts: `
 `list_candidates`. Opportunities (deals): `list/get/create_opportunity`, `list_opportunity_stages`.
 Bulk: `create_{companies,people,projects,opportunities}_batch` and the generic `batch`.
 Everything else (campaigns, meetings, interviews, fees, files, placements, users, custom-attributes,
-identities, experiences) → `request()`; all listed in the cached index.
+identities, experiences) is not yet exposed as a callable method; see the cached index for the raw endpoints.
 
 ## Guardrail
 Writes go to a production ATS/CRM — pilot one record, show payload + response, confirm before bulk.
@@ -75,5 +75,5 @@ Call via the CLI: `hyreflow tools execute atlas <method> --payload '{...}'` (pre
 
 For large pushes use `create_people_batch`, `create_companies_batch`, `create_projects_batch` and
 `create_opportunities_batch`. They pace calls to a conservative **60 req/min** default and return
-`{created, failed, total, elapsed_ms}`. Override with `ATLAS_RATE_LIMIT_RPM`. See `crm-bulk-pushes.md`
-for the cross-CRM guide.
+`{created, failed, total, elapsed_ms}`. Need a higher rate? [Contact us](mailto:support@hyreflow.ai) and
+we'll see what we can do. See `crm-bulk-pushes.md` for the cross-CRM guide.

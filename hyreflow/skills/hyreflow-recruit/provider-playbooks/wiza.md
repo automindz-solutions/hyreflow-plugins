@@ -2,7 +2,7 @@
 
 ## When to use
 
-Wiza for LinkedIn → email/phone enrichment. Key advantage over ContactOut: **accepts Sales Navigator and LinkedIn Recruiter URLs** in addition to standard LinkedIn profile URLs. Strong for outbound teams with Sales Nav lists.
+Wiza for LinkedIn → email/phone enrichment. **Accepts Sales Navigator and LinkedIn Recruiter URLs** in addition to standard LinkedIn profile URLs. Strong for outbound teams with Sales Nav lists.
 
 ## Provider characteristics
 
@@ -63,6 +63,8 @@ Discover prospects by job title, level, company, industry, location. **Free** �
 ```
 
 Typical flow: search → get LinkedIn URLs → feed into `wiza_start_individual_reveal` to enrich.
+
+`wiza_start_individual_reveal` is a member of the `email_enrichment`, `personal_email`, and `phone_enrichment` waterfalls.
 
 ## Output shape
 

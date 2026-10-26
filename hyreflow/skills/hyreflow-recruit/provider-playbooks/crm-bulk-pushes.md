@@ -7,16 +7,20 @@ Hyreflow-supported recruiting CRM/ATS.
 
 All CRM adapters pace writes with a token-scoped rate limiter. Defaults:
 
-- Bullhorn: 1,500 req/min (per OAuth Client ID). `BULLHORN_RATE_LIMIT_RPM` to override.
-- JobAdder: 120 req/min (2/sec, conservative). `JOBADDER_RATE_LIMIT_RPM` to override.
-- Loxo: 60 req/min. `LOXO_RATE_LIMIT_RPM` to override.
-- Recruiterflow: 60 req/min. `RECRUITERFLOW_RATE_LIMIT_RPM` to override.
-- Vincere: 60 req/min. `VINCERE_RATE_LIMIT_RPM` to override.
-- Atlas: 60 req/min. `ATLAS_RATE_LIMIT_RPM` to override.
-- Recruit CRM: 60 req/min. `RECRUITCRM_RATE_LIMIT_RPM` to override (10 req/min per license for >6 licenses).
-- Spott: 600 req/min (per API key). `SPOTT_RATE_LIMIT_RPM` to override.
-- TrackerRMS: 600 req/min (per OAuth access token). `TRACKERRMS_RATE_LIMIT_RPM` to override.
+- Bullhorn: 1,500 req/min (per OAuth Client ID).
+- JobAdder: 120 req/min (2/sec, conservative).
+- Loxo: 60 req/min.
+- Recruiterflow: 60 req/min.
+- Vincere: 60 req/min.
+- Atlas: 60 req/min.
+- Recruit CRM: 60 req/min (10 req/min per license for >6 licenses).
+- Spott: 600 req/min (per API key).
+- TrackerRMS: 600 req/min (per OAuth access token).
 - Carerix: 600 req/min (10 req/sec, per client and tenant).
+- Crelate: 100 req/min (Crelate limits by IP, about 120/min, so all Crelate calls share one paced budget).
+
+If your CRM account allows a higher rate limit than the default above, [contact
+us](mailto:support@hyreflow.ai) and we'll see what we can do.
 
 ## Which batch helper to call
 
@@ -32,6 +36,7 @@ All CRM adapters pace writes with a token-scoped rate limiter. Defaults:
 | Spott | `create_candidates_batch` | — | `create_clients_batch` | — |
 | TrackerRMS | `create_resources_batch` | `create_contacts_batch` | `create_clients_batch` | `create_opportunities_batch` |
 | Carerix | `create_candidates_batch` | — | — | — |
+| Crelate | `create_contacts_batch` | `create_contacts_batch` | — | — |
 
 ## Bulk helper contract
 
@@ -71,7 +76,7 @@ credits.
    Otherwise proceed — watch for a `partial_budget` warning if the balance may not cover every row.
 4. Pilot one payload manually through the single-record method.
 5. Build the list of payloads and call the batch helper with `stop_on_error=False`.
-6. Report `{created_count, failed_count, total, elapsed_ms}` and surface the first few failed rows.
+6. Report `{created, failed, total, elapsed_ms}` and surface the first few failed rows.
 
 ## References
 

@@ -2,11 +2,14 @@
 
 > **Channel: WORK email only (BD / selling to companies).** `enrich_email_address` returns a corporate
 > address at the person's current employer (`data[].contact_email_address`) — never a personal one. It is
-> not in any waterfall and must not be used on a candidate / `personal_email` pipeline, including as a
-> fallback when that waterfall returns fewer hits than hoped. Responses carry `_meta.channel: "work_email"`
-> and a `work_email_only` warning as the engine-side reminder, and a request whose body declares
-> `"channel": "personal"` / `"personal_email"` / `"candidate"` is refused (`400 work_email_only`) before any
-> credit is spent.
+> not in the `email_enrichment` or `personal_email` waterfalls (it does run in the `phone_enrichment`
+> chain, phone-only) and must not be used to serve a work email on a candidate / `personal_email`
+> pipeline, including as a fallback when that waterfall returns fewer hits than hoped. A work-email request's
+> responses carry `_meta.channel: "work_email"` and a `work_email_only` warning as the engine-side reminder,
+> and a request whose body declares `"channel": "personal"` / `"personal_email"` / `"candidate"` is refused
+> (`400 work_email_only`) before any credit is spent — unless the request asks for a phone only
+> (`enrich_email_address: false, enrich_phone_number: true`), which is how the `phone_enrichment`
+> waterfall calls it and skips both the refusal and the work-email meta/warning.
 
 ## Key patterns
 

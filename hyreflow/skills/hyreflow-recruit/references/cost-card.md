@@ -34,6 +34,8 @@ Each method is priced on its own: what the call costs Hyreflow, marked up to a 5
 | bullhorn | metered | metered | BYOK-only: customer connects their own Bullhorn API user |
 | carerix | metered | metered | BYOK-only: customer connects their own Carerix client (Client ID, Client Secret, tenant) |
 | clinicaltrials | free | free | No Hyreflow credits for any method. |
+| crelate | metered | metered | BYOK-only: customer connects their own Crelate API key |
+| emailbison | metered | metered | BYOK-only: customer connects their own EmailBison instance |
 | enrichley | `validate_email` 0.25 cr | `validate_email` 0.25 cr | 1 paid method |
 | exa | `answer` 0.1 cr | `start_agent_run` 0.5 cr | 5 paid methods |
 | fathom | metered | metered | BYOK-only: customer connects their own Fathom account |
@@ -43,10 +45,11 @@ Each method is priced on its own: what the call costs Hyreflow, marked up to a 5
 | granola | metered | metered | BYOK-only: customer connects their own Granola account |
 | heyreach | metered | metered | BYOK-only: customer connects their own HeyReach account |
 | hyreflow_agent | metered | metered | Provider-metered — no fixed per-action price. |
-| hyreflow_native | `get_arbeitsagentur_jobs` 0.05 cr | `search_posts` 0.2 cr | 11 paid methods |
+| hyreflow_native | `get_arbeitsagentur_jobs` 0.05 cr | `search_posts` 0.2 cr | 12 paid methods; `get_arbeitsagentur_jobs` +0.1 credits per job with recruiter details |
 | icypeas | `email_verification` 0.1 cr | `email_search` 0.5 cr | 3 paid methods |
 | instantly | metered | metered | BYOK-only: customer connects their own Instantly account |
 | jobadder | free | free | No Hyreflow credits for any method. |
+| justcall | metered | metered | BYOK-only: customer connects their own JustCall account |
 | layoffsignal | free | free | No Hyreflow credits for any method. |
 | leadmagic | `employee_finder` 0.1 cr | `b2b_profile` 5.5 cr | 13 paid methods |
 | lemlist | metered | metered | BYOK-only: customer connects their own Lemlist account |

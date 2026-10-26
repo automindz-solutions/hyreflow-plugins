@@ -43,6 +43,9 @@ One template, three kinds. Decide from what each row **is**, not from which reci
 | an **open role** / job posting / hiring signal | `jobs` | table, newest first | freshness ("New · Posted 2d ago"), salary, company, hiring manager, link to the posting |
 | a **company or contact you're pitching** (BD, spec-out, outreach, signal-led BD) | `bd` | board (pipeline) | "why now" signal, contact, drafted opener with a copy button, stage |
 
+"Opens on" is the desktop default. On a phone, a page that has a `cards` view opens on cards instead,
+since a wide table needs sideways scrolling there.
+
 - Jobs found **in order to pitch** those companies (hiring signal → BD) are `bd`: the account is the row,
   the role is its `signal`. Jobs the user wants to **review or match a candidate to** are `jobs`.
 - A plain **company list** (TAM, market map, ICP-qualified accounts) is `bd` with
@@ -118,8 +121,10 @@ const DATA = {
 
 - `candidates`: `name, title, company, location, tier, score (0-100), fit, skills[], stage, linkedin,
   photo, proof {label, url}, contact {email, phone}, extra {"Label": value}`. `photo` is the row's
-  `photo_url` (AI Ark search results and `linkedin_profile` lookups carry one); it replaces the
-  initials and falls back to them when the host blocks it or the link expires
+  `photo_url` (AI Ark search results and `linkedin_profile` lookups carry one; a raw AI Ark row has it
+  at `profile.picture.source`); it replaces the
+  initials and falls back to them when the host blocks it or the link expires. Chat artifacts block
+  outside images, so see **Photos** below
 - `jobs`: `title, company, location, workplace (Remote/Hybrid/On-site), employment, seniority,
   salary ("€70k–90k" or {min, max, currency, period}), posted (ISO date), source (LinkedIn, Indeed,
   StepStone…), url, summary (one or two sentences from the posting), skills[], industry,
@@ -203,6 +208,17 @@ about the brand, then publish the filled template the way that host shares pages
 | none of these (no page publishing, no filesystem) | a markdown table in chat, and offer the filled HTML as a code block to save |
 
 If you can't tell which applies, write the `.html` file — it opens anywhere.
+
+**Photos (candidates, chat artifacts).** A chat artifact can't load the photo links, so it shows
+initials. Adding photos needs a way to run commands (a code sandbox or a shell); without one, don't
+offer them. Unless the user already asked for photos, publish that page first (with `photo` set to the
+links as usual, and save the file), then ask whether they want photos added. On a yes: call
+`hyreflow_extract_image` with the rows' `dataset_id` when they came from one (never copy a dataset's
+links out yourself), else their photo links, and run the `curl` command the tool's `instruction` gives
+on the saved file (write it again first if it's gone; it returns the same page with the photos
+inside), then publish that over the first one. Never copy image data into the page yourself — it
+takes many minutes. The command fails: keep the initials and say so. A ChatGPT Site or a `.html` file
+loads the links directly, so skip this there.
 
 **ChatGPT Sites.** Create the site with the filled template as its single page: ask Sites for a
 website whose `index.html` is exactly the filled file, and don't let it regenerate or restyle the

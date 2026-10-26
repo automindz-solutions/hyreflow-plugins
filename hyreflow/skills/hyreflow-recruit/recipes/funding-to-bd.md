@@ -56,7 +56,7 @@ funding raised →  ICP check    →     hiring managers   →    work email    
 
 **4 — ENRICH: work email** *(metered; the `email_enrichment` waterfall)*
 - Run the **email-enrichment waterfall** (order in `reference/waterfalls.json`), first-hit.
-- **Optional verify:** `enrichley.validate_email` before sending — `catch_all_safe` is usable; drop undeliverable.
+- **Already verified:** the waterfall only returns work emails safe to send to — no separate verify step.
 
 **5 — PERSONALIZE: BD first-line off the funding hook** *(metered AI — `hyreflow-agent`)*
 - `hyreflow_agent.infer` with the `prompts.json` → **"BD first line from hiring signal"** template, feeding the

@@ -37,54 +37,54 @@ reporting, LinkedIn-account, blacklist, template, or schedule API on this adapte
 ### Contacts
 
 ```bash
-hyreflow tools execute reply_io reply_io_list_contacts --payload '{"top":25,"skip":0}'
-hyreflow tools execute reply_io reply_io_get_contact --payload '{"contact_id":12345}'
-hyreflow tools execute reply_io reply_io_create_contact --payload '{"email":"ada@acme.com","firstName":"Ada","lastName":"Lovelace","company":"Acme Corp"}'
-hyreflow tools execute reply_io reply_io_update_contact --payload '{"contact_id":12345,"title":"VP Engineering"}'
-hyreflow tools execute reply_io reply_io_search_contacts --payload '{"top":25,"rules":[{"property":"email","condition":"contains","value":"acme.com"}]}'
+hyreflow tools execute reply_io list_contacts --payload '{"top":25,"skip":0}'
+hyreflow tools execute reply_io get_contact --payload '{"contact_id":12345}'
+hyreflow tools execute reply_io create_contact --payload '{"email":"ada@acme.com","firstName":"Ada","lastName":"Lovelace","company":"Acme Corp"}'
+hyreflow tools execute reply_io update_contact --payload '{"contact_id":12345,"title":"VP Engineering"}'
+hyreflow tools execute reply_io search_contacts --payload '{"top":25,"rules":[{"property":"email","condition":"contains","value":"acme.com"}]}'
 ```
 
 ### Contact lists
 
 ```bash
-hyreflow tools execute reply_io reply_io_list_contact_lists --payload '{}'
-hyreflow tools execute reply_io reply_io_add_contacts_to_list --payload '{"list_id":111,"contact_ids":[12345,12346]}'
+hyreflow tools execute reply_io list_contact_lists --payload '{}'
+hyreflow tools execute reply_io add_contacts_to_list --payload '{"list_id":111,"contact_ids":[12345,12346]}'
 ```
 
 ### Sequences
 
 ```bash
-hyreflow tools execute reply_io reply_io_list_sequences --payload '{"status":"active"}'
-hyreflow tools execute reply_io reply_io_get_sequence --payload '{"sequence_id":777}'
-hyreflow tools execute reply_io reply_io_create_sequence --payload '{"name":"Acme Corp - Book Assessment","steps":[{"type":"email","subject":"Quick question","body":"<p>Hello Ada</p>"}]}'
-hyreflow tools execute reply_io reply_io_start_sequence --payload '{"sequence_id":777}'
-hyreflow tools execute reply_io reply_io_pause_sequence --payload '{"sequence_id":777}'
-hyreflow tools execute reply_io reply_io_get_sequence_stats --payload '{"sequence_id":777,"dateRangePreset":"lastMonth"}'
-hyreflow tools execute reply_io reply_io_list_sequence_steps --payload '{"sequence_id":777}'
+hyreflow tools execute reply_io list_sequences --payload '{"status":"active"}'
+hyreflow tools execute reply_io get_sequence --payload '{"sequence_id":777}'
+hyreflow tools execute reply_io create_sequence --payload '{"name":"Acme Corp - Book Assessment","steps":[{"type":"email","subject":"Quick question","body":"<p>Hello Ada</p>"}]}'
+hyreflow tools execute reply_io start_sequence --payload '{"sequence_id":777}'
+hyreflow tools execute reply_io pause_sequence --payload '{"sequence_id":777}'
+hyreflow tools execute reply_io get_sequence_stats --payload '{"sequence_id":777,"dateRangePreset":"lastMonth"}'
+hyreflow tools execute reply_io list_sequence_steps --payload '{"sequence_id":777}'
 ```
 
 ### Sequence contacts
 
 ```bash
-hyreflow tools execute reply_io reply_io_list_sequence_contacts --payload '{"sequence_id":777,"top":25}'
-hyreflow tools execute reply_io reply_io_add_contacts_to_sequence --payload '{"sequence_id":777,"contact_ids":[12345,12346]}'
-hyreflow tools execute reply_io reply_io_remove_contacts_from_sequence --payload '{"sequence_id":777,"contact_ids":[12346]}'
-hyreflow tools execute reply_io reply_io_set_contacts_status_in_sequence --payload '{"sequence_id":777,"contact_ids":[12345],"status_in_sequence":"paused"}'
-hyreflow tools execute reply_io reply_io_set_contacts_replied --payload '{"sequence_id":777,"contact_ids":[12345],"is_replied":true}'
+hyreflow tools execute reply_io list_sequence_contacts --payload '{"sequence_id":777,"top":25}'
+hyreflow tools execute reply_io add_contacts_to_sequence --payload '{"sequence_id":777,"contact_ids":[12345,12346]}'
+hyreflow tools execute reply_io remove_contacts_from_sequence --payload '{"sequence_id":777,"contact_ids":[12346]}'
+hyreflow tools execute reply_io set_contacts_status_in_sequence --payload '{"sequence_id":777,"contact_ids":[12345],"status_in_sequence":"paused"}'
+hyreflow tools execute reply_io set_contacts_replied --payload '{"sequence_id":777,"contact_ids":[12345],"is_replied":true}'
 ```
 
 ### Email accounts
 
 ```bash
-hyreflow tools execute reply_io reply_io_list_email_accounts --payload '{}'
-hyreflow tools execute reply_io reply_io_list_sequence_email_accounts --payload '{"sequence_id":777}'
-hyreflow tools execute reply_io reply_io_link_email_account_to_sequence --payload '{"sequence_id":777,"email_account_id":1}'
+hyreflow tools execute reply_io list_email_accounts --payload '{}'
+hyreflow tools execute reply_io list_sequence_email_accounts --payload '{"sequence_id":777}'
+hyreflow tools execute reply_io link_email_account_to_sequence --payload '{"sequence_id":777,"email_account_id":1}'
 ```
 
 ### Identity
 
 ```bash
-hyreflow tools execute reply_io reply_io_whoami --payload '{}'
+hyreflow tools execute reply_io whoami --payload '{}'
 ```
 
 ## Response Shape

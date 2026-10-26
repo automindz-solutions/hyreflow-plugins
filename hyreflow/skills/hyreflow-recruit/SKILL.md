@@ -12,6 +12,9 @@ description: "Hyreflow's recruitment-automation harness — the umbrella over ev
 > Hyreflow MCP server: use those tools and skip everything below that installs or runs the `hyreflow`
 > CLI. The CLI route is for a client with a shell and no `hyreflow_*` tools; when both are present,
 > the MCP tools win — one sign-in, and results come back in the response instead of as files on disk.
+> If the tools are listed but deferred (not yet loaded), load them before anything else and do the work
+> yourself — never delegate a hyreflow request to a web-research agent, and never tell the user hyreflow
+> is "not connected" before you have tried to load them.
 
 Hyreflow is a recruitment-automation harness: a unified adapter + playbook layer
 over every external recruiting/GTM tool. Each tool gets a thin Python **adapter** (`lib/<tool>.py`,
@@ -77,8 +80,9 @@ When the recipes below name a method (`search_users`, `people_search`, `enrich_p
 direct vendor call.
 
 ## Process & goal
-The customer goes from an **open role** (or a BD target) → a **qualified shortlist with reachable contacts**
-(candidates: personal email + LinkedIn, **never** work email; BD: work email) → **outreach or the ATS**.
+The customer goes from an **open role** (or a BD target) → a **qualified shortlist** → **reachable contacts,
+when they ask for them** (candidates: personal email + LinkedIn, **never** work email; BD: work email) →
+**outreach or the ATS**. Contact enrichment is paid and opt-in: a shortlist ask is not a contact ask.
 They may enter anywhere along that arc — meet them where they are and guide them forward.
 **Discovery order depends on the job:** candidate sourcing is **people-first** (title + location across the
 people-DBs); BD / signal work is **company-first** (find the accounts/signals, *then* the contacts). Don't
@@ -133,24 +137,28 @@ filter and pulling the entire DB). Reading more than one is normal and encourage
 
 | When the task is… | Read first |
 |---|---|
+| The user asks to **run Hyreflow onboarding** / get started (their first prompt) | call `hyreflow_onboarding` and follow what it returns; the same text is the **`hyreflow-onboarding`** skill |
 | Talk like a recruiter / what's the better next move / reframe recruitability | [`recruiter-craft.md`](recruiter-craft.md) (voice + vocabulary + full-funnel behaviour canon) |
 | Construct a **Boolean / X-ray** search string | [`references/recruiter-playbooks/boolean-search.md`](references/recruiter-playbooks/boolean-search.md) (operators, `site:` X-ray, mapping onto `people_search`) |
 | Source candidates / find people / build a shortlist | [`finding-companies-and-contacts.md`](finding-companies-and-contacts.md) (the sourcing stage: query shapes, company-scoping, single-source-default) |
 | The user hands you a **team / roster page URL** (team/about/leadership/speaker page listing the people) | [`recipes/people-from-webpage.md`](recipes/people-from-webpage.md) (scrape the page with firecrawl → exa for LinkedIn URLs → enrich; don't search the databases) |
 | Sourcing a **LinkedIn-sparse** role (trades/blue-collar, chefs, mechanics, care workers, nurses, doctors, mechanical engineers) — or finding a local/German business owner via the **Impressum** | [`recipes/linkedin-sparse-sourcing.md`](recipes/linkedin-sparse-sourcing.md) (find the employer, then its team/about/Impressum page; Impressum owner = hiring manager, not a candidate) |
+| Find **hiring managers / owners at local businesses in Germany/DACH** (or any market with a mandatory Impressum) and their **work emails + LinkedIn** | [`recipes/local-business-hiring-managers.md`](recipes/local-business-hiring-managers.md) (openmart → Impressum decision-makers → name+domain work email → LinkedIn resolution → re-enrich → validate) |
 | The user ASKS FOR **Hyreflow-native bulk screening** (or a pool too large to deep-dive row by row) | [`shortlist.md`](shortlist.md) (opt-in `/shortlist`: the score/noul/choice question set, what ranks vs gates vs reports). Otherwise the recipes' own `/qualify` step stands |
 | **Any run that ends in a list a person will review** (shortlist, open roles, target accounts, BD list), or the user wants to show / share / send results | the **`hyreflow-artifact`** skill — render it by default as a branded page (candidates, jobs or BD view), unless they asked for raw data only |
-| A **job description / spec** → candidate shortlist | [`recipes/jd-to-shortlist.md`](recipes/jd-to-shortlist.md) (parse → search + competitor-poach → qualify → enrich) |
-| **Max coverage / talent map / "find the passive ones"** (source from every angle) | [`recipes/multi-strategy-sourcing.md`](recipes/multi-strategy-sourcing.md) (5 angles: structured ∥ semantic + tiered competitor map + lookalike + open-to-work intent → qualify → signal/enrich survivors) |
-| **Cross-DB structured merge** (one title set across AI Ark · Lemlist · Prospeo) | [`recipes/multi-source-candidate-search.md`](recipes/multi-source-candidate-search.md) (gendered-title + location-superset gotchas → dedup by LinkedIn → qualify) |
+| A **job description / spec** → candidate shortlist | [`recipes/jd-to-shortlist.md`](recipes/jd-to-shortlist.md) (parse → search + competitor-poach → profile enrich → qualify → ranked shortlist) |
+| **Max coverage / talent map / "find the passive ones"** (source from every angle) | [`recipes/multi-strategy-sourcing.md`](recipes/multi-strategy-sourcing.md) (5 angles: structured ∥ semantic + tiered competitor map + lookalike + open-to-work intent → qualify → signal-scan survivors → ranked shortlist) |
+| **Cross-DB structured merge** (one title set across AI Ark · Prospeo) | [`recipes/multi-source-candidate-search.md`](recipes/multi-source-candidate-search.md) (gendered-title + location-superset gotchas → dedup by LinkedIn → qualify) |
 | Match candidates to a job from the client's **OWN connected CRM/ATS candidate base** (a CRM is connected, or the user wants to draw on existing candidates) | [`recipes/crm-matching.md`](recipes/crm-matching.md) (prefilter on CRM taxonomy/custom fields → longlist broad → enrich w/ CRM notes/activities/interviews → AI score; combinable with net-new sourcing) |
 | A **CV / candidate** → fitting open jobs + hiring manager (spec-out / MPC) | [`recipes/cv-to-jobs.md`](recipes/cv-to-jobs.md) (parse CV → job search → match → hiring manager → BD) |
 | A **CV / candidate** → a full sequenced BD **campaign** across many companies (MPC Shot / candidate-led BD) | [`recipes/candidate-led-bd-campaign.md`](recipes/candidate-led-bd-campaign.md) (evergreen-candidate gate → scrape+lookalike fan-out → fit-match → CRM-first routing → poaching guard → approval gate → frontsheet + send) |
 | Sourcing an **IT / engineering** role (devs) | [`recipes/it-sourcing.md`](recipes/it-sourcing.md) (GitHub ground-truth + people-DBs → qualify; free emails) |
+| Sourcing **designers** (product / UX / UI / graphic / brand / motion), or any designer whose **portfolio is required** | [`recipes/designer-portfolios.md`](recipes/designer-portfolios.md) (portfolio lookup as an add-on by default; portfolio-first only when the user makes it a must-have) |
 | Qualify against a role / ICP | [`recipes/qualify-against-icp.md`](recipes/qualify-against-icp.md) (+ the client's `ICP.md`) |
 | "Which companies are in my **TAM** / build a **target-account list**" | [`recipes/build-tam.md`](recipes/build-tam.md) (ICP → firmographic/people-first/lookalike sourcing → qualify → ICP-fit company list → opt. people) |
 | Find **local businesses / SMBs** by category and location, then find owners or decision-makers | [`provider-playbooks/openmart.md`](provider-playbooks/openmart.md) (store- vs brand-level search → domain → async people/email/tech batch; BYOK-only, BD/work-email channel) |
 | Enrich for contact (email/phone/LinkedIn) | [`enriching-and-researching.md`](enriching-and-researching.md) + [`references/provider-precedence.md`](references/provider-precedence.md) |
+| **Verify / validate emails** (deliverability, before any send) | [`provider-playbooks/hyreflow_native.md`](provider-playbooks/hyreflow_native.md) |
 | Push to an ATS/CRM, or sequence outreach | that tool's `provider-playbooks/<tool>.md` (auth + write methods + gates) |
 | **Post a job / open a requisition** in the client's ATS | the ATS's playbook: [`ashby`](provider-playbooks/ashby.md) · [`lever`](provider-playbooks/lever.md) · [`smartrecruiters`](provider-playbooks/smartrecruiters.md) · [`recruitee`](provider-playbooks/recruitee.md) — each exposes `create_job`, BYOK-only and free. [`breezy`](provider-playbooks/breezy.md) is **coming soon** (vendor API still in progress) — it is not connectable and every call is refused, so never route a post to it. Get the ATS's own ids (team, location, department) from the user; never invent one. **Creating never publishes** — that is a second, separately-approved call |
 | **Publish / take a role live** once it exists | ashby: `set_job_status` (open the job) then `create_job_posting` with `status: Published` · lever: `set_job_state` · smartrecruiters: `publish_job` · recruitee: `set_job_state` (breezy: `set_job_state` — **coming soon**, not callable). Creating never publishes in any of them. Publishing is public: confirm the exact role with the user first |
@@ -161,6 +169,7 @@ filter and pulling the entire DB). Reading more than one is normal and encourage
 | **Who is posting about X** / hiring posts by recruiting-agency staff, "we're hiring" posts this week | [`provider-playbooks/hyreflow_native.md`](provider-playbooks/hyreflow_native.md) — `search_posts` (keyword search over public LinkedIn posts, **past week by default**, `author_title: "Recruiter"` for the agency-staff cut); one call, 10 posts per page, per request. Then `profile_posts` on a specific author only if their history matters |
 | **Who reacted to / engaged with this post** | [`provider-playbooks/hyreflow_native.md`](provider-playbooks/hyreflow_native.md) — `post_reactions` on the post's `postUrl`; 10 reactors a page, per request; `reaction_type` narrows to one kind |
 | Signal-driven BD (funding / hiring / layoffs) | the signal tool's `provider-playbooks/<tool>.md` + [`recipes/funding-to-bd.md`](recipes/funding-to-bd.md) (funding→BD) / [`recipes/layoff-signal-to-poach.md`](recipes/layoff-signal-to-poach.md) (layoffs) |
+| Companies **reposting** the same role / hard-to-fill hiring signal | [`recipes/repost-signal-to-bd.md`](recipes/repost-signal-to-bd.md) |
 | A client's **LinkedIn connections export** → scored prospect DB + a weekly Dream 100 sweep | [`recipes/network-icp-qualification.md`](recipes/network-icp-qualification.md) (batch qualifier + Dream 100 build + weekly sweep, headless up to the human send) |
 | Any credit-consuming or write action | the **Credit & approval gate** section below |
 | Not sure which tool fits the intent | **start here:** `hyreflow tools search <intent>` (ranked flat tools) → then `hyreflow tools get <tool> <method>` for the exact payload — never guess |
@@ -188,8 +197,8 @@ enrich at scale → orchestrate the sub-agents.
 Not optional — without it the UI shows nothing. **Before (or right after) `session start`, also say the
 plan in prose, in the conversation** — one short paragraph in plain language naming which tools you'll
 use, why, and what gets qualified against what, e.g. "I'll size the DACH pool with Prospeo (people-first,
-free count), verify build artifacts on GitHub for free, qualify against the role must-haves, then only pay
-to enrich personal emails for the finalists." Then execute. The step list is for the Playground; the prose
+free count), verify build artifacts on GitHub for free, qualify against the role must-haves, and stop at a
+ranked shortlist — contact details only if you ask." Then execute. The step list is for the Playground; the prose
 paragraph is for the user watching the conversation — post both, never the steps alone. This is what lets
 the user sanity-check the approach before any tool runs or credits spend, instead of watching terse step
 labels with no reasoning behind them.
@@ -301,7 +310,7 @@ hyreflow-recruit/                    <- this skill package (installed to ~/.agen
 The adapters (`lib/`) and the machine-readable call contract (`reference/tool-registry.json`) live
 **server-side** in the hosted engine — you reach them through the `hyreflow` CLI / API, not local files.
 
-## Tool catalog (52 playbooks — 48 adapters + 3 Hyreflow Natives + 1 parked)
+## Tool catalog (55 playbooks — 51 adapters + 3 Hyreflow Natives + 1 parked)
 
 > **Two tool classes.** **Adapters** wrap a third-party vendor API (BYOK or hyreflow-managed key; obey
 > the provider-precedence waterfall). **Hyreflow Natives** are first-party capabilities with no external
@@ -312,25 +321,25 @@ The adapters (`lib/`) and the machine-readable call contract (`reference/tool-re
 `apollo` · `zoominfo` (OAuth; enrich/search/intent/scoops, lookalikes & recommendations)
 
 **Enrichment** — emails/phones/contact + company data
-`lusha` · `leadmagic` · `icypeas` · `prospeo` · `fullenrich` · `bettercontact` · `wiza` · `exa` · `enrichley` (email validation)
+`lusha` · `leadmagic` · `icypeas` · `prospeo` · `fullenrich` · `bettercontact` · `wiza` · `exa` · `enrichley` (email validation — only when the user names it; the native `verify_emails` is the default)
 
 **Data / sourcing** — search, scrape, actors, signals
 `apify` (**BYOK-only** — needs the client's own Apify key; 0 credits, Apify bills them) · `aiark` · `firecrawl` · `serper` · `openmart` (local-business/SMB search, company enrichment, owners/people, business email, technology detection; BYOK-only) · `theirstack` (tech-stack / keyword-filtered job & company search, technographics, buying intent) · `predictleads` (funding rounds incl. Series A + job openings + tech detections — funding/hiring discovery) · `shovels` (US building permits + contractors — construction/trades) · `github` (developer sourcing — IT recruiting) · `clinicaltrials` (pharma/biotech/CRO hiring signals; no key) · `builtwith` (technographics — source/qualify companies by tech stack)
 
 **Sequencers** — outreach activation
-`instantly` (email) · `lemlist` (email+LinkedIn) · `heyreach` (LinkedIn) · `smartlead` (email) · `reply_io` (email+LinkedIn) · `sendkit` (email, dedicated-IP deliverability) · `sourcewhale` (recruiting outreach)
+`instantly` (email) · `lemlist` (email+LinkedIn) · `heyreach` (LinkedIn) · `smartlead` (email) · `reply_io` (email+LinkedIn) · `sendkit` (email, dedicated-IP deliverability) · `emailbison` (email, the client's own instance: instance URL + API token) · `sourcewhale` (recruiting outreach)
 
 **Recruiting CRMs** — the write targets for candidates, clients and placements
-`recruit-crm` · `loxo` · `vincere` · `recruiterflow` · `atlas` · `bullhorn` · `carerix` (client ID + client secret + Carerix URL) · `spott` · `jobadder` (OAuth, self-serve — dashboard walks the workspace through registering its own app + connecting) · `trackerrms` (OAuth, self-serve — paste the client secret Tracker support issues + pick the region, then Connect) · `zoho_recruit` (OAuth, self-serve — create a Zoho app + pick the data center, then Connect; read-only here — search candidates, list/search clients, read job openings; no ATS write methods)
+`recruit-crm` · `loxo` · `vincere` · `recruiterflow` · `atlas` · `bullhorn` · `carerix` (client ID + client secret + Carerix URL) · `crelate` (API key) · `spott` · `jobadder` (OAuth, self-serve — one click via Hyreflow's own app; a workspace can switch to its own Client ID + Secret instead) · `trackerrms` (OAuth, self-serve — paste the client secret Tracker support issues + pick the region, then Connect) · `zoho_recruit` (OAuth, self-serve — create a Zoho app + pick the data center, then Connect; read-only here — search candidates, list/search clients, read job openings; no ATS write methods)
 
 **ATS** — stand a role up and take it live
 `ashby` · `lever` · `smartrecruiters` · `recruitee` — all BYOK-only — plus `breezy` (**coming soon — vendor API in progress, not connectable**). `create_job` never publishes in any of them; taking the role live is a second call. To post one role to several at once, follow [`recipes/multi-ats-job-posting.md`](recipes/multi-ats-job-posting.md).
 
 **Comms** — calls & meeting intelligence
-`aircall` (phone) · `fathom` (meeting notetaker API) · `granola` (meeting notes) · `quil` (**parked — no public API**)
+`aircall` (phone) · `justcall` (phone + SMS + Sales Dialer) · `fathom` (meeting notetaker API) · `granola` (meeting notes) · `quil` (**parked — no public API**)
 
 **Hyreflow Natives** — first-party, no external vendor, always credit-metered (no BYOK)
-`layoffsignal` (layoff/RIF recruiting trigger — built on free public news RSS; poach displaced talent + BD signal) · `hyreflow_native` (first-party tools — (a) job scrapers for career pages, LinkedIn, Indeed, Arbeitsagentur, StepStone; async launch→poll, pay-on-match per job, and (b) **LinkedIn post feeds** for a person or a company via `profile_posts`/`company_posts`; one call, per request, 50 posts a page — reach for these on "what has X been posting" or any launch/hiring/funding/exec-commentary signal, and (c) **LinkedIn post search** via `search_posts`: keyword across every public post, past week by default, `author_title` to narrow to recruiters — reach for it on "who is posting about X" / "find hiring posts by agency staff", and (d) **postcode radius** via `postcode_radius`: towns within N miles of a postcode or city as a `locations` list for `people_search` — free, and (e) **post reactions** via `post_reactions` — the people who reacted to a LinkedIn post, 10 reactors a page, per request, and (f) **LinkedIn profile lookup** via `get_linkedin_profile`: one person's profile and dated work history by URL, no contact detail, per request — the second step of the `linkedin_profile` waterfall, so reach it through `linkedin_profile`) · `hyreflow-agent` (AI reasoning agent — hosted AI model + adapter toolbelt; `infer` plain + `research` agentic; the metered reasoning layer for batch/headless — interactive reasoning stays free on the host agent). **Within N miles of a postcode or city** → `postcode_radius` (`hyreflow_native.places_within_radius`, free) turns it into the town list for `people_search` `locations`
+`layoffsignal` (layoff/RIF recruiting trigger — built on free public news RSS; poach displaced talent + BD signal) · `hyreflow_native` (first-party tools — (a) job scrapers for career pages, LinkedIn, Indeed, Arbeitsagentur, StepStone; async launch→poll, pay-on-match per job, and (b) **LinkedIn post feeds** for a person or a company via `profile_posts`/`company_posts`; one call, per request, 50 posts a page — reach for these on "what has X been posting" or any launch/hiring/funding/exec-commentary signal, and (c) **LinkedIn post search** via `search_posts`: keyword across every public post, past week by default, `author_title` to narrow to recruiters — reach for it on "who is posting about X" / "find hiring posts by agency staff", and (d) **postcode radius** via `postcode_radius`: towns within N miles of a postcode or city as a `locations` list for `people_search` — free, and (e) **post reactions** via `post_reactions` — the people who reacted to a LinkedIn post, 10 reactors a page, per request, and (f) **LinkedIn profile lookup** via `get_linkedin_profile`: one person's profile and dated work history by URL, no contact detail, per request — the second step of the `linkedin_profile` waterfall, so reach it through `linkedin_profile`, and (g) **repost scan** via `repost_scan`: a company's reposted, long-open and monthly-relisted roles from its PredictLeads job history, free apart from the history pages it pulls — the detection step of the repost recipe, and (h) **email verification** via `verify_emails` (inbox-level, async, 0.05 cr per address submitted, charged at launch, returns only the addresses safe to send to; `email_enrichment` already runs it on every email it finds) — the default for verifying emails) · `hyreflow-agent` (AI reasoning agent — hosted AI model + adapter toolbelt; `infer` plain + `research` agentic; the metered reasoning layer for batch/headless — interactive reasoning stays free on the host agent). **Within N miles of a postcode or city** → `postcode_radius` (`hyreflow_native.places_within_radius`, free) turns it into the town list for `people_search` `locations`
 
 > Read the matching `provider-playbooks/<tool>.md` before executing against any tool — it has the auth scheme,
 > the typed methods, the pagination contract, and the approval gates. Don't guess params.
@@ -353,7 +362,9 @@ On MCP, the same multi-row call uses native arguments — no CLI translation or 
 ```json
 {"tool":"email_enrichment","rows":[{"first_name":"Jane","last_name":"Doe","company_domain":"acme.example.com"}]}
 ```
-Call those arguments with `hyreflow_tools_execute`. Use `personal_email` instead for candidates.
+Call those arguments with `hyreflow_tools_execute`. Use `personal_email` instead for candidates — but only
+when the user explicitly asked for personal emails; a bare "enrich" is ambiguous: ask which channel, or for
+screening/context (not contact details) use `linkedin_profile` instead.
 **Enriching several people? `--rows`, never a loop of `--payload`.** One call walks the chain stage by
 stage and turns the FullEnrich step into ONE provider job for every row still pending — 12 or 100 rows
 finish in roughly the time a single row takes, and billing stays per row. A `still_enriching` row carries its
@@ -383,7 +394,7 @@ reads. **Before scoring, draft the JD's implied must-haves and ask the user to c
 them** — a pinned list makes the score auditable against something they agreed to.
 
 **`/shortlist` is opt-in.** It is the bulk structured screen — one decision call per row →
-`shortlist:{score, tier, categories{}, holistic{}, must_haves[]}`, numbers only, no prose, up to 5000
+`shortlist:{score, tier, categories{}, holistic{}, must_haves[], unverified[]?}`, numbers only, no prose, up to 5000
 rows, far cheaper per candidate. It writes one question set per job description, reuses it, and ranks
 on ~8 weighted categories; `must_haves` are optional hard gates and nothing is
 auto-rejected without them — ask the user before pinning any. Reach for it when the USER asks for native bulk screening, or when the pool is
@@ -422,10 +433,10 @@ Preview spend first with `--dry-run`; the CLI adds bearer auth, 429/5xx retries,
 ## The canonical pipeline
 **source → qualify (ICP) → enrich → verify → sequence → push to ATS**, e.g.
 `apollo`/`aiark`/`apify`/`theirstack` (find companies/people) → **qualify against the client's `ICP.md`
-(see below)** → `leadmagic`/`prospeo`/`fullenrich` (waterfall email+phone) → `enrichley` (validate
-deliverability) → `instantly`/`smartlead`/`reply_io`/`sendkit`/`heyreach`/`lemlist`/`sourcewhale` (activate) →
-`recruit-crm`/`bullhorn`/`carerix`/`loxo`/`vincere`/`recruiterflow`/`atlas`/`trackerrms` (land the record).
-`aircall` + `fathom` close the loop on the conversation side (call logs, transcripts → ATS activity).
+(see below)** → `leadmagic`/`prospeo`/`fullenrich` (waterfall email+phone) → `hyreflow_native` `verify_emails` (validate
+deliverability) → `instantly`/`smartlead`/`reply_io`/`sendkit`/`emailbison`/`heyreach`/`lemlist`/`sourcewhale` (activate) →
+`recruit-crm`/`bullhorn`/`carerix`/`crelate`/`loxo`/`vincere`/`recruiterflow`/`atlas`/`trackerrms` (land the record).
+`aircall`/`justcall` + `fathom` close the loop on the conversation side (call logs, transcripts → ATS activity).
 The same arc as recruiter **behaviour** (source → shortlist → outreach → slate, + BD/MPC + passive-poach)
 — the decision at each stage and *why* — is in [`recruiter-craft.md`](recruiter-craft.md) §B.
 
@@ -434,22 +445,33 @@ Multi-tool flows have a step-by-step recipe in `recipes/` — follow it as the e
 - [`recipes/qualify-against-icp.md`](recipes/qualify-against-icp.md) — **the qualify gate.** Run after any
   sourcing step, before spending on enrichment/outreach: filter the company set against the client's ICP.
 - [`recipes/layoff-signal-to-poach.md`](recipes/layoff-signal-to-poach.md) — **layoff/RIF trigger.** Sweep
-  layoff news (`layoffsignal` native) → extract → source the displaced talent → enrich → outreach (+ BD).
+  layoff news (`layoffsignal` native) → extract → source the displaced talent → qualified list; contact enrichment
+  → outreach is opt-in, only if the user asks (+ BD).
+- [`recipes/repost-signal-to-bd.md`](recipes/repost-signal-to-bd.md) — **repost / hard-to-fill trigger.**
+  O*NET → `predictleads` discovery → company gate → `repost_scan` per company (repost / long-open /
+  evergreen, detected on the server) → BD.
 - [`recipes/it-sourcing.md`](recipes/it-sourcing.md) — **IT / developer sourcing.** Two legs, both carrying real
   volume: GitHub (free, ground-truth — skill proof + personal email + website/socials, impact-tiered) **+**
   people-DBs (breadth, to a `1.5×N` row target) → merge (GitHub wins a dedup tie) → optional Firecrawl+AI
   personal-site context → qualify. Role type picks the primary leg — infra/sysadmin roles are people-DB-only.
+- [`recipes/designer-portfolios.md`](recipes/designer-portfolios.md) — **designer sourcing with portfolios.**
+  By default, source as usual and add each shortlisted candidate's portfolio (profile text → name search →
+  verify); a missing portfolio drops no one. Only when the user makes a portfolio a must-have: portfolio sites
+  first (Exa personal-site search + Serper X-ray) → LinkedIn from the site → qualify with the portfolio as a
+  gate. Physical-goods design (industrial, furniture, fashion) gets no add-on, only the must-have path.
 - [`recipes/jd-to-shortlist.md`](recipes/jd-to-shortlist.md) — **JD → candidate shortlist.** Parse a job spec →
   filters → source (general **+ prioritized competitor profiles + a separate promotion-ready feeder lane**) →
-  enrich the work history → qualify vs JD + assess promotion evidence → enrich contact (personal email+LinkedIn).
-  The most-requested recruiter flow; competitor-poach is a priority add-on, not exclusive.
+  enrich the work history → qualify vs JD + assess promotion evidence → ranked shortlist; contact enrichment
+  (personal email+LinkedIn) is opt-in, only if the user asks. The most-requested recruiter flow;
+  competitor-poach is a priority add-on, not exclusive.
 - [`recipes/multi-strategy-sourcing.md`](recipes/multi-strategy-sourcing.md) — **max-coverage sourcing (5 angles).**
   The superset of jd-to-shortlist: structured ∥ **semantic (Exa)** + **tiered competitor talent map** (bench-
   concentration / raid-targets) + **lookalike** expansion + **open-to-work intent** → merge/dedup → **qualify (free)**
-  → then spend signal scans + enrich on survivors only. Use for "leave no stone unturned", a talent/market map, or
-  to catch the passive profiles structured filters miss.
+  → ranked shortlist with LinkedIn; signal scans run on survivors only and contact (personal email) enrichment
+  is opt-in, only if the user asks. Use for "leave no stone unturned", a talent/market map, or to catch the
+  passive profiles structured filters miss.
 - [`recipes/multi-source-candidate-search.md`](recipes/multi-source-candidate-search.md) — **cross-DB structured merge.**
-  One title set across AI Ark · Lemlist · Prospeo with the gendered-title + location-superset gotchas → dedup by
+  One title set across AI Ark · Prospeo with the gendered-title + location-superset gotchas → dedup by
   LinkedIn slug → qualify on profile text. The plain coverage-completion play (no semantic/competitor/intent angles —
   reach for `multi-strategy-sourcing` when you want those).
 - [`recipes/crm-matching.md`](recipes/crm-matching.md) — **CRM Matching: match the client's OWN candidate base
@@ -485,9 +507,16 @@ Multi-tool flows have a step-by-step recipe in `recipes/` — follow it as the e
   (trades, chefs, mechanics, care workers, nurses, doctors, mechanical engineers) → employer pages →
   contacts.** `people_search` first (don't abandon it) → find local employers (exa/openmart/company_search)
   → their team/about/Impressum pages (firecrawl_map/exa_search) → `firecrawl_extract` names + titles →
-  qualify off the page → candidates go to `personal_email` + LinkedIn; the Impressum's Geschäftsführer/
-  Inhaber is the hiring manager (work email), not a candidate. Fallback for construction/trades outside the
+  qualify off the page → contacts only when the user asks (candidates: `personal_email` + LinkedIn; the Impressum's Geschäftsführer/
+  Inhaber is the hiring manager — work email — not a candidate). Fallback for construction/trades outside the
   US — [`provider-playbooks/shovels.md`](provider-playbooks/shovels.md) stays primary there.
+- [`recipes/local-business-hiring-managers.md`](recipes/local-business-hiring-managers.md) — **Openmart
+  local businesses → Impressum decision-makers → verified work email + LinkedIn.** DACH (or any
+  mandatory-Impressum market): `search_businesses`/`search_brands` → Impressum + team page extract (name,
+  title, printed contact kept company-level) → prioritise Geschäftsführer/Inhaber/Partner → generic-inbox
+  rule (info@/kontakt@/kanzlei@/… never becomes the person's email) → work email via `lookup_people` and/or
+  `email_enrichment` on name+domain → LinkedIn profile resolution (verified name+company/city match) →
+  re-enrich on the LinkedIn URL → validate every address before presenting it. BD/work-email channel only.
 - [`recipes/tradeshow-to-bd.md`](recipes/tradeshow-to-bd.md) — **event → BD.** Public exhibitor/speaker page →
   firecrawl extract companies (speakers: + person + talk topic) → resolve domains → qualify vs ICP → find the
   hiring decision-maker (company-scoped, size-adaptive) → work email → **pre-conference soft intro** ("coffee
@@ -512,6 +541,10 @@ Multi-tool flows have a step-by-step recipe in `recipes/` — follow it as the e
   a layered `people_search` build feeds a Dream 100 table; a weekly scheduled sweep suppresses (90-day),
   scores engagement, researches the top 10, and drafts invites in the client's voice — the human send is
   a hard gate (cap 20-25/day, no LinkedIn send automation, ever); already-connected targets warm-DM instead.
+- [`recipes/team-network-sourcing.md`](recipes/team-network-sourcing.md) — **who does the team already
+  know?** Each member uploads their LinkedIn Connections.csv once (Dashboard → LinkedIn network); the free
+  `linkedin_network search` tool then spans every member's connections and names the teammates connected to
+  each person (`connected_via`), so the play is a warm intro, not a cold message. Essential plan and above.
 
 ### The ICP qualify gate (Model A — runs on the host agent)
 - The client's **`ICP.md`** is built once by **`/icp`** at onboarding and lives in the client's working
@@ -554,7 +587,7 @@ WORKDIR="hyreflow/data/<task-slug>" && mkdir -p "$WORKDIR"   # e.g. hyreflow/dat
 ### Data / large files
 - **Never `Read` a large candidate CSV into context** — it burns the window for zero output. Inspect shape
   first (row count, columns, a 2-row sample), then process row-by-row / in code.
-- **Count-before-pay:** every people-DB exposes a total (AI Ark `totalElements`, Lemlist `total`,
+- **Count-before-pay:** every people-DB exposes a total (AI Ark `totalElements`,
   Prospeo `pagination.total_count`, JobAdder `Limit=0`) — peek it cheaply, estimate credits, decide depth.
   Never blind-paginate a paid source. **The count (and all vendor data) lives under `result`:** every
   `tools execute` response is the envelope `{ "_meta": {…}, "result": <vendor payload> }`, so read
@@ -593,15 +626,18 @@ hyreflow enrich --input hyreflow/data/<slug>/leads.csv --output hyreflow/data/<s
   (`email_enrichment`, `personal_email`, `people_search`, `linkedin_profile`, `phone_enrichment`), `run_javascript` (deterministic row transforms —
   `row` is in scope, e.g. `{"tool":"run_javascript","payload":{"code":"return row.email.split('@')[1]"}}`),
   or `hyreflow_agent` (AI: `payload.{model,prompt,jsonSchema}` — use only when JS/providers can't do it).
-- **Waterfalls:** `--with-waterfall <column> … --end-waterfall` tries the steps in order, first non-null
-  wins, only the hitting step is billed.
+- **Waterfalls:** `--with-waterfall <column> … --end-waterfall` tries the steps in order, the first step
+  that finds data wins (a provider's not-found answer falls through to the next step). A step is billed
+  when it finds data, and a provider that charges per request is billed even on a miss, so a row can pay
+  for more than one step; the run's cost estimate covers that.
 - **Chaining:** pass a dataset id back in — `--input ds_…` (or `--in-place`) — so search→enrich→enrich runs
   server-side without rows ever touching chat. `--input` also takes a local CSV (auto-uploaded to a dataset).
 - **`--dry-run`/`--preview`:** show the interpolated payloads per step, no calls, no spend.
 - **Inspect / deliver via handles, never by inlining:** `hyreflow dataset head <ds_id> -n 5` to peek;
   `hyreflow dataset download <ds_id> --out hyreflow/data/<slug>/<slug>.csv` to write the final CSV; then
   report the path + counts. **Without a shell**, the same three moves are `hyreflow_dataset_read` (a page
-  at a time — 25 rows by default, 100 max, follow `next_offset`; `format:"csv"` is the denser page) and
+  at a time — 25 rows by default, 100 max, follow `next_offset`; `format:"csv"` is the denser page;
+  `columns` (dotted paths like `attributes.title`) keeps only the fields you need and allows up to 500 rows a page) and
   `hyreflow_dataset_export`, which returns a download URL to give the user instead of a file path. Never
   rebuild a CSV in chat by paging the read tool. Lost the handle? `hyreflow dataset list` /
   `hyreflow_datasets_list` lists this workspace's datasets newest-first — including a workflow run's
@@ -645,8 +681,8 @@ plan step — for free/zero-cost work:
   gate, so read which kind it is:
   - **Metered data** (Apollo, ZoomInfo, BuiltWith, Shovels) — each call burns their vendor credits. Real
     money → gate the spend.
-  - **Their sequencer / ATS / CRM / meeting tool** (Instantly, Lemlist, HeyReach, Smartlead, SendKit,
-    Recruit CRM, Recruiterflow, Loxo, Atlas, Carerix, Spott, Ashby, Lever, SmartRecruiters, Recruitee,
+  - **Their sequencer / ATS / CRM / meeting tool** (Instantly, Lemlist, HeyReach, Smartlead, SendKit, EmailBison,
+    Recruit CRM, Recruiterflow, Loxo, Atlas, Carerix, Crelate, Spott, Ashby, Lever, SmartRecruiters, Recruitee,
     Fathom, Granola) — a flat plan, so a call costs no per-call money. Reads
     are free to make; gate the **write**, because it lands in their live account in front of candidates.
     **Narrow carve-out for sequencers whose playbook documents a non-sending campaign state** (draft or
@@ -667,8 +703,11 @@ plan step — for free/zero-cost work:
   it asked for and reports that on the response, so `credits` is the base request and a bigger ask (more
   results, more content types, more pages) bills proportionally more. Quote the base, gate the bulk run.
 - `variable` present ⇒ the method is **argument-priced**: an option raises the price (e.g.
-  `prospeo_enrich_person(enrich_mobile=True)` bills 3.4 cr instead of 0.4). Budget with **`credits_max`**,
-  never `credits`.
+  `prospeo_enrich_person(enrich_mobile=True)` bills 3.4 cr instead of 0.4).
+- `surcharge` present ⇒ a **per-record add-on** on top of `credits` (e.g. an Arbeitsagentur job returned
+  with recruiter details), billed only for the records that carry it.
+- Whenever **`credits_max`** is present, budget with it, never `credits`: it is the dearest a call or a
+  record can bill (the top argument tier, or the base plus the surcharge).
 
 A provider being cheap or free *to hyreflow* is never a reason to skip the gate — the customer is billed
 the price in the cost block regardless.
@@ -686,7 +725,7 @@ pilot, not the narrow pilot.
 ### Sizing
 - Smaller sequential calls first; keep limits low and windows bounded before scaling.
 - **Count-before-pay (the "TAM hack"):** most people-DBs return the *total* match count while you pay only
-  for the page you pull — peek it with `size:1`/`page:1`/`Limit=0` (AI Ark `totalElements`, Lemlist `total`,
+  for the page you pull — peek it with `size:1`/`page:1`/`Limit=0` (AI Ark `totalElements`,
   Prospeo `pagination.total_count`, JobAdder `Limit=0`) to size the run cheaply, then choose depth. Read the
   count under the `result` envelope (e.g. `result.totalElements`), not the top level.
 - Don't rely on plan/monthly caps as a hard risk control.
@@ -810,8 +849,14 @@ for / when to reach for it*; the quirks live in the playbook. (Keep this list cu
 - [clinicaltrials playbook](provider-playbooks/clinicaltrials.md)
   Summary: Use as a pharma/biotech/CRO hiring-signal source — find recruiting trials by sponsor/condition/phase and track changes that precede hiring (free, no key).
   Last reviewed: 2026-06-01
+- [crelate playbook](provider-playbooks/crelate.md)
+  Summary: Use as the Crelate ATS/CRM — read contacts (candidates and client contacts), jobs, companies and notes, create and update contacts, put a contact on a job's pipeline at a stage, and add notes.
+  Last reviewed: 2026-10-14
+- [emailbison playbook](provider-playbooks/emailbison.md)
+  Summary: Use to build and launch cold-email campaigns on the client's own EmailBison instance: sequence, schedule, mailboxes, leads, custom fields.
+  Last reviewed: 2026-10-09
 - [enrichley playbook](provider-playbooks/enrichley.md)
-  Summary: Use to validate email deliverability (especially catch-all/risky addresses) before sequencing.
+  Summary: Use to validate email deliverability (especially catch-all/risky addresses) — only when the user names Enrichley; the native `verify_emails` is the default.
   Last reviewed: 2026-06-01
 - [exa playbook](provider-playbooks/exa.md)
   Summary: Use for neural/semantic web search, fetching page text, finding lookalike pages/companies, and grounded cited answers for research — plus Exa Agent for async multi-hop research, list-building, and enrichment runs that return schema-validated structured JSON with citations.
@@ -846,12 +891,15 @@ for / when to reach for it*; the quirks live in the playbook. (Keep this list cu
 - [jobadder playbook](provider-playbooks/jobadder.md)
   Summary: Use as the JobAdder ATS read/write target — find/create/update candidates, jobs, companies and contacts, and attach candidates to jobs.
   Last reviewed: 2026-06-02
+- [justcall playbook](provider-playbooks/justcall.md)
+  Summary: Use to sync JustCall calls, AI transcripts and SMS into the ATS, text candidates from a JustCall number, and load a shortlist into a Sales Dialer campaign.
+  Last reviewed: 2026-10-21
 - [layoffsignal playbook](provider-playbooks/layoffsignal.md)
   Summary: Use as the first-party layoff/RIF trigger — surface displaced talent to poach and companies to pitch (Hyreflow Native, free, no BYOK).
   Last reviewed: 2026-06-01
 - [hyreflow_native playbook](provider-playbooks/hyreflow_native.md)
-  Summary: First-party tools — job scrapes (career pages, LinkedIn, Indeed, Arbeitsagentur, StepStone) async launch→poll pay-on-match per job; LinkedIn post feeds and post search per request; postcode radius free (Hyreflow Native, credit-metered, no BYOK).
-  Last reviewed: 2026-07-16
+  Summary: First-party tools — job scrapes (career pages, LinkedIn, Indeed, Arbeitsagentur, StepStone) async launch→poll pay-on-match per job; LinkedIn post feeds and post search per request; postcode radius free; email verification — the first choice to verify emails (Hyreflow Native, credit-metered, no BYOK).
+  Last reviewed: 2026-09-30
 - [leadmagic playbook](provider-playbooks/leadmagic.md)
   Summary: Use to find/validate work & personal email, find mobiles, resolve email↔LinkedIn, and enrich companies.
   Last reviewed: 2026-06-01

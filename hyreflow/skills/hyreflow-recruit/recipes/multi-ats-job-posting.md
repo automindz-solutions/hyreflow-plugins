@@ -96,7 +96,7 @@ internal ids, most of which Hyreflow cannot look up for you.
 | ashby | `teamId`, `locationId` (UUIDs). Add `defaultInterviewPlanId` **now** if the role will be opened in Step 7 | `ashby_list_departments` returns the teams. Location, interview-plan, template and brand UUIDs come from the user (visible in the Ashby admin URL) |
 | lever | `perform_as` — a real Lever user UID; every write is attributed to a person | `lever_list_users`. `categories.team` / `.department` / `.location` are plain strings, not ids |
 | smartrecruiters | `industry.id`, `function.id`, `experienceLevel.id` — all three required | not exposed by the adapter; from the user or the SmartRecruiters config screens. `department.id` from `smartrecruiters_list_departments` |
-| recruitee | `location_ids` — **integers**, required even for a fully remote role | from the user (Recruitee's Locations screen). `department_id` from `recruitee_list_departments` |
+| recruitee | `location_ids` — **integers**, required even for a fully remote role | `recruitee_list_locations` (`query` by city or name; use each match's `id`). None matches → the user adds it under Settings → General → Locations. `department_id` from `recruitee_list_departments` |
 | breezy | `department` is a **name**, not an id — it must match a real department exactly | `breezy_list_companies` confirms the company; department names from the Breezy admin |
 | trackerrms | `client.id` (the Tracker Client the role belongs to) and `status.id`; optionally `contact.id` for the hiring contact | `trackerrms_search_clients` returns client ids; `trackerrms_get_metadata` returns the status / type / source / team ids — the free read for everything id-shaped |
 

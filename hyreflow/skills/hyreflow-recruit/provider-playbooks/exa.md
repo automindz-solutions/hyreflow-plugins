@@ -1,6 +1,23 @@
 Use Exa for web-grounded retrieval, then synthesis.
 
-**`type` vs `category`:** `type` controls the search strategy (auto/fast/neural/deep). `category` filters result type (company/people/news/financial report). These are independent params. `"type":"news"` is a 422 error — use `"category":"news"` for news results.
+**`type` vs `category`:** `type` controls the search strategy (auto/fast/neural/deep). `category` filters result type (company/people/news/financial report/personal site). These are independent params. `"type":"news"` is a 422 error — use `"category":"news"` for news results.
+
+**`personal site` finds people's own websites** — portfolios, personal blogs, one-person homepages. It is the
+way to source designers and other people whose proof of work lives on their own site (see
+[`../recipes/designer-portfolios.md`](../recipes/designer-portfolios.md)). Pair it with domain filters:
+`excludeDomains` drops the platforms that would otherwise crowd the results (`behance.net`, `dribbble.com`,
+`linkedin.com`, `medium.com`), and `includeDomains` restricts the search to the domains you name.
+
+```bash
+hyreflow tools execute exa_search --payload '{"query":"product designer portfolio, based in Lisbon","category":"personal site","numResults":20,"excludeDomains":["behance.net","dribbble.com","linkedin.com","medium.com"]}'
+```
+
+**Links off a page:** `exa_contents` with `"extras":{"links":N}` returns the links on each page, so one call
+over a batch of personal sites gives you their LinkedIn / social links without a name lookup. The links sit at
+`results[i].extras.links` in page order: 50 covers a personal site, while a Behance profile opens with 25–30
+navigation links and needs about 80. The page text comes back even with `"text":false`, so ask for a capped
+slice on purpose (`"text":{"maxCharacters":1500}`). `statuses[]` lists every URL; the ones Exa could not
+fetch have `status: "error"` and are missing from `results`. Pages come from Exa's cache.
 
 **Cost.** Every `exa_search` / `exa_contents` / `exa_answer` / `exa_find_similar` call is charged, including one that
 matches nothing — Exa prices the request it accepted. The card price covers the base request, and the request

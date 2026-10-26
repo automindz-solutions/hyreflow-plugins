@@ -77,7 +77,7 @@ each provider scopes correctly; `finding-companies-and-contacts.md`). Target = w
 ## STEP 6 — Enrich work email  (BD channel)
 `email_enrichment` waterfall for the decision-maker's work email. **Over-provision → filter** (contact
 search misses ~15–20%, the email waterfall ~5–10%): pull ~1.4× the target, deliver the complete rows, drop
-the rest — don't chase missing contacts. Verify with `enrichley` if needed (`catch_all_safe` is usable).
+the rest — don't chase missing contacts. Every email the waterfall returns is already verified safe to send to.
 
 ## STEP 7 — Output: pre-conference soft-intro sequence
 Generate with `prompts.json → "Pre-conference soft-intro sequence (exhibitor/speaker BD)"` — a 2-touch
@@ -101,7 +101,7 @@ booth/talk → the soft-intro message.** No CRM write unless asked.
 | Domain resolve | `serper` / `exa` | ✅ |
 | Qualify | ICP gate (agent reasoning, Model A) | ✅ |
 | Decision-maker | company-scoped `people_search` | ✅ |
-| Work email | `email_enrichment` waterfall (+ `enrichley` verify) | ✅ |
+| Work email | `email_enrichment` waterfall (verified safe-to-send automatically) | ✅ |
 | Outreach | `prompts.json` soft-intro prompt + `hyreflow_agent` | **new prompt** |
 
 → Net-new = the extraction schema (above) + the soft-intro prompt. Everything else is recomposition.

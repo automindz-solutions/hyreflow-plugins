@@ -1,6 +1,6 @@
 ---
 name: prospeo
-description: "Email & phone finding + people/company data via the Prospeo API — work email finder, domain search, mobile finder, LinkedIn/social enrichment, email verifier. Use when the user mentions Prospeo or finding/verifying emails & phones. Keys: hyreflow-managed credits or BYOK."
+description: "Email & phone finding + people/company data via the Prospeo API — work email finder, domain search, mobile finder, LinkedIn/social enrichment. Use when the user mentions Prospeo or finding emails & phones. Keys: hyreflow-managed credits or BYOK."
 ---
 
 # Prospeo — Integration Meta Skill
@@ -14,7 +14,7 @@ HOW in `lib/prospeo.py`. Docs cached at `reference/docs/prospeo/raw/`.
 **Live:** `enrich_person` (`/enrich-person` — `data{first_name,last_name,full_name,linkedin_url,email,company_name,company_website,company_linkedin_url,person_id}` + `only_verified_email`/`enrich_mobile`/`only_verified_mobile`), `bulk_enrich_person` (≤50), `enrich_company`, `bulk_enrich_company` (≤50), `search_person` (200M+ contacts, 30+ filters), `search_company` (30M+), `search_suggestions`, `account_information` (Prospeo's own account usage/renewal/credits — only callable on a connected Prospeo key). Endpoint index: `reference/docs/prospeo/raw/endpoints.md`.
 
 ## ⚠️ Deprecation
-`email_finder`, `domain_search`, `mobile_finder`, `social_url_enrichment`, `email_verifier`, `linkedin_email_finder` are **deprecated (sunset 2026-03-01)** — kept as thin wrappers but **migrate to `enrich_person`/`search_person`**. `enrich_person(enrich_mobile=True)` bills the higher mobile-reveal rate (vs the email-reveal rate for a plain email); the legacy `mobile_finder` wrapper is priced the same. Check `hyreflow tools get prospeo enrich_person` for the live rates.
+`email_finder`, `domain_search`, `mobile_finder`, `social_url_enrichment`, `linkedin_email_finder` are **deprecated (sunset 2026-03-01)** — kept as thin wrappers but **migrate to `enrich_person`/`search_person`**. `email_verifier` has been **removed by the vendor**: it always errors and is never charged — do not call it. `enrich_person(enrich_mobile=True)` bills the higher mobile-reveal rate (vs the email-reveal rate for a plain email); the legacy `mobile_finder` wrapper is priced the same. Check `hyreflow tools get prospeo enrich_person` for the live rates.
 
 ## ⚠️ WORK EMAIL ONLY — not for candidate workflows
 Prospeo returns **work / professional emails only — it does NOT find personal emails.** Do **not** use it
@@ -115,7 +115,7 @@ Enrichment layer (**work email**): shortlist → Prospeo for work emails/phones 
     (`"San Francisco, California #US"`) **is UI-internal — the API returns and accepts plain canonical
     suggestion names** (live-verified 2026-07-02: C-Suite + `"San Francisco, California"` → 16,155 matches).
   - **⚠️ Can't search with `exclude`-only — need ≥1 positive filter.**
-- **🎯 RADIUS trick:** for "within ~X km of a city," use the **ZONE** suggestion (e.g. `"Greater Munich Metropolitan Area, Germany"`) — it covers the metro in ONE value, no town enumeration (unlike AI Ark `contact.location` / Lemlist which need city lists). Confirmed: Steuerfachwirt + Munich ZONE → 66 matches.
+- **🎯 RADIUS trick:** for "within ~X km of a city," use the **ZONE** suggestion (e.g. `"Greater Munich Metropolitan Area, Germany"`) — it covers the metro in ONE value, no town enumeration (unlike AI Ark `contact.location`, which needs city lists). Confirmed: Steuerfachwirt + Munich ZONE → 66 matches.
 - **Credits — two billing systems, don't conflate:** what the CUSTOMER pays is the `cost` block in
   `reference/tool-registry.json`, in Hyreflow credits — budget against `hyreflow billing balance`: every
   reveal bills per result (`enrich_person`, `bulk_enrich_person`, `enrich_company`, `bulk_enrich_company`

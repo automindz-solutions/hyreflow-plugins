@@ -21,7 +21,7 @@ Python client. Read the matching doc BEFORE making any call.
 
 - Routing, auth, and safety gates for every Recruit CRM API call.
 - Canonical execution surface: the Python client at `lib/recruit_crm.py` (Python-only stack).
-- Per-endpoint detail lives in `reference/endpoints.md`; task playbooks in `recipes/*.md`.
+- Per-endpoint detail lives under `reference/docs/recruitcrm/raw/` (one folder per resource); task playbooks in `recipes/*.md`.
 
 ## 2) Auth & config (confirmed from public docs)
 
@@ -38,13 +38,13 @@ Python client. Read the matching doc BEFORE making any call.
 
 | When the task involves...                                          | Read this first                          |
 | ------------------------------------------------------------------ | ---------------------------------------- |
-| Any endpoint shape, params, pagination, field names                | `reference/endpoints.md`                 |
+| Any endpoint shape, params, pagination, field names                | `reference/docs/recruitcrm/raw/` |
 | Pushing enriched leads (companies + contacts) from a CSV           | `recipes/push-enriched-leads.md`         |
 | Rate limits, batch helpers, and stress-test sizing                 | `recruit-crm-rate-limits.md`             |
 | Calling the API from Python                                        | `lib/recruit_crm.py` (docstrings)        |
 
-If the exact payload for an operation is marked `TODO (paste schema)` in
-`reference/endpoints.md`, do NOT guess it — ask the user to paste that section of
+If the exact payload for an operation isn't in
+`reference/docs/recruitcrm/raw/`, do NOT guess it — ask the user to paste that section of
 https://docs.recruitcrm.io first. (The docs site is a JS-rendered SPA and cannot be scraped.)
 
 ## 4) Approval gates (writes & bulk operations)
@@ -54,7 +54,7 @@ Recruit CRM writes are real changes to a production ATS. Before any create/updat
 1. **Dry-run first.** For bulk loads, process `--rows 0:1` (one record) and show the user
    the exact payload + response before continuing.
 2. **Confirm field mapping.** Custom-field IDs and hiring-stage IDs are account-specific
-   (see `reference/endpoints.md` → "Account-specific IDs"). Confirm the mapping before writing.
+   (custom fields: `reference/docs/recruitcrm/raw/custom_fields/`; stage IDs: `get_candidate_hiring_pipelines`). Confirm the mapping before writing.
 3. **Confirm rate-limit headroom.** For >50 records, read `recruit-crm-rate-limits.md` and size the
    batch so it does not exceed `X-RateLimit-Remaining`. Use the `create_*_batch` helpers and run
    in chunks if needed.
@@ -66,7 +66,7 @@ See [`recruit-crm-rate-limits.md`](recruit-crm-rate-limits.md) for the full cont
 [`crm-bulk-pushes.md`](crm-bulk-pushes.md) for the cross-CRM bulk guide. Summary:
 
 - Default rate limit: **60 req/min** (≤6 licenses) or **10 req/min per license** (>6 licenses).
-- Batch helpers loop single `POST` calls and pace them via `RECRUITCRM_RATE_LIMIT_RPM`:
+- Batch helpers loop single `POST` calls and pace them to stay inside your account's rate limit:
   - `create_candidates_batch(payloads)`
   - `create_contacts_batch(payloads)`
   - `create_companies_batch(payloads)`
@@ -79,7 +79,7 @@ See [`recruit-crm-rate-limits.md`](recruit-crm-rate-limits.md) for the full cont
 - **Jobs** — list / `jobs/search`, assign candidates
 - **Pipeline & custom fields** — hiring-stage moves, deals, read/write custom fields
 
-## 6) Handoff from the sourcing/enrichment layer
+## 7) Handoff from the sourcing/enrichment layer
 
 The canonical flow: the sourcing + enrichment adapters produce an enriched CSV → this skill loads
 that CSV into Recruit CRM. Inspect the CSV (row count, columns, sample values) first

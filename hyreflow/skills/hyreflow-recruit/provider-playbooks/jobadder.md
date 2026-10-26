@@ -30,14 +30,15 @@ HOW in `lib/jobadder.py`. Built from the official OpenAPI v2 (spec-verified; not
 ## Operations (ALL spec-verified from OpenAPI v2)
 - **Pilot (safe, read-only):** `get_current_user` (`/users/current`) — cheapest call; confirms auth + resolves the region base.
 - **Candidates:** `find_candidates` (Name/Email/Phone/Location/Keywords/StatusId/…), `get_candidate`, `add_candidate`, `update_candidate`, `set_candidate_status`, `add_candidate_note`, `get_candidate_skills`, `find_candidate_attachments`, list helpers (`get_candidate_statuses`, `get_candidate_custom_fields`).
-- **Jobs:** `find_jobs` (Active/CompanyId/StatusId/…), `get_job`, `add_job`, `update_job`, `set_job_status`, `get_job_applications`, `add_candidates_to_job`, `get_job_statuses`.
-- **Companies / Contacts:** `find_companies`/`get_company`/`add_company`/`update_company`/`get_company_contacts`; `find_contacts`/`get_contact`/`add_contact`/`update_contact`.
-- **Applications / Placements / Ads / Reqs / Opps:** `find_applications`/`get_application`/`update_application`/`set_application_status`/`get_application_statuses`; `find_placements`/`get_placement`; `find_job_ads`/`get_job_ad`; `find_requisitions`/`get_requisition`; `find_opportunities`.
+- **Jobs:** `find_jobs` (Active/CompanyId/StatusId/…), `get_job`, `add_job`, `update_job`, `set_job_status`, `get_job_applications`, `add_candidates_to_job`, `get_job_statuses`, `get_job_custom_fields`.
+- **Companies / Contacts:** `find_companies`/`get_company`/`add_company`/`update_company`/`get_company_contacts`/`get_company_custom_fields`; `find_contacts`/`get_contact`/`add_contact`/`update_contact`/`get_contact_custom_fields`.
+- **Applications / Placements / Ads / Reqs / Opps:** `find_applications`/`get_application`/`update_application`/`set_application_status`/`get_application_statuses`/`get_application_custom_fields`; `find_placements`/`get_placement`/`get_placement_custom_fields`; `find_job_ads`/`get_job_ad`; `find_requisitions`/`get_requisition`; `find_opportunities`.
 - **Notes / identity search:** `find_notes`, `add_note`, `search_by_email`, `search_by_phone`.
 
 ## Gotchas
 - **⚠️ `update_*` (PUT) is a FULL-RESOURCE REPLACE, not a patch — READ-MERGE-WRITE.** A `PUT /contacts|companies|candidates/{id}` with only the field you want to change will **blank every field you omit** (e.g. `update_contact(id, {"social": {...}})` wipes name/email/company). Always `get_*` first, merge your change into the existing object, then PUT the full body. Verified live 2026-06-03. Applies to nested objects too: to set `social.linkedin`, copy the existing `social` dict and add the key.
 - **⚠️ Custom-field writes fail SILENTLY and need a specific shape.** Payload is `custom:[{"fieldId":N,"value":...}]` — singular **`value`** (not `values`); for a **List** field the value is an **array even for one option** (`"value":["Agency"]`), Text → `"value":"text"`, Date → `"value":"2018-07-01"`. A wrong shape returns **200 with no error but does NOT persist**. **Always read the record back and confirm the `custom` array** rather than trusting the 200. (Standard fields echo correctly, but read-back is still the safe default.) Custom-field IDs are account-specific — fetch `get_*_custom_fields()` first.
+- **List endpoints never return custom-field values.** `find_contacts`/`find_companies`/`find_jobs`/`find_candidates`'s `Embed`/`Fields` params have no custom option — read values per record via `get_*`. And `get_*` only returns custom fields **populated on that record**, not the full definition list (options for a List field, etc.) — use `get_<entity>_custom_fields()` for the complete field definitions.
 - **Count-peek before paging:** every list takes `Limit=0` → returns only `totalCount` (no item bodies). Use `count(path, **filters)`; then `paginate(path, ...)` walks `Offset`/`Limit` (Limit max **1000**, default 100). Lists return `{items, totalCount, links}`.
 - **Date filters** (`CreatedAt`/`UpdatedAt`/…) are ISO date-time and accept a `<`/`>` prefix for before/after; pass the same param twice for a range.
 - **Duplicate handling:** `add_candidate`/`add_company`/`add_contact` return **409** with an `X-Allow-Duplicates` response header on dup email/name; pass that code back via `allow_duplicates=` to force-create.
@@ -80,6 +81,7 @@ Call via the CLI: `hyreflow tools execute jobadder <method> --payload '{...}'` (
 - `find_requisitions(**params) -> Any` — GET /requisitions — RequisitionId, CompanyId, Status, HiringManager.ContactId, Offset, Limit.
 - `find_users(**params) -> Any` — GET /users — UserId/OfficeId/GroupId/Include + Offset/Limit.
 - `get_application(application_id: int) -> Any`
+- `get_application_custom_fields() -> Any` — GET /applications/fields/custom — custom-field definitions (ids for update_application custom fields).
 - `get_application_statuses(**params) -> Any` — GET /applications/lists/status — application status definitions (workflow stages).
 - `get_candidate(candidate_id: int, *, embed: str | None = None) -> Any` — GET /candidates/{id} — Embed: skills,notes,applications,placements.
 - `get_candidate_custom_fields() -> Any` — GET /candidates/fields/custom — custom-field definitions (ids for AddCandidate.custom).
@@ -87,13 +89,17 @@ Call via the CLI: `hyreflow tools execute jobadder <method> --payload '{...}'` (
 - `get_candidate_statuses(**params) -> Any` — GET /candidates/lists/status — status definitions (ids for set_candidate_status).
 - `get_company(company_id: int, *, embed: str | None = None) -> Any`
 - `get_company_contacts(company_id: int) -> Any`
+- `get_company_custom_fields() -> Any` — GET /companies/fields/custom — custom-field definitions (ids for AddCompanyCommand.custom / update_company).
 - `get_contact(contact_id: int, *, embed: str | None = None) -> Any`
+- `get_contact_custom_fields() -> Any` — GET /contacts/fields/custom — custom-field definitions (ids for AddContact.custom / update_contact).
 - `get_current_user() -> Any` — GET /users/current — authenticated user; cheapest call to confirm auth + region base.
 - `get_job(job_id: int, *, embed: str | None = None) -> Any` — GET /jobs/{id} — Embed: applications,notes.
 - `get_job_ad(ad_id: int, *, embed: str | None = None) -> Any`
 - `get_job_applications(job_id: int, **params) -> Any` — GET /jobs/{id}/applications — applications attached to a job.
+- `get_job_custom_fields() -> Any` — GET /jobs/fields/custom — custom-field definitions (ids for AddJobOrderCommand.custom / update_job).
 - `get_job_statuses(**params) -> Any` — GET /jobs/lists/status — job status definitions.
 - `get_placement(placement_id: int, *, embed: str | None = None) -> Any`
+- `get_placement_custom_fields() -> Any` — GET /placements/fields/custom — custom-field definitions (ids for placement custom fields).
 - `get_requisition(requisition_id: int, *, embed: str | None = None) -> Any`
 - `paginate(path: str, *, limit: int = 100, max_items: int | None = None, **params) -> list` — Walk Offset/Limit pages, collecting `items`. Caps at max_items if given.
 - `search_by_email(email: str) -> Any` — GET /search/emailaddress — resolve candidates/contacts/users by email (identity match).
@@ -113,5 +119,5 @@ Call via the CLI: `hyreflow tools execute jobadder <method> --payload '{...}'` (
 
 For large pushes use `add_candidates_batch`, `add_companies_batch`, `add_contacts_batch`,
 `add_jobs_batch`. They pace calls to a conservative **120 req/min** default and return
-`{created, failed, total, elapsed_ms}`. Override with `JOBADDER_RATE_LIMIT_RPM`. See
-`crm-bulk-pushes.md` for the cross-CRM guide.
+`{created, failed, total, elapsed_ms}`. Need a higher rate? [Contact us](mailto:support@hyreflow.ai) and
+we'll see what we can do. See `crm-bulk-pushes.md` for the cross-CRM guide.

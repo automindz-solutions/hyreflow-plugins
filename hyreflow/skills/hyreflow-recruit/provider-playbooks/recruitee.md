@@ -10,14 +10,19 @@ Recruitee calls a job an **offer**, and the same endpoint creates either a real 
 ## Auth & access
 
 - **Base URL:** `https://api.recruitee.com`, with the company in the path · **Auth:** Bearer token.
-- **BYOK-only:** connect the client's own Recruitee token **and** their company id or subdomain in
-  Integrations. There is no managed-key fallback, and the write costs 0 Hyreflow credits.
+- **BYOK-only:** connect the client's own Recruitee token **and** their company in Integrations — the
+  `acme` in `acme.recruitee.com`, or the numeric company ID. Both are shown under Settings → Apps and
+  plugins → API tokens → Personal, the same screen the token is minted on. There is no managed-key
+  fallback, and the write costs 0 Hyreflow credits.
 - A Recruitee token is **personal and per-company**: it carries exactly the permissions of the user who
   minted it, acts in that user's name, and a token from one company is not valid in another. Whoever
   mints it is who the offer will look like it came from.
-- Hyreflow exposes one write, `create_job`, plus `list_departments()` — a free read that verifies a
-  submitted token and returns the departments a `department_id` comes from.
-- The public careers-site API is a different host and does not create offers.
+- Hyreflow exposes two writes, `create_job` and `set_job_state`, plus two free reads:
+  `list_locations()` (where `location_ids` come from) and `list_departments()` (where a `department_id`
+  comes from, and the connection check).
+- Recruitee's separate Careers Site API (and its careers-site token) is not needed here: it reads
+  published offers and takes applications, but cannot create one, and the offer this API returns already
+  carries its `careers_url`.
 
 ## Create an offer
 
@@ -53,9 +58,20 @@ The response is `{offer}`; the id is `offer.id`, and `offer.slug` is what appear
 
 ## Where `location_ids` comes from
 
-They are numeric Recruitee location ids, and Hyreflow does not expose the locations endpoint. Ask the
-user for them, or have them read the ids out of Recruitee's Locations settings. There is **no way to pass
-a location as a string** on create — the derived `location` text on the response is read-only.
+Call `list_locations()` first and use the `id` of each match:
+
+```bash
+hyreflow tools execute recruitee_list_locations --payload '{"query": "Berlin"}'
+```
+
+It returns `{meta: {total_count, page, limit}, locations: [{id, name, city, country_code, full_address, …}]}`.
+`query` searches name and address; `scope` defaults to `active` (`archived` and `all` also work); page
+with `page`/`limit` (default 60) when `total_count` is larger.
+
+No match? The location has to be created in Recruitee first (a new account starts with one) —
+Settings → General → Locations → New location (name, country, city) — then list again. Hyreflow does not
+create locations. There is **no way to pass a location as a string** on create — the derived `location`
+text on the response is read-only.
 
 ## What you cannot set here
 
@@ -88,6 +104,8 @@ embeds — so an offer looks unpublishable if you only read the latter.
 ## Guardrails
 
 - This is a **write into the customer's own ATS**: confirm the payload before executing.
+- Never invent a `location_ids` value or reuse one from an example — a wrong id silently files the
+  offer under a different office. Take it from `list_locations()`.
 - Recruitee documents no validation-error shape, so a rejected create can come back thin. If a create
   fails, re-check the required four (`title`, `description`, `requirements`, `location_ids`) and that one
   of `on_site` / `hybrid` / `remote` is true, rather than guessing at the message.
@@ -102,6 +120,7 @@ Call via the CLI: `hyreflow tools execute recruitee <method> --payload '{...}'` 
   - requires: title, location_ids, description, requirements
   - example: `{"title":"Senior Platform Engineer","location_ids":[12345],"description":"<p>Own the deployment platform.</p>","requirements":"<p>Kubernetes, five years of platform work.</p>","kind":"job","hybrid":true}`
 - `list_departments() -> Any` — GET /c/{company_id}/departments — the departments an offer's `department_id` comes from, and the connection check.
+- `list_locations(query: str | None = None, scope: str = 'active', page: int = 1, limit: int = 60) -> Any` — GET /c/{company_id}/locations — the locations an offer's `location_ids` come from.
 - `set_job_state(offer_id: Any, state: str = 'published') -> Any` — PATCH /c/{company_id}/offers/{offer_id}/{publish|draft|close|archive} — publish an offer.
 
 <!-- API-SURFACE:END -->

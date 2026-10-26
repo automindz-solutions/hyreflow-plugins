@@ -52,7 +52,11 @@ specific headcount and the best source. Output one row per layoff event.
   - **Everyone else →** `apollo` / `aiark` people-search at that company (recently-departed if available),
     walking the `people_search` provider order.
 
-## Step 6 — Enrich → verify → outreach
+## Step 6 — Enrich → verify → outreach (opt-in)
+
+**Deliver the qualified, sourced list first.** Run this step only when the user explicitly asks for contact
+details — never as a default continuation of sourcing. A bare "enrich" is ambiguous: ask which channel
+before spending. LinkedIn from people-search already rides on the list, free.
 
 > 🎯 **Channel decision — ASK THE USER before enriching.** This is **candidate acquisition**, so the
 > default is **LinkedIn + personal email ONLY — never work email** (you're recruiting them *away* from
@@ -65,7 +69,7 @@ specific headcount and the best source. Output one row per layoff event.
 > it needs no enrichment. Personal email is the second channel when found. SourceWhale is multichannel →
 > one cadence fires a **LinkedIn touch + an email touch** on the same candidate (utilize both).
 
-Standard tail: personal-email/phone **waterfall** (per the channel decision above) → validate (`enrichley`)
+Standard tail: personal-email/phone **waterfall** (per the channel decision above) → validate (`hyreflow_native` `verify_emails`; returns only safe-to-send addresses)
 → sequence (`sourcewhale` for recruiting / `lemlist` / `instantly`) → land in the client's ATS.
 **Approval-gate** the first send + any bulk enrichment (one-record pilot first).
 

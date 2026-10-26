@@ -61,6 +61,9 @@ missing fields.
   counts as a miss — it costs nothing and the waterfall moves on. **Enrich each profile once and carry it on the
   row:** a step that also serves the work-email chain charges its per-result rate on both capabilities, so
   re-running `linkedin_profile` over rows that already hold a `profile` pays for it twice.
+  **`identity_mismatch`**: the URL belongs to someone else (the profile's name, or its employer, doesn't
+  match the row, an earlier role counts; the step names who it found as `matched_name`). It costs 0, and retrying the same URL
+  can't help: find the right URL (a fresh search on name + employer) or drop the row, and tell the user.
   ⚠️ Never hand-pick a raw scraper actor for this: Apify is BYOK-only
   and its spend is invisible to your credits, the spend cap and the approval gate.
 - ⚠️ prospeo / aiark / lusha / **bettercontact** are **work-email only** — never use them for candidate/personal
@@ -92,12 +95,26 @@ Each provider wants the identifier in a different field/shape — the waterfall 
   `_meta.warnings[]` entry with `code: "spending_cap_reached"` (rows affected + providers skipped). Read
   that as "retry after the cap is raised/rolls over" — the rows were never asked, so a lower hit count
   says nothing about coverage and is NOT a reason to reach for a different (work-email) provider.
+- **A failing own key is not a miss.** When the user's OWN provider key fails (out of credits, refused by the
+  provider, or throttled), the response carries `_meta.provider_errors[]` with the provider, a `reason`
+  (`out_of_credits` / `rejected` / `rate_limited`), a plain-language `message` and how many rows it touched. Tell
+  the user that message as written: it is their own account with that provider, so they fix it there. Those
+  rows had that provider skipped, not searched, so do NOT report them as "no email found". Any rows that got
+  an email from another provider are real.
 - **Count-before-pay + over-provision ~1.4×.** Coverage is a property of the person — a bare profile / tiny-co
   contact has near-zero coverage everywhere. Deliver the best **N complete** rows; drop the incomplete.
 
 ## Verify deliverability (before any send)
-- `enrichley.validate_email` → **`catch_all_safe` is usable** (send it); only `undeliverable` / `catch_all_not_safe`
-  are unusable. Drop those; keep verified + catch_all_safe.
+- **`email_enrichment` already does it.** Every work email the waterfall finds is checked by the native
+  verifier and kept only if it is safe to send to; anything else is dropped and the next provider tried.
+  If the verifier can't answer for an address, or finds its domain is catch-all, Enrichley checks it too. Don't pay to re-verify those
+  rows. When the user names Enrichley for this, add `"email_verifier": "enrichley"` to each row.
+- **Any other addresses: `hyreflow_native` `verify_emails`** (inbox-level, async — launch, then poll
+  `get_verified_emails`; 0.05 cr per address submitted, charged at launch). Only safe-to-send addresses come back; the rest are
+  withheld and counted in `result.withheld`. See
+  [`provider-playbooks/hyreflow_native.md`](provider-playbooks/hyreflow_native.md).
+- `enrichley.validate_email` (or another validator) **only when the user names it** → **`catch_all_safe`
+  is usable** (send it); only `undeliverable` / `catch_all_not_safe` are unusable.
 
 ## Provider quirks (rest in each `provider-playbooks/<tool>.md`)
 - **BetterContact** — **BD / work-email flows only.** Not part of any waterfall; on an `email_enrichment`

@@ -10,7 +10,7 @@ Use Smartlead for outbound email campaign management: campaign creation, lead pu
 - Push leads in batches of up to 400 and re-check campaign analytics after writes.
 - Keep Smartlead traffic at or below 60 requests per 60 seconds per API key. Large pools need queueing or smaller concurrency.
 - Configure sequences before starting a campaign.
-- Include `SMARTLEAD_API_KEY` as fallback env credential when not using org-linked auth.
+- Auth is your workspace's connected Smartlead key (BYOK-only, no managed/env fallback) — the adapter sends it as the `api_key` query param.
 - Keep payloads provider-native. There is no shared outbound standard contract for Smartlead.
 
 Only the methods below are supported — anything else 404s. There is no schedule/settings API, no webhooks,
@@ -30,36 +30,36 @@ block-list, smart-delivery, smart-senders, or generic passthrough on this adapte
 ### Campaigns
 
 ```bash
-hyreflow tools execute smartlead smartlead_list_campaigns --payload '{}'
-hyreflow tools execute smartlead smartlead_create_campaign --payload '{"name":"Insurance Brokerage - Book Assessment"}'
-hyreflow tools execute smartlead smartlead_get_campaign --payload '{"campaign_id":"12345678"}'
-hyreflow tools execute smartlead smartlead_update_campaign_status --payload '{"campaign_id":"12345678","status":"START"}'
+hyreflow tools execute smartlead list_campaigns --payload '{}'
+hyreflow tools execute smartlead create_campaign --payload '{"name":"Insurance Brokerage - Book Assessment"}'
+hyreflow tools execute smartlead get_campaign --payload '{"campaign_id":"12345678"}'
+hyreflow tools execute smartlead update_campaign_status --payload '{"campaign_id":"12345678","status":"START"}'
 ```
 
 ### Leads
 
 ```bash
-hyreflow tools execute smartlead smartlead_push_to_campaign --payload '{"campaign_id":"12345678","lead_list":[{"email":"jane@example.com","first_name":"Jane","last_name":"Lovelace","company_name":"Acme Corp","custom_fields":{"tag":"demo"}}]}'
-hyreflow tools execute smartlead smartlead_list_campaign_leads --payload '{"campaign_id":"12345678"}'
+hyreflow tools execute smartlead add_leads_to_campaign --payload '{"campaign_id":"12345678","lead_list":[{"email":"jane@example.com","first_name":"Jane","last_name":"Lovelace","company_name":"Acme Corp","custom_fields":{"tag":"demo"}}]}'
+hyreflow tools execute smartlead list_leads_by_campaign --payload '{"campaign_id":"12345678"}'
 ```
 
 ### Sequences
 
 ```bash
-hyreflow tools execute smartlead smartlead_save_campaign_sequences --payload '{"campaign_id":"12345678","sequences":[{"seq_number":1,"seq_delay_details":{"delay_in_days":0},"seq_variants":[{"email_body":"<p>Hello Ada</p>","variant_label":"A","subject":"Quick question"}]},{"seq_number":2,"seq_delay_details":{"delay_in_days":3},"seq_variants":[{"email_body":"<p>Following up</p>","variant_label":"A","subject":"Re: Quick question"}]}]}'
+hyreflow tools execute smartlead save_campaign_sequence --payload '{"campaign_id":"12345678","sequences":[{"seq_number":1,"seq_delay_details":{"delay_in_days":0},"seq_variants":[{"email_body":"<p>Hello Ada</p>","variant_label":"A","subject":"Quick question"}]},{"seq_number":2,"seq_delay_details":{"delay_in_days":3},"seq_variants":[{"email_body":"<p>Following up</p>","variant_label":"A","subject":"Re: Quick question"}]}]}'
 ```
 
 ### Analytics
 
 ```bash
-hyreflow tools execute smartlead smartlead_get_campaign_analytics --payload '{"campaign_id":"12345678"}'
+hyreflow tools execute smartlead get_campaign_analytics --payload '{"campaign_id":"12345678"}'
 ```
 
 ### Email Accounts
 
 ```bash
-hyreflow tools execute smartlead smartlead_list_email_accounts --payload '{}'
-hyreflow tools execute smartlead smartlead_add_campaign_email_account --payload '{"campaign_id":"12345678","email_account_ids":[1,2,3]}'
+hyreflow tools execute smartlead list_email_accounts --payload '{}'
+hyreflow tools execute smartlead add_email_account_to_campaign --payload '{"campaign_id":"12345678","email_account_ids":[1,2,3]}'
 ```
 
 ## Response Shape Contract

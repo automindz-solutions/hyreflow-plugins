@@ -2,7 +2,7 @@
 
 BuiltWith is **BYOK-only** in Hyreflow. If the workspace has no BuiltWith key configured, BuiltWith
 tools are unavailable/skipped with `no_key`. Do not assume a Hyreflow-managed BuiltWith key exists for
-user workspaces.
+user workspaces. Connecting a key needs the Essential plan or above: on Free/Starter the connect is refused with a plan-required error, so tell the user to upgrade rather than retrying.
 
 - Use `builtwith_domain` when you already know the domain and need live/current technographics. The handler defaults `live_only` to true; set `live_only=false` only when historical detections matter.
 - Use `builtwith_vector_search` to discover the exact BuiltWith technology label before `builtwith_lists` or `builtwith_trends`. Free-text tech guesses often miss if the BuiltWith canonical name differs.
