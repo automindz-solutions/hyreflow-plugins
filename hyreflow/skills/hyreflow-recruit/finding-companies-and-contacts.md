@@ -29,9 +29,10 @@ hyreflow tools execute people_search --payload '{...}' --dry-run   # preview the
 
 Canonical query fields (all optional, combine what you have):
 `titles`, `skills`, `locations` (or `person_locations`), `company_names`, `company_domains`,
-`company_linkedin_urls`, `seniority`, `certifications`, `keywords`, `min_experience_years`, `limit`,
-`coverage` (`single` = stop once `limit` people are collected, the default · `max` = exhaustive deduped
-union across every provider),
+`company_linkedin_urls`, `seniority`, `certifications`, `keywords`, `min_experience_years`,
+`max_experience_years`, `limit`,
+`coverage` (`single` = stop once `limit` people are collected, the default · `max` = deduped union across every
+provider, each paged only as far as `limit` needs — the union can exceed `limit`),
 `providers` (optional allowlist — **pin the waterfall to a subset**, house order preserved, e.g.
 `"providers":["aiark"]` for "only ai ark"; still goes through the engine's correct per-provider mapper).
 
@@ -46,13 +47,23 @@ row it returns and the engine sizes each vendor page from `limit` — "find me 5
 > alongside the title rather than relying on the title alone. Only AI Ark filters on `skills`: if it finds
 > nobody, the other providers run once more without the skill (see `filters_relaxed` below).
 
+> **Junior or "at most N years of experience" → `max_experience_years`.** `seniority` alone is a job-title
+> label and lets long careers through (a 10-year veteran with "Junior" in the title). Tenure is a different
+> thing: `company_tenure_*_months` / `role_tenure_*_months` measure time in the current job, so a senior
+> hire who joined last month passes a tenure max. AI Ark and Prospeo filter on both; providers that can't
+> are skipped, not run unfiltered.
+
 > **`keywords` is the free-text lever for niche or domain sourcing** ("National Security", "clinical
 > trials", "payments"). It matches the profile's own prose — headline, summary, work-history
 > descriptions (aiark `contact.keyword`, Apollo `q_keywords`, quoted into the web fallbacks). Use it for
 > domain vocabulary that isn't a listed skill; use `skills` for named tools/technologies.
 >
 > Several `keywords` match ANY of them; pass a list, or a single string joined with ` OR `
-> (`"fintech OR B2B"` is split into two terms). Providers that can't express a field (`skills`: every
+> (`"fintech OR B2B"` is split into two terms). One exception: a keyword that is exactly "open to work"
+> (or `#OpenToWork`), in a search scoped by another filter such as `titles`, is searched as
+> `profile_badges: ["OPEN_TO_WORK"]` (AI Ark only), so the remaining keywords must then match too and
+> the other providers are skipped; the response carries a `keyword_to_profile_badge` warning. Ask for
+> the badge directly with `profile_badges`, always with `titles` or `locations`. Providers that can't express a field (`skills`: every
 > provider but AI Ark; `keywords`: Prospeo and Apollo when there are several) are skipped with
 > `outcome: "unsupported_fields"`. If AI Ark answered and the whole search found no one, those providers
 > run once more without `skills`/`keywords` (never after an AI Ark error). Those rows are **billed**, carry
@@ -71,7 +82,7 @@ hand-write per-provider filters or manage dedup/paging.
 company — and, under the default `coverage:"single"`, only once the people databases have failed to fill
 `limit`. That's the coverage case they exist for: a seed-stage company the databases hold no rows for at
 all. You don't reach for them by hand inside a company-scoped search — one `people_search` call already
-covers it. (`coverage:"max"` is exhaustive by definition, so it runs them alongside everything else.)
+covers it. (`coverage:"max"` visits every source, so it runs them alongside everything else.)
 - A row is kept only if the person's current company matches the company you asked for **as a whole
   name**, so name collisions (people at unrelated companies that share the search term) never reach you —
   a query for `acme` against `GoAcme` or `Acmeteer` is a different company and its people are dropped, while
@@ -81,7 +92,7 @@ covers it. (`coverage:"max"` is exhaustive by definition, so it runs them alongs
   "company_mismatch"` with `verify_dropped` (how many rows were dropped) — distinguishing a leg that
   contributed nothing from one that found nobody at all.
 - These steps read the company anchor plus `titles`, `locations`, `seniority`, `keywords`,
-  `min_experience_years`. A query carrying `skills`, a tenure window, `departments` or firmographics stops
+  `min_experience_years`. A query carrying `skills`, `max_experience_years`, a tenure window, `departments` or firmographics stops
   at the databases — a web result can't prove those, so it isn't asked to.
 - A row with **`verification_required: true`** came from a profile *search result*, not a profile record:
   confirm the company and title on the profile before you ship or contact it. `_meta.warnings` counts them.
