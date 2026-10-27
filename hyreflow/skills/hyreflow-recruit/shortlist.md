@@ -376,4 +376,4 @@ call, so this works the same for 10 people or 1000:
    `run_id`.
 
 A call over the spend threshold comes back `confirmation_required` with a quote; show the user the
-cost, and repeat the identical call with the `confirm_token` once they approve.
+cost, and repeat the same call with `approved_credits` set to the approved figure once they approve.
