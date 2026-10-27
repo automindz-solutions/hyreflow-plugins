@@ -27,10 +27,10 @@ Sweep (weekly, scheduled): SUPPRESS (90-day join, runs FIRST) → REFRESH (7-day
 
 ## Config primitive — the network-ICP doc
 One file drives all three pipelines: `<client-slug>-network-icp.md`, client-local data (like the
-company-level `ICP.md` used by [`build-tam.md`](build-tam.md) / [`qualify-against-icp.md`](qualify-against-icp.md)
+company-level ICP (`ICP.md` or the second brain's ICP page) used by [`build-tam.md`](build-tam.md) / [`qualify-against-icp.md`](qualify-against-icp.md)
 — but this one screens **people**, not companies, so keep it a **separate file**; a client may have both).
 Built once at onboarding, versioned per-client. If it's missing, tell the user to build it first — don't
-silently skip the gate, same discipline as the company `ICP.md`. It must supply:
+silently skip the gate, same discipline as the company ICP. It must supply:
 1. **Title/function match rules** for the pre-filter (decision-maker titles, functions to keep).
 2. **Full screening criteria + exclusions** for the deep screen (the binary bar).
 3. **Sub-segment definitions** for the Dream 100 layering (e.g. a PE / CEO-or-hiring-manager /
@@ -196,6 +196,6 @@ recurring piece.
   wants it formalized into a real adapter.
 - **No LinkedIn send automation, ever** — the sold guarantee is draft generation, not sending. Every
   headless step in this recipe stops at a staged draft.
-- The network-ICP doc and the company-level `ICP.md` are **separate files** even for the same client —
+- The network-ICP doc and the company-level ICP are **separate files** even for the same client —
   one screens companies (firmographic fit), this one screens **people** (LinkedIn network fit). Don't
   collapse them; a client may run both recipes at once.

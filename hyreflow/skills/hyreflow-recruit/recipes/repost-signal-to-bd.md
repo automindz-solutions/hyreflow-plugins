@@ -26,7 +26,7 @@ history pulls (Steps 2 and 4) and on enriching the *survivors'* contacts downstr
 - Role title (or an O*NET code already in hand) + location.
 - **Fresh window** — default `48h` for a daily run, `30d` for a backfill.
 - **Lookback** — default 12 months (an earlier listing counts when its `last_seen_at` falls inside it).
-- The client's `ICP.md` (for the company gate) — per-client data, not in this skill.
+- The client's ICP (for the company gate): `ICP.md` when it exists, else the second brain's ICP page (`hyreflow_knowledge_index`, MCP only). Per-client data, not in this skill.
 
 ## Step 1 — Resolve the role to O*NET code(s)
 `discover_job_openings` only accepts O*NET occupation codes, not free-text titles. Resolve the role with

@@ -139,7 +139,7 @@ title hierarchy** (ported from mpc's `prospeo-search-strategy`, generalised by `
 
 > **Size buckets are per-client config, not fixed.** Each hyreflow customer defines their own
 > `size_buckets` (the same ones used for the Step-2 soft-rank) and which seniority owns the hire in each
-> bucket — read them from the client config (alongside `provider_order`/`ICP.md`), don't hardcode. The
+> bucket — read them from the client config (alongside `provider_order`, and the second brain's ICP page when one exists), don't hardcode. The
 > table below is the **default** shape (the mpc client's `100 / 500` thresholds shown as illustration);
 > override per client.
 

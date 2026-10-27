@@ -53,7 +53,7 @@ times (by hall, category, sponsor tier). Keep one row per company with its best 
 
 ## STEP 4 — Qualify vs ICP  (the gate — free, runs first)
 Follow [`recipes/qualify-against-icp.md`](qualify-against-icp.md): hard firmographic filters on the data
-you already scraped (free) → LLM fuzzy-fit against the client's `ICP.md`. **Model A — runs on the
+you already scraped (free) → LLM fuzzy-fit against the client's ICP (`ICP.md` first, else the second brain). **Model A — runs on the
 host agent, no credits.** Gate **before** any paid enrichment — exhibitor lists are large and noisy,
 so this is where most of the list falls away and where you avoid paying to process non-fit companies.
 

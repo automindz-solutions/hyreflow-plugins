@@ -102,6 +102,6 @@ result** (not one still `still_enriching`) counts as that provider's miss for th
 fallback, continue with the next provider in the chain.
 
 ## Per-client config
-Lives **outside** this skill (client data), e.g. `clients/<slug>/config.json` + `ICP.md`. Shape:
+Lives **outside** this skill (client data), e.g. `clients/<slug>/config.json` + the ICP (`ICP.md`, else the second brain's ICP page). Shape:
 `reference/client-config.example.json`. A recipe reads it to get the order overrides + the client's
 ATS/sequencer; everything else falls back to the house defaults above.

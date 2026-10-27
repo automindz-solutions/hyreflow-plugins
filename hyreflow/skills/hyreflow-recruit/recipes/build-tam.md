@@ -31,7 +31,7 @@ RESOLVE ICP (cascade) → SOURCE companies  [A firmographic-filter ‖ B people-
 ---
 
 ## STEP 0 — Resolve the ICP (cascade, best → worst)
-1. **`ICP.md` exists** (built by `/icp` at onboarding, in the client dir) → use it. Best.
+1. **`ICP.md` exists** (built by `/icp` at onboarding, in the client dir) → use it. Best. Without one, the second brain's ICP page (`hyreflow_knowledge_index`, then `hyreflow_knowledge_read`, MCP only) works the same: confirm a `draft` page with the user first.
 2. **Else: derive from seeds.** Ask for an **active-client list / Dream-100 / CSV**, or pull the client's
    existing accounts from their ATS (`recruit_crm.list_companies` · `recruiterflow.list_clients` ·
    `vincere.search_companies` · `jobadder.find_companies` · bullhorn `query("ClientCorporation")`). Then
@@ -136,7 +136,7 @@ a qualified company set.
 ## Tools by step
 | Step | Tools |
 |---|---|
-| 0 ICP | `ICP.md` · ATS list methods (`recruit_crm.list_companies`, `recruiterflow.list_clients`, …) · CSV · `hyreflow_agent` (derive-ICP prompt) |
+| 0 ICP | `ICP.md` · second brain ICP page · ATS list methods (`recruit_crm.list_companies`, `recruiterflow.list_clients`, …) · CSV · `hyreflow_agent` (derive-ICP prompt) |
 | 1A firmographic | **aiark** `company_search` · apollo · prospeo `search_company` · lusha (+ theirstack `catalog_industries` for LinkedIn-industry codes; builtwith only for who-uses-X breadth) |
 | 1B people-first | `/search` people_search (aiark default) → company roll-up |
 | 1C lookalike | prospeo `company_lookalike` · lusha/zoominfo `company_lookalikes` · predictleads `similar_companies` · exa `find_similar` |

@@ -18,7 +18,7 @@ hosted AI model call. Credits are spent only on the downstream enrichment of *pa
 ## Inputs
 - Mode: `broad` (whole market) or `targeted` (one or more named employers).
 - `when` window (default `7d`; `30d` for a named company).
-- The client's `ICP.md` (for the qualify gate) — per-client data, not in this skill.
+- The client's ICP (for the qualify gate): `ICP.md` when it exists, else the second brain's ICP page (`hyreflow_knowledge_index`, MCP only). Per-client data, not in this skill.
 
 ## Step 1 — Sweep the feeds (`layoffsignal`, native — free)
 ```bash
@@ -46,7 +46,7 @@ specific headcount and the best source. Output one row per layoff event.
 
 ## Step 5 — Resolve company → source affected roles
 - Resolve company → domain (`builtwith.company_to_url`, or known domain).
-- **Qualify the company vs `ICP.md`** if this is BD (`recipes/qualify-against-icp.md`).
+- **Qualify the company vs the ICP** if this is BD (`recipes/qualify-against-icp.md`).
 - Source the displaced people by function:
   - **Engineering/IT →** `github` (search users by company/location/language; `find_user_emails`).
   - **Everyone else →** `apollo` / `aiark` people-search at that company (recently-departed if available),
