@@ -266,19 +266,24 @@ happens when the worst-case estimate clears 50 credits *or* a quarter of what th
 whichever is lower, so a nearly-empty balance trips it far sooner than the headline number suggests.
 Nothing was charged: `credits_charged` is 0.
 
-The body carries `cost_estimate`, `current_balance`, `balance_after` and a `confirm_token`. Then:
+The body carries `cost_estimate`, `current_balance`, `balance_after` and a `confirm_token`. The token is
+null when the call was a resend (see "no open quote" below) or when the approval could not be checked
+just now; either way, its `next_step` says what to do. Then:
 
 1. **Show the user the number** — the estimate in credits, what it buys ("personal emails for 9
    people"), the balance now and after. This is the moment they were missing. Don't paraphrase it away.
 2. **Wait for a real answer.** Approving on their behalf defeats the entire mechanism.
-3. **Resend the identical call** with `confirm_token` set. Identical — the token is bound to the exact
-   arguments and the quoted price.
+3. **Resend the same call** with `approved_credits` set to the figure the user approved (or with
+   `confirm_token` set). Same arguments — the quote is bound to the exact call, and it runs once.
 
-Never retry without the token (same refusal), never tweak the payload and retry (a changed payload is a
-new quote, so you get a fresh confirmation), and never split the batch into smaller calls to slip under
+Never retry without one of them (same refusal), never tweak the payload and retry (a changed payload
+needs its own quote: send it without `approved_credits` or `confirm_token` and ask again), and never
+split the batch into smaller calls to slip under
 the threshold — that spends *more* than the run you were asked to check, and hides it.
 
-A token lasts ten minutes; a stale one returns a fresh confirmation, so re-ask rather than re-send.
+A quote lasts ten minutes. A resend that comes back with "no open quote" was never quoted, waited too
+long, or already ran on that approval, and resending it again will not help: send the call without
+`approved_credits` or `confirm_token` to get a fresh quote, then ask the user to approve that cost.
 
 `_meta.budget_warning` on a completed call means the balance is low, or that run took half of what was
 there. Say so in plain language before you start the next paid step.

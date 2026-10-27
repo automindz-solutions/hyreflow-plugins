@@ -40,7 +40,7 @@ thing should take a couple of minutes.
    and a payload of `titles`, `locations` and `"limit": 5`, passing the user's own words as
    `user_prompt`. Do not use `dry_run` here: it returns no people to show.
    - If the call returns `confirmation_required`, tell the user the quoted cost in one line and repeat
-     the call with the `confirm_token` once they say yes.
+     the call with `approved_credits` set to that cost once they say yes.
    - If it comes back empty, widen once (drop the seniority words, or use the country instead of the
      city) and run it again. Don't loop more than that: say what you tried and move on.
 
