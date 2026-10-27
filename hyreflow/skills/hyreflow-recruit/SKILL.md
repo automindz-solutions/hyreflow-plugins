@@ -658,7 +658,7 @@ hyreflow enrich --input hyreflow/data/<slug>/leads.csv --output hyreflow/data/<s
   `reference/tool-registry.json` (see [references/cost-card.md](references/cost-card.md)).
 - **No fabricated endpoints.** Adapters built from each vendor's real docs (cached under `reference/docs/<tool>/raw`).
   Where a path/auth was inferred from doc slugs, the tool's playbook flags "verify on first pilot".
-- **Stack rules** (per Hyreflow defaults): Python-only; the hosted AI model for LLM; InboxKit for mailboxes;
+- **Stack rules** (per Hyreflow defaults): Python-only; the hosted AI model for LLM;
   the Hyreflow-built product is the strategic layer — the wrapped vendor API is an implementation detail.
 
 ## Credit & approval gate (paid actions)
