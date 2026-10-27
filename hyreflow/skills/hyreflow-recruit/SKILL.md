@@ -154,7 +154,7 @@ filter and pulling the entire DB). Reading more than one is normal and encourage
 | A **CV / candidate** → a full sequenced BD **campaign** across many companies (MPC Shot / candidate-led BD) | [`recipes/candidate-led-bd-campaign.md`](recipes/candidate-led-bd-campaign.md) (evergreen-candidate gate → scrape+lookalike fan-out → fit-match → CRM-first routing → poaching guard → approval gate → frontsheet + send) |
 | Sourcing an **IT / engineering** role (devs) | [`recipes/it-sourcing.md`](recipes/it-sourcing.md) (GitHub ground-truth + people-DBs → qualify; free emails) |
 | Sourcing **designers** (product / UX / UI / graphic / brand / motion), or any designer whose **portfolio is required** | [`recipes/designer-portfolios.md`](recipes/designer-portfolios.md) (portfolio lookup as an add-on by default; portfolio-first only when the user makes it a must-have) |
-| Qualify against a role / ICP | [`recipes/qualify-against-icp.md`](recipes/qualify-against-icp.md) (+ the client's `ICP.md`) |
+| Qualify against a role / ICP | [`recipes/qualify-against-icp.md`](recipes/qualify-against-icp.md) (+ the client's `ICP.md`, else the ICP from the second brain) |
 | "Which companies are in my **TAM** / build a **target-account list**" | [`recipes/build-tam.md`](recipes/build-tam.md) (ICP → firmographic/people-first/lookalike sourcing → qualify → ICP-fit company list → opt. people) |
 | Find **local businesses / SMBs** by category and location, then find owners or decision-makers | [`provider-playbooks/openmart.md`](provider-playbooks/openmart.md) (store- vs brand-level search → domain → async people/email/tech batch; BYOK-only, BD/work-email channel) |
 | Enrich for contact (email/phone/LinkedIn) | [`enriching-and-researching.md`](enriching-and-researching.md) + [`references/provider-precedence.md`](references/provider-precedence.md) |
@@ -432,8 +432,8 @@ Preview spend first with `--dry-run`; the CLI adds bearer auth, 429/5xx retries,
 
 ## The canonical pipeline
 **source → qualify (ICP) → enrich → verify → sequence → push to ATS**, e.g.
-`apollo`/`aiark`/`apify`/`theirstack` (find companies/people) → **qualify against the client's `ICP.md`
-(see below)** → `leadmagic`/`prospeo`/`fullenrich` (waterfall email+phone) → `hyreflow_native` `verify_emails` (validate
+`apollo`/`aiark`/`apify`/`theirstack` (find companies/people) → **qualify against the client's ICP
+(`ICP.md` first, see below)** → `leadmagic`/`prospeo`/`fullenrich` (waterfall email+phone) → `hyreflow_native` `verify_emails` (validate
 deliverability) → `instantly`/`smartlead`/`reply_io`/`sendkit`/`emailbison`/`heyreach`/`lemlist`/`sourcewhale` (activate) →
 `recruit-crm`/`bullhorn`/`carerix`/`crelate`/`loxo`/`vincere`/`recruiterflow`/`atlas`/`trackerrms` (land the record).
 `aircall`/`justcall` + `fathom` close the loop on the conversation side (call logs, transcripts → ATS activity).
@@ -482,7 +482,7 @@ Multi-tool flows have a step-by-step recipe in `recipes/` — follow it as the e
 - [`recipes/funding-to-bd.md`](recipes/funding-to-bd.md) — **funding → BD trigger.** Company raises →
   ICP check → find hiring managers (people_search wf) → work email (email_enrichment wf) → personalize →
   BD sequence → CRM. A pattern the agent composes from the capability waterfalls (not a hard-coded pipeline).
-- [`recipes/build-tam.md`](recipes/build-tam.md) — **TAM / target-account mapping.** Resolve the ICP (ICP.md →
+- [`recipes/build-tam.md`](recipes/build-tam.md) — **TAM / target-account mapping.** Resolve the ICP (ICP.md → second brain →
   derive from clients/Dream-100/CSV → NL) → source companies (firmographic filter **+** people-first reverse
   **+** lookalike-from-seeds) → count-first (TAM size) → **qualify** (hard filters → Model-A fuzzy-fit →
   ICP-driven web verification, industry-agnostic) → ICP-fit company list → **optional** people (HMs/candidates)
@@ -547,9 +547,21 @@ Multi-tool flows have a step-by-step recipe in `recipes/` — follow it as the e
   each person (`connected_via`), so the play is a warm intro, not a cold message. Essential plan and above.
 
 ### The ICP qualify gate (Model A — runs on the host agent)
-- The client's **`ICP.md`** is built once by **`/icp`** at onboarding and lives in the client's working
-  directory (per-client **data**, NOT in this skill).
-- Qualification is **agent reasoning** — the host agent reads `ICP.md` and scores companies.
+- **The client's own `ICP.md` wins.** Built by **`/icp`** and kept in the client's working directory
+  (per-client **data**, NOT in this skill), it is what they wrote and checked, so use it whenever it exists.
+- **Else read the second brain**, when you have the `hyreflow_knowledge_*` tools (an MCP connection; it may
+  be empty): `hyreflow_knowledge_index`, then `hyreflow_knowledge_read` the ICP and persona
+  pages (`hyreflow_knowledge_search` for a topic), before asking the user about their business, roles, ICP
+  or messaging. Its notes are built from the company's public site: a `draft` page is a guess, so confirm
+  it with the user before you rely on it. Ask the user only when neither exists.
+- **Keep the brain right.** When the user corrects something about their business, roles, ICP or messaging,
+  show them the changed note text, then save it with `hyreflow_knowledge_write` (it changes only the fields
+  sent, every teammate's agent reads it at once, and there is no undo). A confirmed `draft` becomes
+  `active`. On the CLI there is no brain to write to: update `ICP.md` instead.
+- **Searches start from the persona** when the brain has one: build the `people_search` payload (`titles`,
+  `locations`, `skills`, `keywords`, `seniority`) from the persona page's Search filter notes, then tighten it
+  with what the user says.
+- Qualification is **agent reasoning** — the host agent reads the ICP and scores companies.
   **No hyreflow server call, no hosted AI model call, no credits for the judgment itself.** Hard firmographic
   filters run on data you already have (free); the LLM fuzzy-fit (via the `company-qualifier` agent or
   inline) runs only on survivors; enrichment runs only on the passes.

@@ -23,7 +23,7 @@ funding raised →  ICP check    →     hiring managers   →    work email    
 ```
 
 ## Inputs the agent needs (ask if missing)
-- **ICP** — the client's `ICP.md` (built once by `/icp`, lives in the client workspace), or quick firmographics.
+- **ICP** — the client's `ICP.md` (built once by `/icp`, lives in the client workspace), else the second brain's ICP page (`hyreflow_knowledge_index`, MCP only), or quick firmographics.
 - **Funding window + round types** — e.g. Series A+ in the last 90 days (default below).
 - **BD persona** — which titles to reach (e.g. founder / VP Eng / Head of Talent / hiring manager). Not a hard
   filter list — the intent ("who signs off on using a recruiter").
@@ -44,7 +44,7 @@ funding raised →  ICP check    →     hiring managers   →    work email    
 
 **2 — QUALIFY: ICP gate** *(FREE — Model A, runs on the host agent; the strategic gate)*
 - Hard firmographic filters on data you already have from the signal (industry/size/geo) — free.
-- Then LLM fuzzy-fit of survivors vs `ICP.md` (the `company-qualifier` agent / inline reasoning). **No credits.**
+- Then LLM fuzzy-fit of survivors vs the ICP (the `company-qualifier` agent / inline reasoning). **No credits.**
 - **Gate BEFORE enrichment** — never pay to find contacts at companies that don't fit. See
   [recipes/qualify-against-icp.md](qualify-against-icp.md).
 

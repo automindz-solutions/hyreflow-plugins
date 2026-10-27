@@ -11,7 +11,7 @@ Run the qualify gate after any search/enrich and before sequencing or pushing to
 record against the role/ICP and drops the misses, so you never spend credits sequencing unqualified leads.
 
 → Follow [`recipes/qualify-against-icp.md`](recipes/qualify-against-icp.md) as the plan (pair it with the
-client's `ICP.md` when present).
+client's ICP when present: `ICP.md` first, else the second brain (`hyreflow_knowledge_index`, MCP only).
 
 ## 2) Confirm the cadence before building a sequence
 
