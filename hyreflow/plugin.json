@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "hyreflow",
-  "version": "1.1.14",
+  "version": "1.1.15",
   "description": "Source, enrich, qualify, sequence, and push candidates to your ATS from your agent. Drives the Hyreflow CLI and MCP server.",
   "author": {
     "name": "Automindz Solutions",
