@@ -129,7 +129,8 @@ assuming silence means clean). The root object also carries `credits_consumed`, 
   back (**10**). They are independent: `rows: 15` with a default poll returns 10, and a default `rows` with
   `limit: 50` hands back up to 50. For "find me 15 roles", send `rows: 15` on the launch **and**
   `limit: 15` on the poll — then one poll delivers the ask and bills exactly it. `limit` maxes at 50 on
-  every poller and Indeed `rows` at 100, so a `rows: 100` run takes two polls: `offset` 0, then 50.
+  every poller, so a LinkedIn `rows: 100` run takes two polls: `offset` 0, then 50. Indeed returns only
+  its first page (about 15 jobs) whatever `rows` says, so one poll covers an Indeed run.
   `scrape_arbeitsagentur_jobs` and `scrape_career_pages` take **no `rows`** (`max_pages`/`page_size` and
   `max_pages` bound them instead), so there the poll's `limit` plus stopping at the ask is the only guard.
   `scrape_stepstone_jobs` takes `rows` but only in **whole pages of 25** (25/50/75/100, default 25 —
@@ -474,15 +475,34 @@ hyreflow tools execute hyreflow_native repost_scan --payload '{"domain":"acme.ex
   search mode `country` only picks the regional site — it never substitutes for `locations`.
   **Clinical / healthcare searches:** a title keyword like "physician" or "doctor" also matches pharma,
   CRO and med-tech roles, which crowd out hospital postings. Search the local-language titles too
-  (e.g. Hungarian "orvos", "szakorvos", "rezidens" alongside the English), and drop the noise with
-  `excluded_industries` (e.g. `["Pharmaceutical Manufacturing", "Research Services",
-  "Biotechnology Research", "Medical Equipment Manufacturing"]`) and `excluded_companies` for recurring
-  CRO names.
+  (e.g. Hungarian "orvos", "szakorvos", "rezidens" alongside the English), and narrow to the sector
+  you want with `included_industries` (e.g. `["Hospitals and Health Care", "Medical Practices"]`), with
+  `excluded_companies` for recurring CRO names.
 - **Indeed jobs** — `scrape_indeed_jobs(titles_query, locations, …)`. Both are required. `country` picks
   Indeed's regional site. Before a sweep in a new market, run one small scrape (`rows: 5`) and check
   that `result.search_urls` is on that country's Indeed site and the jobs' locations are in-country. A
   country Indeed has no site for comes back with no jobs and a `warnings` entry saying so (nothing is
   billed); use `linkedin_jobs` for that market instead.
+- **Seniority and industry filters (LinkedIn + Indeed)** — a title keyword alone pulls in the wrong
+  employers: "CEO" matches charities, councils, hospitals and staffing firms. Set `included_industries`
+  to the sector you want and `experience_levels` to the level (`internship`, `entry level`, `associate`,
+  `mid-senior level`, `director`, `executive`) on either board, instead of listing every unwanted
+  industry in `excluded_industries`. Both boards also take `excluded_titles` / `excluded_companies`.
+  - Seniority and industry are labels an LLM classifier assigns from each job's detail page (each job
+    shows them as `seniority` / `industry`), so they can drift between runs.
+  - Industry terms are LinkedIn industry names, matched case-insensitively as a substring
+    (`"renewable"` keeps "Renewable Energy Power Generation"). Use the real names.
+  - A job the classifier could not label is **kept**, with a `result.warnings` entry. Check those rows
+    yourself.
+  - Industry filters need the job detail page, so they cannot go with `include_job_details: false`.
+    On a LinkedIn `company_url` scrape any seniority or industry filter turns detail fetches on and an
+    omitted `rows` defaults to 50, so set `rows` to the ask.
+  - Filtered-out jobs are never returned and never billed. Billing stays per returned job.
+  - On LinkedIn a filtered run reads more search pages to fill `rows`, so it takes longer. Fewer jobs
+    than `rows` does **not** mean the board ran out: a warning says the run stopped early and lists the
+    labels it dropped most. If those look wrong, widen the filter rather than paging on.
+  - Indeed serves only its first page (about 15 jobs), so an Indeed filter thins those ~15 and cannot
+    page deeper to fill `rows`. For more, run narrower searches (more titles or locations).
 - **Arbeitsagentur** — `scrape_arbeitsagentur_jobs(title=…, location=…)` for the German federal job
   board (Bundesagentur für Arbeit). `radius` is in km. Need `title` and/or `location`. Recruiter details
   only appear with `include_recruiter_details: true` (slower); the poll bills
@@ -523,6 +543,14 @@ hyreflow tools execute linkedin_jobs --payload '{"linkedin_job_urls":["https://w
 hyreflow tools execute hyreflow_native_get_linkedin_jobs --payload '{"request_id":"<id>","limit":2}'
 ```
 
+```bash
+# Executive search — CEOs at renewable-energy employers in the UK, not charities, councils or agencies.
+hyreflow tools execute linkedin_jobs --payload '{"titles_query":"CEO renewable","locations":["United Kingdom"],"rows":25,"experience_levels":["executive"],"included_industries":["Renewable Energy Power Generation","Solar Electric Power Generation","Wind Electric Power Generation","Utilities","Environmental Services"]}'
+# The same filters on Indeed (no seniority or industry data there, so every job is classified). Indeed
+# returns about 15 jobs before filtering, so `rows: 25` is a ceiling, not a target.
+hyreflow tools execute indeed_jobs --payload '{"titles_query":"chief executive renewable","locations":["London"],"country":"United Kingdom","rows":25,"experience_levels":["executive","director"],"included_industries":["Renewable Energy Power Generation","Utilities"]}'
+```
+
 ## When to reach for it
 **Job scrapes** — open-roles / hiring intelligence: "what is this company hiring for", "find all RevOps
 openings in Berlin", "pull recruiter jobs posted this week". This is the **default source for open-roles /
@@ -537,9 +565,9 @@ clients generally want both. Run them alongside `linkedin_jobs` / `indeed_jobs` 
 geo runs on the global boards plus `career_pages` — there is no national board to reach for.
 **A narrowed ask is still a native ask.** Recency, exclusions, who posted it and what the description
 says are not reasons to switch to theirstack: `linkedin_jobs` takes `hours` (posted within the last N
-hours — 21 days is `504`; `indeed_jobs` takes `max_age_days`), `excluded_titles` ("no recruiter jobs") and
-`excluded_industries`; for "posted by a recruiting agency" or "the description names the recruiter",
-launch with `include_company_details` + `include_job_details` and filter the returned postings on their
+hours — 21 days is `504`; `indeed_jobs` takes `max_age_days`), `excluded_titles` ("no recruiter jobs"),
+`experience_levels` and `included_industries` / `excluded_industries` (both boards); for "posted by a
+recruiting agency" or "the description names the recruiter", launch with `include_company_details` + `include_job_details` and filter the returned postings on their
 company and description fields yourself. theirstack is for tech-stack / keyword-slug filters,
 technographics and buying intent — no other filter moves a hiring query off the natives (the user naming
 theirstack, or the native legs coming back short, still does). The user's language
@@ -622,8 +650,8 @@ Call via the CLI: `hyreflow tools execute hyreflow_native <method> --payload '{.
 - `repost_scan(domain: str, *, related_domains: list | None = None, titles: list | None = None, onet_codes: list | None = None, fresh_days: int = 2, lookback_months: int = 12, limit: int = 20) -> dict` — GET /v1/repost-scan — find a company's hard-to-fill roles in its job-opening history: reposts, roles open 90+ days, and roles relisted every month.
 - `scrape_arbeitsagentur_jobs(title: str | None = None, location: str | None = None, radius: int = 25, job_type: str | None = None, max_pages: int = 3, page_size: int = 25, include_details: bool = True, include_recruiter_details: bool = False) -> dict` — POST /v1/scrape-arbeitsagentur-jobs/async — start a German hiring-signal scrape of open roles on Germany's Bundesagentur für Arbeit board. Returns {request_id, status}.
 - `scrape_career_pages(company_url: str, company_name: str | None = None, max_pages: int = 10, target_titles: list | None = None, target_titles_prompt: str | None = None, target_locations: list | None = None, filters: dict | None = None, known_career_page_url: str | None = None, known_career_page_urls: list | None = None) -> dict` — POST /v1/scrape-career-pages/async — start a hiring-signal scrape of a named company's own career site/ATS for open roles. Returns {request_id, status}.
-- `scrape_indeed_jobs(titles_query: Any, locations: list, country: str = 'United States', rows: int = 25, start: int = 0, radius: int | None = None, job_types: list | None = None, max_age_days: int | None = None, include_job_details: bool = True, include_company_details: bool = False) -> dict` — POST /v1/scrape-indeed-jobs/async — start a hiring-signal scrape of Indeed open roles by title + location across companies. Returns {request_id, status}.
-- `scrape_linkedin_jobs(titles_query: Any = None, company_url: str | None = None, locations: list | None = None, country: str | None = None, rows: int | None = None, distance: str | None = None, hours: int | None = None, job_types: list | None = None, work_types: list | None = None, experience_levels: list | None = None, excluded_companies: list | None = None, excluded_titles: list | None = None, excluded_industries: list | None = None, include_company_details: bool | None = None, include_job_details: bool | None = None, linkedin_job_urls: list | None = None, linkedin_job_ids: list | None = None) -> dict` — POST /v1/scrape-linkedin-jobs/async — start a hiring-signal scrape of LinkedIn open roles by title/location, for one company, or for specific job postings. Returns {request_id, status}.
+- `scrape_indeed_jobs(titles_query: Any, locations: list, country: str = 'United States', rows: int = 25, start: int = 0, radius: int | None = None, job_types: list | None = None, max_age_days: int | None = None, include_job_details: bool = True, include_company_details: bool = False, experience_levels: list | None = None, included_industries: list | None = None, excluded_industries: list | None = None, excluded_titles: list | None = None, excluded_companies: list | None = None) -> dict` — POST /v1/scrape-indeed-jobs/async — start a hiring-signal scrape of Indeed open roles by title + location across companies. Returns {request_id, status}.
+- `scrape_linkedin_jobs(titles_query: Any = None, company_url: str | None = None, locations: list | None = None, country: str | None = None, rows: int | None = None, distance: str | None = None, hours: int | None = None, job_types: list | None = None, work_types: list | None = None, experience_levels: list | None = None, excluded_companies: list | None = None, excluded_titles: list | None = None, excluded_industries: list | None = None, include_company_details: bool | None = None, include_job_details: bool | None = None, linkedin_job_urls: list | None = None, linkedin_job_ids: list | None = None, included_industries: list | None = None) -> dict` — POST /v1/scrape-linkedin-jobs/async — start a hiring-signal scrape of LinkedIn open roles by title/location, for one company, or for specific job postings. Returns {request_id, status}.
 - `scrape_stepstone_jobs(title: str, location: str | None = None, radius: int | None = None, rows: int = 25, start_page: int = 1, work_type: str | None = None, posted_within_days: int | None = None, work_from_home: str | None = None, job_language: str | None = None, application_method: str | None = None, discipline: str | None = None, include_details: bool = True) -> dict` — POST /v1/scrape-stepstone-jobs/async — start a German hiring-signal scrape of open roles on StepStone, Germany's largest commercial job board. Returns {request_id, status}.
 - `search_people(filters: dict, page: int = 0, size: int = 25) -> dict` — POST /v1/people-search — filtered search over a licensed contact database; rows carry work emails where known.
 - `search_posts(keyword: str, date_posted: str | None = None, sort_by: str = 'date_posted', page: int = 1, limit: int = 10, author_title: str | None = None, from_members: list | None = None, content_type: str | None = None) -> dict` — POST /v1/linkedin-post-search — keyword search across public LinkedIn posts, newest first, scoped to a date window.
