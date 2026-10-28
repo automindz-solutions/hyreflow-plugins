@@ -16,7 +16,9 @@ Person = { linkedin_url, first_name, last_name, full_name, company_name, company
 ```
 Run it: `POST /enrich/email_enrichment` (engine) — body `{rows:[Person, …]}`. On this capability the
 output row also carries `company_match` (whether the returned address checked out against the employer)
-and `company_match_basis` (`company_domain` or `company_name` — which one it was judged on).
+and `company_match_basis` (`company_domain` or `company_name` — which one it was judged on; `model` when an
+address on a different domain than `company_domain`, e.g. `.com` for a `.de` employer, was scored by the
+model for being the same company, whether kept or dropped, with that probability in `company_match_score`).
 
 **Many people ⇒ ONE call, not a loop.** Hand the whole list over at once:
 ```bash
