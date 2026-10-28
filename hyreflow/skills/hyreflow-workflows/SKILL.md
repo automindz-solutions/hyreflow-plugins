@@ -1,6 +1,6 @@
 ---
 name: hyreflow-workflows
-description: 'Build, run, and oversee recruiting/GTM workflows with Hyreflow — cloud workflows that Hyreflow executes and meters, on an api, webhook, or cron trigger. Use when the user asks to automate, schedule, or wire a multi-step pipeline.'
+description: "Build, run, and oversee recruiting/GTM workflows with Hyreflow — cloud workflows that Hyreflow executes and meters, on an api, webhook, or cron trigger. Use when the user asks to automate, schedule, or wire a multi-step pipeline, or to watch something on a schedule for what's new, like a company's new jobs (monitors)."
 ---
 
 # Hyreflow Workflows
@@ -61,6 +61,13 @@ Read `references/native-workflows.md`. Author with the Python SDK builder or a d
 
 Manage it from the dashboard list or the CLI: `hyreflow workflows list`,
 `hyreflow workflows enable|disable|delete <id|name>`, `hyreflow workflows runs --workflow-id <id>`.
+
+## Watch something for what's new (monitors)
+
+When the user wants to know when something changes on a schedule, like a company posting new roles, don't
+build a workflow: create a **monitor**. Hyreflow checks on a schedule and records each new item. Read
+`references/monitors.md` first: a monitor spends credits on every check, so the user confirms the price
+before you create one.
 
 ## Always
 
