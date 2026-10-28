@@ -556,9 +556,10 @@ Multi-tool flows have a step-by-step recipe in `recipes/` — follow it as the e
   (per-client **data**, NOT in this skill), it is what they wrote and checked, so use it whenever it exists.
 - **Else read the second brain**, when you have the `hyreflow_knowledge_*` tools (an MCP connection; it may
   be empty): `hyreflow_knowledge_index`, then `hyreflow_knowledge_read` the ICP and persona
-  pages (`hyreflow_knowledge_search` for a topic), before asking the user about their business, roles, ICP
-  or messaging. Its notes are built from the company's public site: a `draft` page is a guess, so confirm
-  it with the user before you rely on it. Ask the user only when neither exists.
+  pages and any `imported-*` notes (`hyreflow_knowledge_search` for a topic), before asking the user about
+  their business, roles, ICP or messaging. Most notes are built from the company's public site: a `draft` page
+  is a guess, so confirm it with the user before you rely on it. An `imported-*` note is the user's own file
+  (folder Imported), so weigh it like `ICP.md`. Ask the user only when neither exists.
 - **Keep the brain right.** When the user corrects something about their business, roles, ICP or messaging,
   show them the changed note text, then save it with `hyreflow_knowledge_write` (it changes only the fields
   sent, every teammate's agent reads it at once, and there is no undo). A confirmed `draft` becomes
