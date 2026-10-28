@@ -326,6 +326,29 @@ as `YYYY-MM`, `is_current`, plus `location`, `employment_type`, `description`, `
 that resolves to no profile comes back `success: false`, `profile: null`, and is still one charged
 request, so check the URL before spending it.
 
+**When the source is down, the call answers from the waterfall.** If the lookup itself is unavailable
+(its allowance is used up, it is refusing calls, it is not set up, or it timed out), the call runs the
+`linkedin_profile` waterfall for that one URL without this source and returns its answer in the same
+`{success, profile, message}` shape, plus `source` (the provider that answered, e.g. `aiark`) and
+`fallback: {from, reason, charged}`. It is charged what the waterfall charges: the answering provider's
+price when a profile is found, plus any source on the way that bills a miss (`fallback.charged`). A
+"no profile found" answer never falls back: it is an answer. Fields only this source carries (`username`, `urn`, `first_name`/`last_name`, `country`, `photo_url`, `is_open_to_work`,
+`is_hiring`, `languages`, a role's `location`/`employment_type`/company page/industry/size, and a school's
+`field_of_study` and dates) come back empty from another source. The fallback stays within what you
+approved, or, if you approved nothing, within the amount Hyreflow would otherwise ask you to confirm,
+counting every fallback in the request (lookups that answered from this source don't count): past that it
+does not run and you get the error instead. A source that is only busy (too many calls at once) does not
+fall back: it returns "temporarily unavailable" with no `linkedin_profile` line, so wait and retry it.
+
+**If the call still returns an error (424) that says to use `linkedin_profile` instead, the source
+itself is down** (its allowance used up, or refusing calls, not set up or timing out), so further calls are
+likely to fail the same way: switch the remaining rows to the `linkedin_profile` waterfall, which reaches
+the other sources.
+
+An error without that line is about the one URL you sent: fix it or skip that row, and keep using this
+source. The exception is "temporarily unavailable": the source is busy, so retry the same URL after a short
+wait instead of skipping it.
+
 ```bash
 # one person's full profile — one call, one charge (0.2 cr)
 hyreflow tools execute hyreflow_native get_linkedin_profile --payload '{"linkedin_url":"https://www.linkedin.com/in/acme-dana-reed"}'

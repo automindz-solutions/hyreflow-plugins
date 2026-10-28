@@ -64,6 +64,8 @@ missing fields.
   **`identity_mismatch`**: the URL belongs to someone else (the profile's name, or its employer, doesn't
   match the row, an earlier role counts; the step names who it found as `matched_name`). It costs 0, and retrying the same URL
   can't help: find the right URL (a fresh search on name + employer) or drop the row, and tell the user.
+  A direct `hyreflow_native get_linkedin_profile` call whose source is down answers from this waterfall on
+  its own, labelled with `source` and `fallback` (see `provider-playbooks/hyreflow_native.md`).
   ⚠️ Never hand-pick a raw scraper actor for this: Apify is BYOK-only
   and its spend is invisible to your credits, the spend cap and the approval gate.
 - ⚠️ prospeo / aiark / lusha / **bettercontact** are **work-email only** — never use them for candidate/personal
