@@ -15,8 +15,8 @@ the client's ICP. **No hosted AI model call, no credits for the judgment itself*
   firmographics the source already returned (industry, size, location, the job context).
 - The client's Ideal Customer Profile: **`ICP.md`**, built by **`/icp`** and stored in the working
   directory (per-client **data**, not part of this skill), whenever it exists. Without one, and with the
-  `hyreflow_knowledge_*` tools (MCP), read the second brain's ICP page: `hyreflow_knowledge_index`, then
-  `hyreflow_knowledge_read` (free), and confirm a `draft` page with the user first. If neither exists,
+  `hyreflow_knowledge_*` tools (MCP), read the second brain's ICP page and any `imported-*` notes the user added from their own files:
+  `hyreflow_knowledge_index`, then `hyreflow_knowledge_read` (free), and confirm a `draft` page with the user first. If neither exists,
   tell the user to run `/icp` first; do not silently skip the gate.
 
 ## Step 1 — Hard filters (data rules, NO LLM, ~free)
