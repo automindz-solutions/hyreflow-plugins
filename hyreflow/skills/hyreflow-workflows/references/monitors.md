@@ -42,8 +42,8 @@ watches it.
 
 ## Before you create one: say what it costs, and ask
 
-A monitor spends credits on its own schedule, long after this conversation, and its first check runs
-within minutes of saving. Every completed check costs the type's fee, whatever it finds, plus a price for
+A monitor spends credits on its own schedule, long after this conversation. Nothing runs when it's saved:
+its first check waits for the schedule's next time, unless the user asks to run it now (`check_now: true`). Every completed check costs the type's fee, whatever it finds, plus a price for
 each NEW item; items seen before are free, and a check that fails costs nothing. The current prices are in
 `hyreflow_monitor_save`'s description, after each type ("Price: ..."): quote them from there, never from
 memory. The save tool only returns the price after it has created the monitor, so work the figure out first
@@ -59,9 +59,10 @@ the user the corrected figure right away, and pause the monitor if they no longe
 
 ## After saving
 
-- The first check runs within about 5 minutes and takes a few minutes. It records what's already there,
-  marks it `baseline`, and reports none of it as new. Tell the user that, so an empty "new" list after the
-  first check doesn't read as a failure.
+- The first check waits for the schedule's next time. Offer to run it now (`hyreflow_monitor_save` with the
+  `monitor_id` and `check_now: true`); it then starts within about 5 minutes and takes a few minutes. It
+  records what's already there, marks it `baseline`, and reports none of it as new. Tell the user that, so an
+  empty "new" list after the first check doesn't read as a failure.
 - Point them to the dashboard. Its words differ from the API's: there, a monitor is a type (**Jobs**), each
   monitor you create is a **schedule** under it, and each check is a **run**. So: **Monitors** → **Jobs** →
   the schedule, to see what it found, its runs and the cost.
