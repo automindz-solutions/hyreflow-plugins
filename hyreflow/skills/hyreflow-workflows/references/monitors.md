@@ -32,10 +32,12 @@ watches it.
 ## The tools
 
 - `hyreflow_monitor_save` creates a monitor (`type`, `config`) or changes one (`monitor_id`). Its
-  description lists each type's `config` settings. The schedule is `cron` in UTC, daily at 09:00 by default
-  and at most hourly.
+  description lists each type's `config` settings. The `schedule` is `{every, unit, days, day_of_month, time}`:
+  every 1-12 hours, days, weeks (`days`, 1 Monday to 7 Sunday) or months (`day_of_month`) at `time`, in the
+  workspace's time zone, daily at 09:00 by default and at most hourly. A zone change is made by the user in
+  Settings → Date & time.
 - `hyreflow_monitors_list` lists the workspace's monitors, each with its last check and how many new items
-  it found.
+  it found, and the workspace's `timezone` their schedules are read in.
 - `hyreflow_monitor_items` returns the items a monitor found, newest first. `since` keeps only the ones first
   seen after a time. `baseline: true` marks items that were already there when the monitor started: they
   are not new.
