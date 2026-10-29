@@ -45,7 +45,7 @@ Each method is priced on its own: what the call costs Hyreflow, marked up to a 5
 | granola | metered | metered | BYOK-only: customer connects their own Granola account |
 | heyreach | metered | metered | BYOK-only: customer connects their own HeyReach account |
 | hyreflow_agent | metered | metered | Provider-metered — no fixed per-action price. |
-| hyreflow_native | `get_arbeitsagentur_jobs` 0.05 cr | `search_posts` 0.2 cr | 12 paid methods; `get_arbeitsagentur_jobs` +0.1 credits per job with recruiter details |
+| hyreflow_native | `get_arbeitsagentur_jobs` 0.05 cr | `search_posts` 0.2 cr | 11 paid methods; `get_arbeitsagentur_jobs` +0.1 credits per job with recruiter details |
 | icypeas | `email_verification` 0.1 cr | `email_search` 0.5 cr | 3 paid methods |
 | instantly | metered | metered | BYOK-only: customer connects their own Instantly account |
 | jobadder | free | free | No Hyreflow credits for any method. |
