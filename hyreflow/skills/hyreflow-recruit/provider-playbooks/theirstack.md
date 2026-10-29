@@ -36,8 +36,10 @@
 - **Field names differ by endpoint:** `theirstack_search_companies` and company-level filters on `theirstack_search_jobs` use `company_technology_slug_*`; job text filters on `theirstack_search_jobs` use `job_technology_slug_*`; `theirstack_company_technographics` uses `keyword_slug_or`.
 - **No email-provider filter:** do not invent `company_email_provider`, `email_provider`, `mx_provider`, or similar fields for TheirStack company search.
 - **Country codes** are ISO 2-letter (e.g., `US`, `GB`, `DE`).
-- **Funding stages:** `seed`, `series_a`, `series_b`, `series_c`, `growth`, `ipo`.
-- **Job seniority:** `senior`, `junior`, `manager`, `director`, `vp`, `c_level`.
+- **Funding stages** (`funding_stage_or`): common ones are `pre_seed`, `seed`, `series_a` … `series_j`, `growth_equity_vc`,
+  `private_equity`, `post_ipo_equity`, `debt_financing`, `undisclosed`. There is no `growth` or `ipo`; an unlisted value is not rejected, it silently matches nothing.
+- **Job seniority** (`job_seniority_or`): only `c_level`, `staff`, `senior`, `junior`, `mid_level`. There is no
+  `manager`, `director` or `vp`; filter those by `job_title_or` instead.
 
 ## Cost Awareness
 
