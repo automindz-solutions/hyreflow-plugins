@@ -30,6 +30,12 @@ Avoid follow/unfollow workflows for now. PredictLeads followed-company APIs are 
 - `discover_job_openings` needs `onet_codes` or it times out scanning everything — see
   [`../references/field-notes.md`](../references/field-notes.md) (O*NET section) for turning a title into
   a code.
+- `location` on `discover_job_openings` (and `location` / `company_location` on every other
+  `discover_*` / `iter_discover_*` method) takes ONE country by its full name, or ONE state by name or
+  abbreviation: `"United States"`, `"Tennessee"` or `"TN"` — not a country code like `"US"`. A combined
+  `"Tennessee, United States"` fails with `Invalid location`; pass the state alone when you want a state.
+  The vendor allows no city: for "hiring in Nashville", pass the state and keep the rows whose
+  `attributes.location` names the city.
 - `crawler_potentially_blocked: true` on a company means its coverage is incomplete — say so in any
   output built from it, rather than reporting a clean result off partial data.
 - Detecting a **reposted**, **long-open** (live 90+ days) or **evergreen** (relisted monthly) role from a
