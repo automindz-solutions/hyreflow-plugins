@@ -16,7 +16,7 @@ commit one.** The engine operator sets these in the server's secrets manager / e
 | apify | `APIFY_API_KEY` | Bearer | BYOK-only for user workspaces; no managed fallback for workspace calls; actorId = `username~actorname` |
 | apollo | `APOLLO_API_KEY` | header `x-api-key` | BYOK-only for user workspaces; no managed fallback for workspace calls; page/per_page |
 | ashby | `ASHBY_API_KEY` | HTTP Basic (key as username) | ATS job posting; needs the vendor's `jobsWrite` permission; connect-your-own (BYOK, self-serve) |
-| atlas | `ATLAS_API_KEY` | `Authorization: Bearer` | AI-native ATS/CRM; 30 methods; long tail via `request()`; connect-your-own (BYOK, self-serve) |
+| atlas | `ATLAS_API_KEY` | `Authorization: Bearer` | AI-native ATS/CRM; 30 methods; connect-your-own (BYOK, self-serve) |
 | bettercontact | `BETTERCONTACT_API_KEY` | header `X-API-Key` | async: start job → poll |
 | breezy | `BREEZY_API_KEY`, `BREEZY_COMPANY_ID` | header `Authorization` (RAW token, **no** `Bearer` prefix) | ATS job posting; company id is a path segment; BYOK-only, **not self-serve — coming soon** while the vendor finishes its v3 API |
 | bullhorn | `BULLHORN_CLIENT_ID`, `BULLHORN_CLIENT_SECRET`, `BULLHORN_USERNAME`, `BULLHORN_PASSWORD` (+ optional `BULLHORN_REDIRECT_URI`) | loginInfo → 3-leg OAuth → BhRestToken | datacenter hosts resolved per username via loginInfo; leave redirect_uri unset unless the OAuth app needs it; BYOK-only, self-serve (connect your own API user) |
@@ -39,7 +39,7 @@ commit one.** The engine operator sets these in the server's secrets manager / e
 | lusha | `LUSHA_API_KEY` | header `api_key` | |
 | openmart | `OPENMART_API_KEY` | `Authorization: Bearer` | BYOK-only, self-serve; search/enrich calls and async batch starts run on the client's Openmart account; account balance and batch status/task-ID/result reads are free |
 | prospeo | `PROSPEO_API_KEY` | header `X-KEY` | enrich/search/suggestions live-confirmed |
-| recruit_crm | `RECRUITCRM_API_KEY` | Bearer | 35 methods; full CRUD; connect-your-own (BYOK, self-serve) |
+| recruit_crm | `RECRUITCRM_API_KEY` | Bearer | 30 methods; full CRUD; connect-your-own (BYOK, self-serve) |
 | recruitee | `RECRUITEE_API_KEY`, `RECRUITEE_COMPANY_ID` | `Authorization: Bearer` | ATS job posting; token is per user AND per company; company id or subdomain is a path segment; connect-your-own (BYOK, self-serve) |
 | recruiterflow | `RECRUITERFLOW_API_KEY` | header `RF-Api-Key` | connect-your-own (BYOK, self-serve) |
 | reply_io | `REPLY_IO_API_KEY` | `Authorization: Bearer` | scoped `domain:verb` keys (e.g. `sequences:operate`); connect-your-own (BYOK, self-serve) |

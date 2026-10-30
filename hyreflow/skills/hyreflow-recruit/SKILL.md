@@ -699,9 +699,9 @@ plan step — for free/zero-cost work:
   gate, so read which kind it is:
   - **Metered data** (Apollo, ZoomInfo, BuiltWith, Shovels) — each call burns their vendor credits. Real
     money → gate the spend.
-  - **Their sequencer / ATS / CRM / meeting tool** (Instantly, Lemlist, HeyReach, Smartlead, SendKit, EmailBison,
+  - **Their sequencer / ATS / CRM / meeting / telephony tool** (Instantly, Lemlist, HeyReach, Smartlead, SendKit, EmailBison,
     Recruit CRM, Recruiterflow, Loxo, Atlas, Carerix, Crelate, Spott, Ashby, Lever, SmartRecruiters, Recruitee,
-    Fathom, Granola) — a flat plan, so a call costs no per-call money. Reads
+    Fathom, Granola, Aircall, JustCall) — a flat plan, so a call costs no per-call money. Reads
     are free to make; gate the **write**, because it lands in their live account in front of candidates.
     **Narrow carve-out for sequencers whose playbook documents a non-sending campaign state** (draft or
     paused; if it documents none, stay gated): once the user has confirmed the cadence and the campaign is

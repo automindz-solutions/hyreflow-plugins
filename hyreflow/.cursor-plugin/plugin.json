@@ -1,6 +1,6 @@
 {
   "name": "hyreflow",
-  "version": "1.1.26",
+  "version": "1.1.27",
   "description": "Source, enrich, qualify, sequence, and push candidates to your ATS from your agent. Drives the Hyreflow CLI.",
   "author": {
     "name": "Automindz Solutions",
