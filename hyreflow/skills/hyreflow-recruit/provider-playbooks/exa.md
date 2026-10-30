@@ -103,12 +103,12 @@ hyreflow tools execute exa_agent_get --payload '{"run_id":"agent_run_01j..."}'
 Call via the CLI: `hyreflow tools execute exa <method> --payload '{...}'` (preview with `--dry-run`; `hyreflow tools get exa <method>` returns the live contract + cost). Base: `https://api.exa.ai`. Only the methods listed below are callable.
 
 - `answer(query: str, *, text: bool = False, **opts) -> dict` — POST /answer — LLM answer grounded in Exa search results, with citations.
-- `budget_remaining() -> dict` — Remaining Exa balance — NOT callable by a workspace. It reads a Hyreflow-side Exa balance rather than the caller's own account, so connecting your own Exa key does not unlock it; the engine refuses it on the workspace path regardless of BYOK.
+- `budget_remaining() -> dict` — Remaining Exa balance — NOT callable by a workspace. It reads Hyreflow's own Exa balance, not a per-workspace account (exa has no customer BYOK today); the engine refuses it on the workspace path regardless.
 - `find_similar(url: str, *, num_results: int = 10, **opts) -> dict` — POST /findSimilar — find pages semantically similar to a seed URL.
 - `get_agent_run(run_id: str) -> dict` — GET /agent/runs/{run_id} — fetch an Exa Agent run's status and result.
 - `get_contents(urls: list[str], *, text: bool = True, **opts) -> dict` — POST /contents — fetch cleaned page content for URLs (text/highlights/summary).
 - `list_agent_runs(*, limit: int = 10, **opts) -> dict` — GET /agent/runs — list recent Exa Agent runs (id/status/createdAt/request).
-- `ping() -> dict` — BYOK key-verification probe. Exa's usage endpoint needs an api-key id in the path, so this fires the cheapest real search (1 result) to confirm the key authenticates — NOT free, ~1 search charge on the caller's own Exa account.
+- `ping() -> dict` — Hyreflow-managed-key verification probe (exa has no customer BYOK today). Exa's usage endpoint needs an api-key id in the path, so this fires the cheapest real search (1 result) to confirm the key authenticates — NOT free, ~1 search charge against Hyreflow's own Exa account.
 - `search(query: str, *, num_results: int = 10, type: str | None = None, category: str | None = None, contents: dict | None = None, **opts) -> dict` — POST /search — neural/auto web search. `type`: auto|neural|keyword|fast|deep.
 - `start_agent_run(query: str, *, output_schema: dict | None = None, effort: str | None = None, input: dict | None = None, data_sources: list | None = None, previous_run_id: str | None = None, **opts) -> dict` — POST /agent/runs — start an async Exa Agent research/list-build run; returns a run id to poll.
 
