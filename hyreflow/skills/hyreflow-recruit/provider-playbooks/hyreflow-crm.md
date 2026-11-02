@@ -79,11 +79,8 @@ Every write leaves a receipt in the CRM's run log. Reads don't.
 | `log_timesheet` | A contractor's hours or days for one week. | free |
 | `approve_timesheet` | A submitted timesheet, so it can be invoiced. | free |
 | `import_dataset` | People from a Hyreflow dataset into the CRM, optionally onto a job. | free |
-| `export_to_dataset` | CRM people out to a new Hyreflow dataset (e.g. a job's tier-1 shortlist). | free |
-| `rediscover_for_job` | Our own database ranked against a job's keywords, best added to its pipeline. | free |
+| `export_to_dataset` | Chosen CRM people out to a new Hyreflow dataset. | free |
 | `source_candidates` | New people from external databases, imported deduped. | paid, ~0.05/person |
-| `source_for_job` | New people for a job from its title and location, onto its pipeline. | paid, ~0.05/person |
-| `shortlist_job` | A job's pipeline screened against its JD: fit score 0-10, tier, reasoning. | paid, quoted first |
 | `find_email` | Verified work emails for CRM people. | paid, on a hit |
 | `hiring_signals` | A company's open job ads, saved as a hiring signal. | paid, 0.8/company |
 | `find_hiring_managers` | Likely hiring managers at a client, added as contacts. | paid, ~0.05/person |
@@ -97,9 +94,9 @@ confirm with the user again and repeat the identical call with `approved_credits
 
 ## Recipes
 
-**A JD comes in.** `create_job` (client by name) → `rediscover_for_job` (free: who we already know) → if that's
-thin, `source_for_job` (paid, quote first) → `shortlist_job` (paid, quote first) → read the pipeline with
-`get` on the job → `move_stage` the best to the next stage with a note.
+**A JD comes in.** `create_job` (client by name) → `search_candidates` (free: who we already know) →
+`add_to_pipeline` the good ones → if that's thin, `source_candidates` with the job's `vacancyId` (paid, quote first)
+→ read the pipeline with `get` on the job → `move_stage` the best to the next stage with a note.
 
 **A client brief.** `update_company` (type CLIENT, fee) → `add_contact` for the hiring manager → `hiring_signals`
 (paid) for what else they are hiring → `create_task` for the follow-up call.
@@ -113,7 +110,7 @@ thin, `source_for_job` (paid, quote first) → `shortlist_job` (paid, quote firs
 **What's on today.** `tasks` (open, mine) → work through Overdue and Today → `task_update` each one done. Before a
 call, `timeline` on the person for what happened last.
 
-**Hand off to outreach or enrichment.** `export_to_dataset` with the job's tier-1 people, then run the workflow or
+**Hand off to outreach or enrichment.** `export_to_dataset` with the people you picked, then run the workflow or
 campaign on that dataset. Bring results back with `import_dataset`.
 
 **Lists.** `lists` to find one → `list_entries` to read it → `add_to_list` / `remove_from_list`.
