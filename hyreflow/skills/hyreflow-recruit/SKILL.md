@@ -900,6 +900,12 @@ for / when to reach for it*; the quirks live in the playbook. (Keep this list cu
 - [hyreflow-agent playbook](provider-playbooks/hyreflow-agent.md)
   Summary: Use the AI reasoning Native for **batch/headless** classify, extract, qualify, or agentic research (model + web toolbelt) — when you don't want the host agent looping per-row. Metered; powered by `prompts.json`.
   Last reviewed: 2026-06-02
+- [hyreflow-crm playbook](provider-playbooks/hyreflow-crm.md)
+  Summary: Use for the built-in Hyreflow CRM (workspaces that have it): jobs, candidates, clients, pipelines, notes, tasks, lists and contractors over the hyreflow_crm_* MCP tools.
+  Last reviewed: 2026-10-30
+- [hyreflow-outreach playbook](provider-playbooks/hyreflow-outreach.md)
+  Summary: Use for the built-in Hyreflow Outreach sequencer (workspaces that have it): campaigns, replies, mailboxes and do-not-contact over the hyreflow_outreach_* MCP tools.
+  Last reviewed: 2026-10-30
 - [icypeas playbook](provider-playbooks/icypeas.md)
   Summary: Use to find and verify emails (and run domain search) at scale, async.
   Last reviewed: 2026-06-01
