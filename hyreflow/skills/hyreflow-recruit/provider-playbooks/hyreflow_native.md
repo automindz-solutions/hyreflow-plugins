@@ -129,8 +129,10 @@ assuming silence means clean). The root object also carries `credits_consumed`, 
   back (**10**). They are independent: `rows: 15` with a default poll returns 10, and a default `rows` with
   `limit: 50` hands back up to 50. For "find me 15 roles", send `rows: 15` on the launch **and**
   `limit: 15` on the poll — then one poll delivers the ask and bills exactly it. `limit` maxes at 50 on
-  every poller, so a LinkedIn `rows: 100` run takes two polls: `offset` 0, then 50. Indeed returns only
-  its first page (about 15 jobs) whatever `rows` says, so one poll covers an Indeed run.
+  every poller, so a LinkedIn `rows: 100` run takes two polls: `offset` 0, then 50. Indeed's own first page
+  is about 15 jobs, and a run the second source tops up (best effort, see the Indeed bullet;
+  `listing_source: "indeed+secondary"`) returns up to about 50 per location, so an Indeed run asking for
+  more than 50 can need a second poll: check `has_more`.
   `scrape_arbeitsagentur_jobs` and `scrape_career_pages` take **no `rows`** (`max_pages`/`page_size` and
   `max_pages` bound them instead), so there the poll's `limit` plus stopping at the ask is the only guard.
   `scrape_stepstone_jobs` takes `rows` but only in **whole pages of 25** (25/50/75/100, default 25 —
@@ -506,6 +508,14 @@ hyreflow tools execute hyreflow_native repost_scan --payload '{"domain":"acme.ex
   that `result.search_urls` is on that country's Indeed site and the jobs' locations are in-country. A
   country Indeed has no site for comes back with no jobs and a `warnings` entry saying so (nothing is
   billed); use `linkedin_jobs` for that market instead.
+  - **Depth:** Indeed's own first page is about 15 jobs and `start` above 0 returns none. A second source
+    tops a run up to about 50 per location, best effort, and only when the country is US, UK, Germany or
+    France, there is no `job_types` filter, the first page came back full (15), the run has at most 5
+    locations, and the second source's monthly request quota is not spent. `listing_source` says which
+    answered (`indeed` or `indeed+secondary`) and `warnings` says when a run stopped short or the second
+    source failed. Fewer jobs than `rows` is normal, not a thin market: do not re-run the same search.
+    For more, run narrower searches (other titles or locations) and dedupe by `job_url`; each location
+    also spends the second source's quota.
 - **Seniority and industry filters (LinkedIn + Indeed)** — a title keyword alone pulls in the wrong
   employers: "CEO" matches charities, councils, hospitals and staffing firms. Set `included_industries`
   to the sector you want and `experience_levels` to the level (`internship`, `entry level`, `associate`,
@@ -524,8 +534,9 @@ hyreflow tools execute hyreflow_native repost_scan --payload '{"domain":"acme.ex
   - On LinkedIn a filtered run reads more search pages to fill `rows`, so it takes longer. Fewer jobs
     than `rows` does **not** mean the board ran out: a warning says the run stopped early and lists the
     labels it dropped most. If those look wrong, widen the filter rather than paging on.
-  - Indeed serves only its first page (about 15 jobs), so an Indeed filter thins those ~15 and cannot
-    page deeper to fill `rows`. For more, run narrower searches (more titles or locations).
+  - On Indeed the pool is its first page plus what the second source adds (see Depth above), so a filter
+    thins that pool and cannot page deeper to fill `rows`. For more, run narrower searches (more titles or
+    locations), which also spend the second source's quota.
 - **Arbeitsagentur** — `scrape_arbeitsagentur_jobs(title=…, location=…)` for the German federal job
   board (Bundesagentur für Arbeit). `radius` is in km. Need `title` and/or `location`. Recruiter details
   only appear with `include_recruiter_details: true` (slower); the poll bills
@@ -570,7 +581,7 @@ hyreflow tools execute hyreflow_native_get_linkedin_jobs --payload '{"request_id
 # Executive search — CEOs at renewable-energy employers in the UK, not charities, councils or agencies.
 hyreflow tools execute linkedin_jobs --payload '{"titles_query":"CEO renewable","locations":["United Kingdom"],"rows":25,"experience_levels":["executive"],"included_industries":["Renewable Energy Power Generation","Solar Electric Power Generation","Wind Electric Power Generation","Utilities","Environmental Services"]}'
 # The same filters on Indeed (no seniority or industry data there, so every job is classified). Indeed
-# returns about 15 jobs before filtering, so `rows: 25` is a ceiling, not a target.
+# returns about 15 to 50 jobs per location before filtering, so `rows: 25` is a ceiling, not a target.
 hyreflow tools execute indeed_jobs --payload '{"titles_query":"chief executive renewable","locations":["London"],"country":"United Kingdom","rows":25,"experience_levels":["executive","director"],"included_industries":["Renewable Energy Power Generation","Utilities"]}'
 ```
 
