@@ -8,7 +8,7 @@ description: "Read/write Carerix (recruiting ATS/CRM) via its GraphQL API — li
 HOW in `lib/carerix.py`. Docs: docs.carerix.io/graphql.
 
 ## Auth & config (client credentials)
-- **Connect (BYOK):** dashboard **Integrations → Carerix** — the **Client ID** and **Client Secret** of a *confidential* client (in Carerix: **Identity Access → Clients**, with the data scope enabled), plus your **Carerix URL** (the login address, e.g. `https://acme.carerix.net`; the bare tenant name `acme` works too). Tenants on a non-default Carerix identity host are not supported yet. CLI: `hyreflow byok set carerix --api-key <client_id> --field client_secret=<secret> --field tenant=<carerix url or tenant name>`.
+- **Connect (BYOK):** dashboard **Integrations → Carerix** — the **Client ID** and **Client Secret** of a *confidential* client (in Carerix: **Identity Access → Clients**, with the data scope enabled), plus your **Carerix URL** (the login address, e.g. `https://acme.carerix.net`; the bare tenant name `acme` works too). Your Carerix login server is found automatically. CLI: `hyreflow byok set carerix --api-key <client_id> --field client_secret=<secret> --field tenant=<carerix url or tenant name>`.
 - Hyreflow fetches and refreshes the access token for you; only the tenant name is read from the Carerix URL (it picks the login realm); the pasted URL itself is never fetched.
 - Every call is one GraphQL request to Carerix's single endpoint. Limit: 10 requests/second (600/min), paced for you. Each `list_*` call returns one page (`page` from 0, `page_size` at most 100 — a larger value is rejected, not trimmed).
 
