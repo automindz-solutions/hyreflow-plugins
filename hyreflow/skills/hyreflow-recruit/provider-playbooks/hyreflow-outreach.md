@@ -21,8 +21,8 @@ Send `describe: true` next to `method` to get its description and payload schema
 a nested shape (versions → steps → conditions), so get `campaign_create`'s schema before writing one. A method
 without inputs (`status`, `setup`, `senders`) runs without a `payload`.
 
-**Real messages go out** from `campaign_launch`, `campaign_resume`, `inbox_reply`, and `campaign_add_people` on a
-campaign that is already sending. Each takes `confirm: true` in the payload. Only send it when the user explicitly
+**Real messages go out** from `campaign_launch`, `campaign_resume`, `inbox_reply`, and `campaign_add_people` or
+`campaign_leads_action` resume on a campaign that is already sending. Each takes `confirm: true` in the payload. Only send it when the user explicitly
 asked for that send in this conversation; a draft, a preview or a test is never permission.
 
 ## Methods
@@ -36,7 +36,7 @@ asked for that send in this conversation; a draft, a preview or a test is never 
 | `senders` | Who campaigns can send as: each sender's mailboxes and LinkedIn account. |
 | `mailboxes` | Every sending mailbox: sender name, daily limit, warm-up and health, signature. |
 | `campaigns` | Campaigns, newest first, with status and results. |
-| `campaign_get` | One campaign: its steps, sending window, what blocks launch, results. |
+| `campaign_get` | One campaign: its steps, sending window, settings, chosen mailboxes (null = every ready one), what blocks launch, results. |
 | `campaign_leads` | Everyone on a campaign: their step, next send, status. |
 | `campaign_preview` | Every step rendered for real people, to check personalisation before launch. |
 | `inbox_list` | Replies across campaigns, newest first, filterable by reply status or campaign. |
@@ -48,11 +48,12 @@ asked for that send in this conversation; a draft, a preview or a test is never 
 | Method | What it does |
 |---|---|
 | `campaign_create` | A DRAFT campaign (nothing sends): steps, or the 3-email starter template, or empty. |
-| `campaign_update` | A draft or paused campaign's name, steps, window, sender or audience list. |
+| `campaign_update` | A campaign's name, steps, sender or audience list (draft or paused), and its settings, sending window and mailboxIds (also while sending). |
 | `campaign_duplicate` | A copy of a campaign as a new draft, without its people. |
 | `campaign_add_people` | CRM people onto a campaign (do-not-contact and unreachable are skipped). confirm on a sending one. |
 | `campaign_set_variables` | Per-person values for the campaign's custom variables. |
 | `campaign_remove_people` | People off a campaign: their remaining steps are cancelled. |
+| `campaign_leads_action` | Pause, resume or remove chosen people (personIds): a paused person's steps and email follow-ups wait until resume. **Sends** on resume when the campaign is sending (`confirm: true`). |
 | `campaign_send_test` | One email of a campaign to a test address, with sample values. |
 | `campaign_launch` | **Sends.** Starts the campaign: enrols its audience and emails real people. confirm. |
 | `campaign_pause` | Pauses a sending campaign. |
