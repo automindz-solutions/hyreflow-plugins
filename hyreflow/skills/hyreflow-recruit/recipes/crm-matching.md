@@ -81,12 +81,16 @@ can never give you:
 | **jobadder** | `find_candidate_attachments(candidate_id)` | `find_notes(CandidateId=...)` | `get_candidate(id, embed="skills,notes,applications,placements")`, `find_applications(CandidateId=...)` | `find_placements(CandidateId=...)` |
 | **loxo** | `get_person(person_id)` (resume field) | — | `list_job_candidates` per job (pipeline stage) | cross-reference via `list_jobs` + `list_job_candidates` |
 | **vincere** | `get_candidate(id, fields=...)` | — | — (no dedicated method documented; check `reference/docs` before assuming absent) | — |
-| **bullhorn** | `get_entity("Candidate", id, fields="*")` (resume/file fields) | same call, wider `fields` | `get_entity("JobSubmission", id, fields="*")` per submission | `search("JobSubmission", "candidate.id:<id>")` |
+| **bullhorn** | `get_candidate_cv(candidate_id)` → `text` | `get_entity("Candidate", id, fields="notes")` | `get_entity("JobSubmission", id, fields="*")` per submission | `search("JobSubmission", "candidate.id:<id>")` |
 | **recruiterflow** | `list_candidates(include_files=1)` | `list_candidates(include_notes=1)` | `get_job_pipeline(job_id)` cross-referenced by candidate | same |
 | **atlas** | — (no attachment method documented) | — (`add_person_note` is write-only; no GET-notes method) | `list_project_candidates(project_id)` per project | `list_candidates(personId=...)` agency-wide |
 
 Where a CRM doesn't expose a method (`—` above), don't fabricate one — note the gap to the user and score
 on what's available rather than stalling the whole run.
+
+**CV text goes in `profile.about`.** When the screen is `hyreflow_shortlist`, put the CV text from the
+column above (e.g. bullhorn's `get_candidate_cv(...)["text"]`) in each candidate's `profile.about`.
+That is where the screen reads a CV, so the candidate is scored on it instead of on title alone.
 
 **4 — SCORE by feeding the CRM context into an AI scoring prompt**
 Score each enriched candidate against the job using **prompts.json → "Score candidate against job using

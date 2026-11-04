@@ -20,6 +20,13 @@ Then every call hits `{restUrl}<path>` with `BhRestToken`. The client re-logs in
 ## Operations (CONFIRMED from bullhorn.github.io/rest-api-docs, 2026-06-01)
 `search(entity, query, fields)` — `GET /search/{Entity}` Lucene (indexed: Candidate, JobOrder, ClientContact, ClientCorporation…). `query(entity, where, fields)` — `GET /query/{Entity}` SQL-style (non-indexed). `get_entity` (`GET /entity/{Entity}/{id}`), `create_entity` (`PUT /entity/{Entity}`), `update_entity` (`POST /entity/{Entity}/{id}`). Typed single-entity creators (`create_candidate`, `create_client_contact`, `create_client_corporation`, `create_job_order`) and their `*_batch` helpers, plus `ping` and the generic `batch(method, calls)`, are also exposed — there is no `request()` passthrough. BhRestToken via query param is valid (also accepted as a header). All path patterns verified.
 
+## Candidate CVs (read-only)
+`get_candidate_cv(candidate_id)` → `{source, text, truncated}` (plus `name` when `source` is `"file"`): the candidate's CV as plain text. It reads Bullhorn's own parsed CV text (the Candidate `description`, HTML stripped) and falls back to the CV file when that is empty or a short stub such as "See attached": the attachment typed or named as a CV/resume, else the newest PDF, DOCX or TXT under 10 MB. Up to 3 files are tried in that order, skipping one that is unreadable, private or deleted. A short description is returned only when no file reads. Text past 40,000 characters is cut and `truncated` is `true`. With no description and no readable file it fails with a clear error. When `source` is `"file"`, check `name`: with no file marked as a CV, the newest file may be a cover letter.
+- **Feeding a CV to `hyreflow_shortlist`:** put `text` in the candidate's `profile.about`. That is where the screen reads CV text, so the candidate is scored on the CV, not just the headline.
+- **Refused:** `.doc` and image files, files over 10 MB, and files with no extractable text (scanned/image-only PDFs). A `.doc` CV is usually still covered by the `description`.
+- **Access depends on the Bullhorn API user's entitlements.** It needs Candidate read rights to see files at all, and the private-file entitlement for attachments marked `isPrivate`. Without it, `get_candidate_cv` skips the private file and `get_candidate_file` fails with Bullhorn's 403. Ask the Bullhorn admin to grant it rather than retrying.
+- **Low-level calls**, for a specific file: `list_candidate_files(candidate_id)` — `GET /entity/Candidate/{id}/fileAttachments` → the candidate's files (`id`, `name`, `type`, `contentType`, `fileExtension`, `fileSize`, `dateAdded`, `isPrivate`), deleted ones already dropped. `get_candidate_file(candidate_id, file_id)` — `GET /file/Candidate/{id}/{fileId}` → `{name, contentType, text, truncated}`; pass `file_size` and `is_private` from the list to save a lookup.
+
 ## Guardrail
 Production ATS writes — pilot one record, confirm, then bulk.
 
@@ -40,7 +47,10 @@ Call via the CLI: `hyreflow tools execute bullhorn <method> --payload '{...}'` (
 - `create_entity(entity: str, payload: dict) -> Any` — PUT /entity/{entity} — create a record.
 - `create_job_order(payload: dict) -> Any` — PUT /entity/JobOrder — create a job.
 - `create_job_orders_batch(payloads: list[dict], *, stop_on_error: bool = False) -> dict` — Create many job orders sequentially, rate-limited.
+- `get_candidate_cv(candidate_id: int) -> dict` — A candidate's CV as text, for screening: Bullhorn's parsed `description`, else the CV file.
+- `get_candidate_file(candidate_id: int, file_id: int, file_size: int | None = None, is_private: bool | None = None) -> dict` — GET /file/Candidate/{id}/{fileId} — one file's text (PDF, DOCX or TXT), for scoring a CV.
 - `get_entity(entity: str, entity_id: int, *, fields: str = '*') -> Any` — GET /entity/{entity}/{id}?fields=...
+- `list_candidate_files(candidate_id: int) -> list[dict]` — GET /entity/Candidate/{id}/fileAttachments — a candidate's files (CVs etc.), deleted ones dropped.
 - `ping() -> Any` — GET ping — verify session (safe read-only pilot).
 - `query(entity: str, where: str, *, fields: str = '*', **params) -> Any` — GET /query/{entity}?where=...&fields=... — SQL-style where (non-indexed entities).
 - `search(entity: str, query: str, *, fields: str = '*', **params) -> Any` — GET /search/{entity}?query=...&fields=... — Lucene-style search (indexed entities).
