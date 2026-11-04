@@ -36,7 +36,7 @@ Candidate slug: lowercase first+last, umlauts folded (ä→ae ö→oe ü→ue ß
 ## STEP 1 — Input & CV extraction
 
 **Modes:** (a) CV file (`.pdf`) → copy to run dir as `cv.pdf`; (b) ATS slug → pull candidate record +
-download résumé (`recruit-crm`/`bullhorn` candidate get) → `cv.pdf` + `candidate_meta.json`.
+download résumé (`recruit-crm` candidate get; `bullhorn`: `get_candidate_cv(candidate_id)`, which returns the CV as text, not a PDF) → `cv.pdf` (or the text) + `candidate_meta.json`.
 
 **Parse** → canonical candidate profile:
 - `titles_current` (1), `titles_past` (≤5, newest first), `skills_top` (≤10 **hard** skills, no soft),
