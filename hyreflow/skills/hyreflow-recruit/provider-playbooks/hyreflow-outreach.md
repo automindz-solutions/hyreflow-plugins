@@ -66,6 +66,8 @@ asked for that send in this conversation; a draft, a preview or a test is never 
 | `inbox_do_not_contact` | Never contact this person again: blocks the email, flags the person, stops their sequences. |
 | `mailbox_update` | Mailboxes' sender name, daily limit, sending on or off, signature (up to 500 at once). |
 | `mailbox_photo` | Mailboxes' profile picture. |
+| `mailbox_warmup` | Start, pause, resume or stop mailboxes' warm-up and change its settings (volumes, reply rates); with neither, read them. Settings are written first, so a refused operation can leave them saved (`settingsSaved`). Never changes campaign sending. |
+| `mailbox_manage` | Rename (at the mailbox provider too), forward incoming mail, tag, remove at renewal, reactivate. Forwarding, remove and reactivate are admin-only; forwarding to an address, remove and reactivate need confirm (stopping forwarding does not). |
 | `dnc_add` | Emails or whole domains onto the do-not-contact list. |
 | `dnc_remove` | Emails or domains off the do-not-contact list. |
 | `linkedin_connect_link` | A secure link for the USER to open and connect their LinkedIn account. Never ask for LinkedIn passwords. |
@@ -88,6 +90,7 @@ it → `inbox_reply` with `confirm: true` once approved → `inbox_set_status`. 
 `inbox_do_not_contact`.
 
 **Mailboxes.** `mailboxes` to read the current names, limits and signatures → `mailbox_update` (one call can set
-the signature on every mailbox of a sender) or `mailbox_photo`.
+the signature on every mailbox of a sender), `mailbox_photo`, `mailbox_warmup` (warm-up) or `mailbox_manage` (name at the
+provider, forwarding, tags, removal).
 
 **Results.** `campaigns` for the overview, `campaign_get` and `campaign_leads` for one campaign.
