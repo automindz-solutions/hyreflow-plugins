@@ -1,6 +1,6 @@
 ---
 name: carerix
-description: "Read/write Carerix (recruiting ATS/CRM) via its GraphQL API — list/get candidates, vacancies, companies, contacts, matches and notes, create candidates (with duplicate detection) and notes, and update a match's pipeline status. Use when the user mentions Carerix, pushing candidates into the ATS, or reading vacancies/contacts/companies. Keys: BYOK-only — the workspace connects its own Carerix client (Client ID + Client Secret + Carerix URL)."
+description: "Read/write Carerix (recruiting ATS/CRM) via its GraphQL API — list/get candidates, vacancies, companies, contacts, matches and notes, create candidates (with duplicate detection), companies, contacts and notes, and update a match's pipeline status. Use when the user mentions Carerix, pushing candidates into the ATS, or reading vacancies/contacts/companies. Keys: BYOK-only — the workspace connects its own Carerix client (Client ID + Client Secret + Carerix URL)."
 ---
 
 # Carerix — Integration Meta Skill
@@ -13,20 +13,21 @@ HOW in `lib/carerix.py`. Docs: docs.carerix.io/graphql.
 - Every call is one GraphQL request to Carerix's single endpoint. Limit: 10 requests/second (600/min), paced for you. Each `list_*` call returns one page (`page` from 0, `page_size` at most 100 — a larger value is rejected, not trimmed).
 
 ## Operations
-Read: `ping`, `list_candidates` / `search_candidates` / `get_candidate`, `list_vacancies` / `get_vacancy`, `list_companies` / `get_company`, `list_contacts` / `get_contact`, `list_matches` / `get_match`, `list_notes` / `get_note`. Write: `create_candidate` (duplicate detection on by default), `create_note`, `update_match`. Bulk: `create_candidates_batch`, plus the generic `batch` for get/search/update/create calls (see `crm-bulk-pushes.md`), e.g. `batch("search_candidates", [qualifier, ...])` for a bulk lookup (one page per qualifier).
+Read: `ping`, `list_candidates` / `search_candidates` / `get_candidate`, `list_vacancies` / `get_vacancy`, `list_companies` / `get_company`, `list_contacts` / `get_contact`, `list_matches` / `get_match`, `list_notes` / `get_note`. Write: `create_candidate` (duplicate detection on by default), `create_company`, `create_contact`, `create_note`, `update_match`. Bulk: `create_candidates_batch`, plus the generic `batch` for get/search/update/create calls (see `crm-bulk-pushes.md`), e.g. `batch("search_candidates", [qualifier, ...])` for a bulk lookup (one page per qualifier).
 
 ## Notes & guardrail
 - **Vocabulary:** Carerix calls a candidate an *employee*, a client contact a *user*, a candidate-to-vacancy link a *match* (it carries the pipeline status) and a note a *to-do of kind note*. The methods here use the recruiter names.
 - **Filtering:** `list_*` take a `qualifier` (Carerix's filter string, for example `toDoTypeKey=0`); `search_candidates` requires one, e.g. `emailAddress = 'jane@acme.example'`. The qualifier goes to Carerix as written, so single-quote string values and escape any quote inside them. Results come back oldest-created first (candidates, vacancies, companies and contacts break ties on their own id), one page per call: raise `page` until a page comes back short.
 - **`create_candidate`** takes the candidate fields as Carerix names them — `firstName`, `lastName`, `emailAddress`, `mobileNumber`, `phoneNumber`, `city`, `title`, `notes` — and needs at least `lastName` or `emailAddress`. `dedupe` is on, which asks Carerix to detect duplicates, but the match key depends on the tenant's setup: `search_candidates` by email first, and pilot one record before a bulk push.
+- **`create_company`** needs `name` (optional `emailAddress`, `phoneNumber`, `url`). It has no duplicate detection, so look the company up first (`list_companies` with `name = 'Acme'`) and reuse its id. **`create_contact`** (a contact person is a Carerix user, not a candidate, so never create one with `create_candidate`) needs `lastName` or `emailAddress` (optional `firstName`, `phoneNumber`, `mobileNumber`, `jobTitle`, and `toCompany`: `{"_kind": "CRCompany", "_id": "<company id>"}`; always link it, since a contact person belongs to a company); `dedupe` is on by default. Required fields beyond these are tenant-specific: pilot one record. For a contact, confirm the new record shows up in `list_contacts` (search by its email) before you create more: no `ekey` is sent, and a record cannot be deleted through Hyreflow.
 - **`create_note`** needs the tenant's note type (`toDoTypeKey`, from Carerix's TodoTypeKey list: read it off an existing note with `get_note` if unsure) and a link to what the note is about: `{"subject": "Intro call", "toDoTypeKey": <note type>, "toNotes": {"_kind": "CRToDoNotes", "notes": "Spoke on Monday"}, "toEmployee": {"_kind": "CREmployee", "_id": "123"}}`. Use `toVacancy`, `toMatch`, `toCompany` or `toContact` for the other record types.
 - **`update_match`** changes a match, e.g. `{"notes": "Shortlisted"}`, or moves its pipeline status with `{"statusInfo": {"_kind": "CRStatusInfo", "_id": "<status id>"}}`. Status ids are specific to the tenant, so read one off an existing match (`get_match`) first.
-- **Writes are not retried after a timeout or server error.** Those may still have applied the create or update, so check (`search_candidates`, `get_match`) before you resend. The only re-sends are after a rate-limit (429) or an authentication refusal (HTTP 401, or GraphQL `UNAUTHENTICATED` on the top-level field), which Carerix rejects before they run.
+- **Writes are not retried after a timeout or server error.** Those may still have applied the create or update, so check (`search_candidates`, `get_match`; `list_companies` by name after a `create_company`, `list_contacts` by email after a `create_contact`) before you resend. The only re-sends are after a rate-limit (429) or an authentication refusal (HTTP 401, or GraphQL `UNAUTHENTICATED` on the top-level field), which Carerix rejects before they run.
 - There is no record delete.
 - Production ATS writes — pilot one record, confirm, then bulk.
 
 ## Handoff
-ATS write target: enriched candidates → `create_candidate` (or `create_candidates_batch`); reply or call notes → `create_note`; pipeline moves → `update_match`.
+ATS write target: enriched candidates → `create_candidate` (or `create_candidates_batch`); client companies → `create_company`, their contact persons → `create_contact` (see the notes above); reply or call notes → `create_note`; pipeline moves → `update_match`.
 Company-first BD: `list_companies` → each company's `url` → `hyreflow_native` career-page scraping for their open roles → contacts via the `people_search` waterfall.
 
 ## Bulk writes & rate limits
@@ -41,6 +42,8 @@ Call via the CLI: `hyreflow tools execute carerix <method> --payload '{...}'` (p
 - `batch(method: str, calls: list, *, stop_on_error: bool = False) -> dict` — Batched get/update/create: run one method over many inputs, rate-limited.
 - `create_candidate(payload: dict, *, dedupe: bool = True) -> dict` — POST /graphql/v1/graphql — crEmployeeCreate: create a candidate (CREmployeeRequest, e.g. {"firstName", "lastName", "emailAddress"}).
 - `create_candidates_batch(payloads: list[dict], *, stop_on_error: bool = False) -> dict` — POST /graphql/v1/graphql — crEmployeeCreate: create many candidates sequentially and rate-limited, each with Carerix's duplicate detection on (its match key is tenant-specific: search first).
+- `create_company(payload: dict) -> dict` — POST /graphql/v1/graphql — crCompanyCreate: create a company (CRCompanyRequest, e.g. {"name", "emailAddress", "phoneNumber", "url"}).
+- `create_contact(payload: dict, *, dedupe: bool = True) -> dict` — POST /graphql/v1/graphql — crUserCreate: create a contact person (CRUserRequest, e.g. {"firstName", "lastName", "emailAddress"}).
 - `create_note(payload: dict) -> dict` — POST /graphql/v1/graphql — crToDoCreate: add a note to a candidate, vacancy, match, company or contact.
 - `get_candidate(candidate_id: str) -> dict` — POST /graphql/v1/graphql — crEmployee: one candidate by id.
 - `get_company(company_id: str) -> dict` — POST /graphql/v1/graphql — crCompany: one company by id.
