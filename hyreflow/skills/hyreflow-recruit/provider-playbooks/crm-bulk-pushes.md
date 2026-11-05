@@ -71,7 +71,7 @@ credits.
 ## Procedure for 1,000+ records
 
 1. Confirm the user's CRM credentials are stored (`byok` or workspace provider config).
-2. Estimate the run cost: `hyreflow enrich --estimate --file <csv> --with <tool> --with <crm>.<batch>`.
+2. Estimate the run cost: `hyreflow enrich --estimate --input <csv> --with <tool> --with <crm>.<batch>`.
 3. If balance can't cover even one row at the worst-case rate, stop and ask the user to top up credits.
    Otherwise proceed — watch for a `partial_budget` warning if the balance may not cover every row.
 4. Pilot one payload manually through the single-record method.

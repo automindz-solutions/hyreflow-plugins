@@ -10,7 +10,7 @@
 
 ## Budget awareness
 
-- Credit costs: `scrape`, `map` and `search` are 0.1 credit per request; `start_crawl` is 0.1 credit per page; `extract` is runtime/usage-priced.
+- Credit costs: `scrape` and `map` are 0.1 credit per request; `search` starts at 0.1 and is priced from what Firecrawl reports it used, so a high `limit` or `scrape_options` (a scrape per result) costs more: keep `limit` to what you need; `start_crawl` is 0.1 credit per page; `extract` is runtime/usage-priced.
 - Firecrawl can charge when infrastructure processes a request even if the target returns 403/404. Avoid blind retries of blocked URLs; inspect `metadata.statusCode`.
 - Crawl defaults to `limit: 10000` and Firecrawl preflights available credits against that limit. Always pass an explicit lower `limit` unless a 10000-page crawl is intentional.
 - Budget against `hyreflow billing balance` before committing to a large run. `firecrawl_get_credit_usage`
