@@ -129,7 +129,7 @@ assuming silence means clean). The root object also carries `credits_consumed`, 
   back (**10**). They are independent: `rows: 15` with a default poll returns 10, and a default `rows` with
   `limit: 50` hands back up to 50. For "find me 15 roles", send `rows: 15` on the launch **and**
   `limit: 15` on the poll — then one poll delivers the ask and bills exactly it. `limit` maxes at 50 on
-  every poller, so a LinkedIn `rows: 100` run takes two polls: `offset` 0, then 50. Indeed's own first page
+  every poller (LinkedIn `rows` is 1-100, rejected above that), so a LinkedIn `rows: 100` run takes two polls: `offset` 0, then 50. Indeed's own first page
   is about 15 jobs, and a run the second source tops up (best effort, see the Indeed bullet;
   `listing_source: "indeed+secondary"`) returns up to about 50 per location, so an Indeed run asking for
   more than 50 can need a second poll: check `has_more`.
@@ -669,16 +669,16 @@ already verified). Only safe-to-send addresses come back.
 ## Callable surface
 Call via the CLI: `hyreflow tools execute hyreflow_native <method> --payload '{...}'` (preview with `--dry-run`; `hyreflow tools get hyreflow_native <method>` returns the live contract + cost). Only the methods listed below are callable.
 
-- `get_arbeitsagentur_jobs(request_id: str, *, limit: int = 10, offset: int = 0) -> dict` — GET /v1/scrape-arbeitsagentur-jobs/async/{request_id} — poll a German hiring-signal scrape for open roles on Germany's Bundesagentur für Arbeit board (paginated result.jobs).
-- `get_career_pages(request_id: str, *, limit: int = 10, offset: int = 0) -> dict` — GET /v1/scrape-career-pages/async/{request_id} — poll a career-page hiring-signal scrape for open roles (paginated result.jobs).
+- `get_arbeitsagentur_jobs(request_id: str, *, limit: int = 10, offset: int = 0) -> dict` — GET /v1/scrape-arbeitsagentur-jobs/async/{request_id} — poll a German hiring-signal scrape for open roles on Germany's Bundesagentur für Arbeit board (paginated result.jobs). `limit` is 1-50 (default 10); `offset` 0 or more.
+- `get_career_pages(request_id: str, *, limit: int = 10, offset: int = 0) -> dict` — GET /v1/scrape-career-pages/async/{request_id} — poll a career-page hiring-signal scrape for open roles (paginated result.jobs). `limit` is 1-50 (default 10); `offset` 0 or more.
 - `get_company_posts(username: str, start: int = 0, limit: int = 50) -> dict` — GET /v1/linkedin-company-posts — a company page's recent LinkedIn posts, newest first.
-- `get_indeed_jobs(request_id: str, *, limit: int = 10, offset: int = 0, fields: list | None = None, max_description_chars: int | None = None) -> dict` — GET /v1/scrape-indeed-jobs/async/{request_id} — poll an Indeed hiring-signal scrape for open roles (paginated result.jobs).
-- `get_linkedin_jobs(request_id: str, *, limit: int = 10, offset: int = 0, fields: list | None = None, max_description_chars: int | None = None) -> dict` — GET /v1/scrape-linkedin-jobs/async/{request_id} — poll a LinkedIn hiring-signal scrape for open roles (paginated result.jobs).
+- `get_indeed_jobs(request_id: str, *, limit: int = 10, offset: int = 0, fields: list | None = None, max_description_chars: int | None = None) -> dict` — GET /v1/scrape-indeed-jobs/async/{request_id} — poll an Indeed hiring-signal scrape for open roles (paginated result.jobs). `limit` is 1-50 (default 10); `offset` 0 or more.
+- `get_linkedin_jobs(request_id: str, *, limit: int = 10, offset: int = 0, fields: list | None = None, max_description_chars: int | None = None) -> dict` — GET /v1/scrape-linkedin-jobs/async/{request_id} — poll a LinkedIn hiring-signal scrape for open roles (paginated result.jobs). `limit` is 1-50 (default 10); `offset` 0 or more.
 - `get_linkedin_profile(linkedin_url: str) -> dict` — GET /v1/linkedin-profile — one person's LinkedIn profile by URL: headline, location, about, dated work history (newest first), education, skills.
 - `get_post_reactions(url: str, page: int = 1, reaction_type: str | None = None, limit: int = 10) -> dict` — POST /v1/linkedin-post-reactions — the people who reacted to a LinkedIn post.
 - `get_profile_posts(username: str, start: int = 0, limit: int = 50) -> dict` — GET /v1/linkedin-profile-posts — a person's recent LinkedIn posts, newest first.
 - `get_run(run_id: str) -> dict` — GET /v1/runs/{run_id} — generic poller ({run_id, status, result} when COMPLETED) for runs you own that are not native scrapes. Scrape jobs are polled with their typed poller (get_X for scrape_X), never this.
-- `get_stepstone_jobs(request_id: str, *, limit: int = 10, offset: int = 0) -> dict` — GET /v1/scrape-stepstone-jobs/async/{request_id} — poll a German hiring-signal scrape for open roles on StepStone (paginated result.jobs).
+- `get_stepstone_jobs(request_id: str, *, limit: int = 10, offset: int = 0) -> dict` — GET /v1/scrape-stepstone-jobs/async/{request_id} — poll a German hiring-signal scrape for open roles on StepStone (paginated result.jobs). `limit` is 1-50 (default 10); `offset` 0 or more.
 - `get_verified_emails(request_id: str, *, limit: int = 100, offset: int = 0) -> dict` — GET /v1/verify-emails/async/{request_id} — poll a bulk email verification (paginated result.emails: only the addresses safe to send to).
 - `places_within_radius(postcode: str | None = None, *, radius: float, unit: str = 'mi', country: str | None = None, limit: int = 50, place: str | None = None) -> dict` — GET /v1/places-within-radius — towns, villages and suburbs within a radius of a postcode or a city, ready to pass as a people search `locations` list.
 - `repost_scan(domain: str, *, related_domains: list | None = None, titles: list | None = None, onet_codes: list | None = None, fresh_days: int = 2, lookback_months: int = 12, limit: int = 20) -> dict` — GET /v1/repost-scan — find a company's hard-to-fill roles in its job-opening history: reposts, roles open 90+ days, and roles relisted every month.
