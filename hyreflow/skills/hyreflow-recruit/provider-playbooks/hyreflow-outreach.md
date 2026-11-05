@@ -48,7 +48,7 @@ asked for that send in this conversation; a draft, a preview or a test is never 
 | Method | What it does |
 |---|---|
 | `campaign_create` | A DRAFT campaign (nothing sends): steps, or the 3-email starter template, or empty. |
-| `campaign_update` | A campaign's name, steps, sender or audience list (draft or paused), and its settings, sending window and mailboxIds (also while sending). |
+| `campaign_update` | A campaign's name, steps, sender, audience list, settings, sending window and mailboxIds, also while it is sending (not once finished or archived). |
 | `campaign_duplicate` | A copy of a campaign as a new draft, without its people. |
 | `campaign_add_people` | CRM people onto a campaign (do-not-contact and unreachable are skipped). confirm on a sending one. |
 | `campaign_set_variables` | Per-person values for the campaign's custom variables. |
