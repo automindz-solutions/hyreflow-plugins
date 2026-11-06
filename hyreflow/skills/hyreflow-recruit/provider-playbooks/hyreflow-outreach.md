@@ -1,6 +1,6 @@
 ---
 name: hyreflow-outreach
-description: "Hyreflow Outreach, the email and LinkedIn sequencer built into a Hyreflow workspace (only when the workspace has Hyreflow CRM switched on): setup, senders and mailboxes, campaigns, the reply inbox and the do-not-contact list, read with hyreflow_outreach_search and changed with hyreflow_outreach_execute. Read before using either tool."
+description: "Hyreflow Outreach, the email and LinkedIn sequencer built into a Hyreflow workspace (only when the workspace has Hyreflow CRM switched on, and only for its owner, admins and team leads): setup, senders and mailboxes, campaigns, the reply inbox and the do-not-contact list, read with hyreflow_outreach_search and changed with hyreflow_outreach_execute. Read before using either tool."
 ---
 
 # hyreflow-outreach — the built-in sequencer
@@ -16,6 +16,10 @@ Two tools, each `{method, payload}`:
 
 - `hyreflow_outreach_search`: reads. Free, change nothing.
 - `hyreflow_outreach_execute`: writes. Free in credits.
+
+Only the workspace owner, its admins and its team leads get them. Anyone else has the two CRM tools only, and an
+Outreach call answers that it is for admins and team leads. When the user asks for a campaign and the tools are
+missing, tell them an admin can change their role in the CRM's Settings, Team.
 
 Send `describe: true` next to `method` to get its description and payload schema; nothing runs. Campaign steps have
 a nested shape (versions → steps → conditions), so get `campaign_create`'s schema before writing one. A method
