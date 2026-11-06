@@ -69,7 +69,7 @@ before spending. LinkedIn from people-search already rides on the list, free.
 > it needs no enrichment. Personal email is the second channel when found. SourceWhale is multichannel →
 > one cadence fires a **LinkedIn touch + an email touch** on the same candidate (utilize both).
 
-Standard tail: personal-email/phone **waterfall** (per the channel decision above) → validate (`hyreflow_native` `verify_emails`; returns only safe-to-send addresses)
+Standard tail: personal-email/phone **waterfall** (per the channel decision above; the `personal_email` chain already checks each address it finds, so only run `hyreflow_native` `verify_emails` on addresses from anywhere else)
 → sequence (`sourcewhale` for recruiting / `lemlist` / `instantly`) → land in the client's ATS.
 **Approval-gate** the first send + any bulk enrichment (one-record pilot first).
 

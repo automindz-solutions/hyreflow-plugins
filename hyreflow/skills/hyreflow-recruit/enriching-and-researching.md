@@ -109,7 +109,7 @@ Each provider wants the identifier in a different field/shape — the waterfall 
   contact has near-zero coverage everywhere. Deliver the best **N complete** rows; drop the incomplete.
 
 ## Verify deliverability (before any send)
-- **`email_enrichment` already does it.** Every work email the waterfall finds is checked by the native
+- **`email_enrichment` and `personal_email` already do it.** Every work or personal email the waterfall finds is checked by the native
   verifier and kept only if it is safe to send to; anything else is dropped and the next provider tried.
   If the verifier can't answer for an address, or finds its domain is catch-all, Enrichley checks it too. Don't pay to re-verify those
   rows. When the user names Enrichley for this, add `"email_verifier": "enrichley"` to each row.
