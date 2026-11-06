@@ -125,27 +125,38 @@ Two listings are the **same opening** when all of these hold:
   move) matches either.
 
 Match on the title and body, never on the row's `onet_data.code`: per-listing codes are unreliable (a
-"Hunter" sales role at Acme GmbH came back coded as *Fishing and Hunting Workers*). Derive all timing from
-`first_seen_at`/`last_seen_at` — `posted_at` and `status` are usually empty on this endpoint, so don't
-gate on them. A listing counts toward the lookback when its `last_seen_at` falls inside it.
+"Hunter" sales role at Acme GmbH came back coded as *Fishing and Hunting Workers*). Derive timing from
+`first_seen_at`/`last_seen_at`, with two exceptions. A listing whose `status` is `"closed"` is never
+live: its page said the job is no longer available. A **LinkedIn** listing's sightings count only up to
+90 days after it went up (its `posted_at`, or `first_seen_at` when that is earlier or missing): LinkedIn
+keeps a job page up after the role stops taking applications, and its `last_seen_at` keeps moving as the
+page is re-read, so a later sighting shows neither that the role is still open nor when it closed. A
+LinkedIn listing on its own therefore never makes a role long-open. A listing counts as new in the fresh
+window when PredictLeads first saw it then, even if it went up (`posted_at`) a few days earlier, but a
+repost needs the earlier listing to have ended before the new one went up: a page posted while the old
+listing still ran is a parallel copy. A LinkedIn page past its 90 days is never new. A listing counts
+toward the lookback when its `last_seen_at` falls inside it.
 
 Two timing terms used below:
-- **Live** — the listing's `last_seen_at` is within 7 days of the **newest `last_seen_at` in that
-  company's history** (not today's date: crawl cadence leaves live listings a day or two behind), **and
-  that newest `last_seen_at` is itself within 14 days of today**. If the company's newest `last_seen_at`
-  is older than that, PredictLeads hasn't crawled it recently: nothing in its history counts as live, so
-  don't report long-open or evergreen for it — say its crawl data is stale instead.
+- **Live** — the listing isn't `closed`, isn't a LinkedIn listing past its 90 days, and its
+  `last_seen_at` is within 7 days of the **newest `last_seen_at` in that company's history** (not today's
+  date: crawl cadence leaves live listings a day or two behind), **and that newest `last_seen_at` is
+  itself within 14 days of today**. If the company's newest `last_seen_at` is older than that,
+  PredictLeads hasn't crawled it recently: nothing in its history counts as live, so don't report
+  long-open or evergreen for it — say its crawl data is stale instead.
 - **Chain** — successive listings of the same opening where each new one appears within **3 days** of
   the previous one's `last_seen_at` (a relist under a new ID or a crawl gap). A longer gap means the role
   closed — it may have been filled — so the next listing starts a new chain.
 
 ### Repost
 A **new listing first seen inside the fresh window**, where **any earlier listing of the same opening**
-in the lookback **ran at least 21 days** (`last_seen_at − first_seen_at`) and stopped being seen before
-the new one appeared — and **no other listing of the opening overlapped the new one**: every earlier
-listing's `last_seen_at` falls before the new listing's `first_seen_at` (allow up to 2 days for crawl
-lag). If an earlier listing was still being seen after that, the opening never closed: the new listing is
-a parallel copy, so check long-open instead of calling a repost. Earlier listings that ran only a few days
+in the lookback **ran at least 21 days** (from when it went up to its last counted sighting, both as
+above; a LinkedIn listing PredictLeads first saw more than 90 days after it went up has no counted
+sighting, so it never ran 21 days) and stopped being seen before the new one went up — and **no other listing of the opening
+overlapped the new one**: every earlier listing's `last_seen_at` falls before the new listing went up,
+its `posted_at` or `first_seen_at`, whichever is earlier (allow up to 2 days for crawl lag). If an
+earlier listing was still being seen after that, the opening never closed: the new listing is a parallel
+copy, so check long-open instead of calling a repost. Earlier listings that ran only a few days
 are corrections or crawl blips — skip them when looking for the earlier listing, and don't count them as
 cycles. The new listing's own length doesn't matter. Count every earlier listing that ran 21 days or
 more as a cycle: three cycles of 98, 77 and 54 days is a far stronger signal than one.

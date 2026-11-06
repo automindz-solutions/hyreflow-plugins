@@ -4,6 +4,10 @@ All notable changes to the Hyreflow plugin are documented here. Versions track
 the plugin, kept in lockstep across the marketplace manifests and the plugin's
 own `plugin.json` files.
 
+## 1.1.41 — 2026-11-06
+
+- Skills synced from the Hyreflow engine.
+
 ## 1.1.40 — 2026-11-06
 
 - Skills synced from the Hyreflow engine.

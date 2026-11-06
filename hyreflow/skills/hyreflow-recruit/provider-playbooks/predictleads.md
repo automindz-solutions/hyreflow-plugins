@@ -25,8 +25,14 @@ Avoid follow/unfollow workflows for now. PredictLeads followed-company APIs are 
 - Check the company's `meta` for `parent_company_domain`, subsidiaries and `redirects_to_domain`, and
   pull those domains too — e.g. `acme.nl` vs `acme.com`, or `acme.de` vs `acme-direct.de` can be the same
   employer split across domains.
-- `posted_at` and `status` are usually empty — derive open/closed and the listing's age from
-  `first_seen_at`/`last_seen_at` instead.
+- `status` is `"closed"` when the listing's page says the job is no longer available, and `null`
+  otherwise. Pass `not_closed: true` to leave closed listings out (`active_only: true` also drops those
+  not seen in the last 5 days). A closed listing can still carry a recent `last_seen_at`, so a recent
+  sighting alone doesn't make a role open.
+- **LinkedIn listings** (`url` on linkedin.com): LinkedIn keeps a job page up after the role stops taking
+  applications, and `null` `status` doesn't rule that out, so `last_seen_at` keeps moving long after the
+  role closed. Judge a LinkedIn listing's age from `posted_at` (when LinkedIn posted it; it can be months
+  before `first_seen_at`), and don't call a role open for 90+ days on LinkedIn sightings alone.
 - `discover_job_openings` needs `onet_codes` or it times out scanning everything — see
   [`../references/field-notes.md`](../references/field-notes.md) (O*NET section) for turning a title into
   a code.
