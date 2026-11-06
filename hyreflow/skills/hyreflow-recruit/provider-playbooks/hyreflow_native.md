@@ -441,6 +441,16 @@ Two listings are the same role when the titles match once seniority words and ge
 Apprenticeship, student and intern listings never count. An ATS switch or a same-site mass relist
 continues the old listing rather than reading as a repost (`not_signals.ats_migration`).
 
+A listing PredictLeads marks closed is never live, and doesn't carry the role's open time forward. A
+LinkedIn listing's sightings count for 90 days after it went up (`posted_at`, or `first_seen_at`):
+LinkedIn keeps a job page up after the role stops taking applications, so later sightings show neither
+that the role is open nor when it closed, and LinkedIn alone never makes a role long-open. Evidence keeps
+PredictLeads' own `first_seen_at`/`last_seen_at`; a LinkedIn listing past its 90 days adds
+`counted_until` (the last date the scan counted), and a closed one adds `status: "closed"`. A listing
+PredictLeads still sees, closed or a stale LinkedIn page, hasn't ended, so it holds back a repost of that
+role until it drops out of the crawl: for a company crawled mostly via LinkedIn, a missing repost isn't a
+"no". A repost's `open_since` is when the earliest cycle went up (`posted_at` when PredictLeads has it).
+
 - `domain` — the company's domain. `related_domains` — its parent or subsidiary domains (up to 4), read
   as one history; the result's `parent_company_domain` names a parent PredictLeads knows of. A group parent
   usually owns many unrelated companies, so add it only when the role could be posted under it.
