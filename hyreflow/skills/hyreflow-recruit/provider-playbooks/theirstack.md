@@ -20,7 +20,7 @@
 
 2. **Company discovery:** Use `theirstack_search_companies` with `company_technology_slug_or` or `company_technology_slug_and`. For precision, use `_and`. For broad reach, use `_or`.
 
-3. **Hiring signals:** Use `theirstack_search_jobs` to find companies actively hiring for specific roles or technologies. Always provide `posted_at_max_age_days` or a company filter — the API requires at least one.
+3. **Hiring signals:** Use `theirstack_search_jobs` to find companies actively hiring for specific roles or technologies. Provide `posted_at_max_age_days` or a company filter: the API requires at least one, and a search with neither gets `posted_at_max_age_days: 30`. `job_location_or` / `job_location_not` take location ids; a name such as `"Huntsville, AL"`, `"London, UK"` or `"Alabama, United States"` is looked up for you (free). A name that matches more than one place is refused with the candidate ids: `"Huntsville"` (several towns), `"New York"` (the state and towns elsewhere; the city is `"New York City"`), `"Washington"` (the state and the capital). Add the state or country to a town's name, or resend one of the listed places by its id or its full name as listed. Name a state by its full name (`"New York, United States"`): `"New York, NY"` is refused, since written that way it usually means the city. Whatever Hyreflow filled in is listed in the response's `metadata.hyreflow_applied`, including the full name of each place a location name became, so tell the user which date window and places the search used.
 
 4. **Tech stack enrichment:** Use `theirstack_company_technographics` for a single known company — provide `company_domain` when possible (most reliable identifier).
 
@@ -52,7 +52,7 @@
 
 ## Common Mistakes
 
-- Forgetting to provide a time filter OR company filter on job search → API returns error
+- Leaving out both a time filter and a company filter on job search → it runs over the last 30 days and is billed per job returned; set the window the user asked for
 - Using display names for keywords instead of slugs → no results
 - Reusing `keyword_slug_or` from technographics in `theirstack_search_companies` → use `company_technology_slug_or` instead
 - Using Prospeo-style MX filters such as `company_email_provider` in `theirstack_search_companies` → TheirStack does not support email-provider filtering
