@@ -154,7 +154,8 @@ title hierarchy** (ported from mpc's `prospeo-search-strategy`, generalised by `
   Finanzen / CFO"; engineering→"Head of Engineering / CTO / IT-Leiter"; sales→"Head of Sales /
   Vertriebsleiter"; etc. (DE + EN title variants — the mpc `TITLE_FAMILIES` are the finance seed list.)
 - **Reporting-line-first** (`finding-companies-and-contacts.md`): if a posting names the reporting line / interview
-  panel, find that person directly (`exa` + verify) before falling back to the title hierarchy.
+  panel, run a company-scoped `people_search` with only those titles first, and check the match against
+  public evidence (`exa`). Fall back to the title hierarchy only when that call finds nobody.
 - Pick the best match (most senior in-function at the scoped company); then **email_enrichment waterfall**
   for the **work email** (BD channel) — order in `reference/waterfalls.json`.
 
