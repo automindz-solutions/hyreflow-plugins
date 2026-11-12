@@ -8,7 +8,8 @@ only ICP-fit companies pass downstream. This is the `qualify` stage of the pipel
 ## Where this runs (Model A)
 Qualification is **reasoning done by the host agent** (the agent running this skill), reading
 the client's ICP. **No hosted AI model call, no credits for the judgment itself**
-— credits are only spent on the optional firmographic lookups in Step 1 and on enriching the *passes*.
+— credits are spent on the optional firmographic lookups in Step 1, on reading company sites in Step 2
+(`firecrawl_scrape`), and on enriching the *passes*.
 
 ## Inputs
 - `companies` — from the sourcing step; each ideally carries `name`, `domain`/`website`, and any
@@ -30,13 +31,13 @@ explicit exclusions) and apply them to the data you **already have** from the so
   Batch where the adapter supports it.
 - Output: survivors → Step 2; dropped → log with the failing rule.
 
-## Step 2 — Fuzzy fit (LLM judgment = the host agent, free)
+## Step 2 — Fuzzy fit (LLM judgment = the host agent, free; reading each site costs `firecrawl_scrape` credits)
 For survivors, judge qualitative fit against the ICP's signals (mission, product, buyer, "what good
 looks like"). Pick the path by scale:
-- **Inline (small N):** you (the agent) read each company's site/description + the ICP and assign a fit
-  **tier (A/B/C)** or **score (0–100)** with a one-line reason.
-- **At scale / parallel:** dispatch the **`company-qualifier`** agent (it WebFetches each site and scores
-  against a qualification prompt). First derive that weighted qualification prompt from the ICP; the
+- **Inline (small N):** you (the agent) read each company's site (via `firecrawl_scrape`) or description +
+  the ICP and assign a fit **tier (A/B/C)** or **score (0–100)** with a one-line reason.
+- **At scale / parallel:** dispatch the **`company-qualifier`** agent and tell it to read each site with
+  `firecrawl_scrape` and score it against a qualification prompt. First derive that weighted qualification prompt from the ICP; the
   **`icp-analysis`** framework / **`icp-analyzer`** agent define the dimensions.
 - **Threshold:** default keep tier **A/B** (or **score ≥ 70**); make it configurable per client in the ICP.
 
@@ -56,7 +57,8 @@ enrich or sequence non-fits.
 
 ## Cost discipline (three nested funnels)
 1. Hard filters (free, on data you already have) shrink the set.
-2. LLM fuzzy-fit runs only on survivors (free — host agent).
+2. LLM fuzzy-fit runs only on survivors (the judgment is free on the host agent; each site read is a
+   `firecrawl_scrape` call, so a large batch goes through the credit & approval gate).
 3. Enrichment runs only on the passes (credits).
 Keeps both LLM and API/credit cost minimal.
 

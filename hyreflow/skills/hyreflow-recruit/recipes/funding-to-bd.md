@@ -19,7 +19,7 @@ cloud workflow — see "Graduating to a workflow" at the end.)
 ```
 SIGNAL            QUALIFY            SOURCE                 ENRICH                  PERSONALIZE        ACTIVATE         LAND
 funding raised →  ICP check    →     hiring managers   →    work email        →     BD first-line  →  BD sequence  →   CRM
-(predictleads)    (free, Model A)    (people_search wf)     (email_enrichment wf)   (hyreflow-agent)  (client seq.)    (client ATS)
+(predictleads)    (free judgment)    (people_search wf)     (email_enrichment wf)   (hyreflow-agent)  (client seq.)    (client ATS)
 ```
 
 ## Inputs the agent needs (ask if missing)
@@ -42,9 +42,9 @@ funding raised →  ICP check    →     hiring managers   →    work email    
 - Fallbacks (funding-discovery order): zoominfo scoops → `leadmagic` company_funding (enrich-only) → exa/serper news.
 - **Count-before-pay:** peek how many companies match the window before pulling the full set.
 
-**2 — QUALIFY: ICP gate** *(FREE — Model A, runs on the host agent; the strategic gate)*
+**2 — QUALIFY: ICP gate** *(free judgment — Model A, runs on the host agent; site reads are metered; the strategic gate)*
 - Hard firmographic filters on data you already have from the signal (industry/size/geo) — free.
-- Then LLM fuzzy-fit of survivors vs the ICP (the `company-qualifier` agent / inline reasoning). **No credits.**
+- Then LLM fuzzy-fit of survivors vs the ICP (the `company-qualifier` agent / inline reasoning). **No credits for the judgment**; reading each site with `firecrawl_scrape` is metered.
 - **Gate BEFORE enrichment** — never pay to find contacts at companies that don't fit. See
   [recipes/qualify-against-icp.md](qualify-against-icp.md).
 
@@ -90,7 +90,7 @@ funding raised →  ICP check    →     hiring managers   →    work email    
 | Step | Metered? |
 |---|---|
 | 1 signal (predictleads) | metered (per the funding source's cost) |
-| 2 ICP qualify | **free** (Model A reasoning + free firmographic filters) |
+| 2 ICP qualify | judgment **free** (Model A reasoning + free firmographic filters); site reads metered (`firecrawl_scrape`) |
 | 3 people-search waterfall | metered (first source that hits; e.g. aiark ~3.0; current costs in cost-card.json) |
 | 4 email waterfall (+verify) | metered (first hitting provider) |
 | 5 personalization | metered (hyreflow-agent tokens) |

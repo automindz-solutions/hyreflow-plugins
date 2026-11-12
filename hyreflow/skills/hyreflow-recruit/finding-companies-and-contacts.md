@@ -355,8 +355,12 @@ the query. Headcount can, but only AI Ark applies it: `company_employee_min` / `
    job-history check on the URLs `people_search` already returned — never a reason to call a profile tool
    without a URL.
 
-## Hiring-manager identification — reporting-line first (UNIVERSAL RULE)
-When the task is "find the hiring manager for this role" (BD, competitor-intel, or any JD-driven search):
+## Hiring-manager identification — `people_search` per company, reporting line first (UNIVERSAL RULE)
+When the task is "find the hiring manager for this role" — BD on companies with live roles, a job posting,
+competitor-intel, or any JD-driven search — **the people search is a company-scoped `people_search` call.**
+Public-web search (`exa`, `serper`; your own browsing only as the fallback) checks the reporting line and fills gaps. It does not
+replace the people search: a contact you only found on a public page has no record behind it, and a
+contact you found with your own browsing never ran through Hyreflow.
 
 **If the JD names a reporting line, that named role IS the hiring manager — find that *specific* person first.**
 Watch for: *"you will report directly to the {Head of Sales / VP Engineering / …}"*, *"reports to {title}"*, or an
@@ -368,13 +372,31 @@ Watch for: *"you will report directly to the {Head of Sales / VP Engineering / �
 - Extract every client-side title → find each person at the company → you get the **hiring manager + the escalation chain**.
   Great for BD: own the direct manager, but **multi-thread** the account by referencing the VP/SVP above.
 
-1. **Extract `reports_to`** during JD parsing (the named manager role).
-2. **exa FIRST** — `exa.answer("Who is the {reports_to} at {company}?")` (or `exa.search`) → the specific person + LinkedIn. Each request is charged whether or not it lands, so ask once with a named role rather than re-running variations.
-   Got the name but no URL? Recover it with the `serper` `site:linkedin.com/in` lookup above.
-3. **Verify** with a targeted company-scoped flat search (e.g. `apollo_search_people` with that title +
-   `q_organization_domains_list`) → canonical record + LinkedIn.
-4. **Fallback only if no reporting line is named** (or the person isn't found): the broad leadership sweep (search the
-   relevant leadership titles at the company).
+1. **Extract `reports_to`** from the posting (the named manager role, plus any client-side interview-panel titles).
+2. **A company-scoped `people_search` per company** — pass every company identifier you have
+   (`company_domains`, `company_names`, `company_linkedin_urls`: each provider scopes by a different one).
+   `titles[]` is an any-of filter with no order, so a named manager shares no call with broader titles:
+   - **Reporting line named:** search the `reports_to` titles alone (plus their local-language variants),
+     `limit` ~3. A match is the hiring manager, even when a more senior person exists.
+   - **No reporting line, or that call found nobody:** search the head of the role's function (sales role →
+     `Head of Sales, VP Sales, Sales Director`; engineering → `Head of Engineering, VP Engineering, CTO`; plus
+     the local-language variants, see step 3 of the company-list section above), `limit` ~5, sized to the
+     company: the founder/CEO also owns the hire at a small company, the HR head joins from mid-size up
+     ([`recipes/cv-to-jobs.md`](recipes/cv-to-jobs.md) STEP 6 has the full size → title table). Pick the most
+     senior in-function person.
+
+   Each call returns name, title and LinkedIn for each match. Several companies? Run the first with
+   `dry_run: true`, multiply by the number of companies, and quote the total before the rest.
+3. **Check the reporting line against public evidence** when it matters: `exa_answer` ("Who is the
+   {reports_to} at {company}?") or a `serper` `site:linkedin.com/in` lookup. Each exa request is charged whether
+   or not it lands, so ask once with a named role rather than re-running variations.
+4. **Only if `people_search` finds no one at that company** after a broadened retry (more title variants, see
+   the retry rule above): first read the broadened call's own public-web steps (`exa` / `serper`, see the
+   waterfall section above), which may already hold the person (flagged `verification_required`). Only then
+   search the web by hand. Got a name but no LinkedIn URL? Recover it with the `serper` `site:linkedin.com/in`
+   lookup (see "URL recovery" above), then run `linkedin_profile` on that URL to get the record, or pass name +
+   company domain to `email_enrichment` for the work email. Say in your summary which contacts came from the
+   public web, and if you used your own browsing for any step, say that too.
 
 This is more precise and cheaper than sweeping all leadership — the JD usually tells you exactly who owns the hire.
 

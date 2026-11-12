@@ -166,6 +166,7 @@ filter and pulling the entire DB). Reading more than one is normal and encourage
 | Build an outreach **sequence / campaign** (pick the cadence) | [`recipes/campaign-plays.md`](recipes/campaign-plays.md) (confirm cadence with the user → build idle → `start_campaign` is separately gated) |
 | A **tradeshow / conference page** → BD on exhibitors (or speakers) | [`recipes/tradeshow-to-bd.md`](recipes/tradeshow-to-bd.md) (crawl exhibitors/speakers → ICP → hiring manager → pre-conference soft intro) |
 | **Which companies are hiring for X** / find open roles (a hiring signal, often geo-scoped) | [`provider-playbooks/hyreflow_native.md`](provider-playbooks/hyreflow_native.md) — the first-party job scrapes are the default source: `linkedin_jobs` / `indeed_jobs` (title + location across companies), `career_pages` (one named company), and **`arbeitsagentur_jobs` FIRST for a Germany-scoped query** (German employers post there who never list on the global boards), plus `stepstone_jobs` (Germany's largest commercial board) as the second German leg. Germany is the one geo with its own boards — run them as legs alongside the global ones, not as a fallback; elsewhere LinkedIn/Indeed/career pages are the full set. `theirstack` only when the query needs *its* filters (tech-stack / keyword-slug) rather than raw postings — recency, excluded titles, agency-posted or description-content asks stay native |
+| Companies hiring now → **their hiring managers** (BD on live roles, a job posting → who owns the hire) | [`finding-companies-and-contacts.md`](finding-companies-and-contacts.md) — "Hiring-manager identification": one company-scoped `people_search` per company with the reporting-line and function-head titles, then check the reporting line on the public web |
 | **Who is posting about X** / hiring posts by recruiting-agency staff, "we're hiring" posts this week | [`provider-playbooks/hyreflow_native.md`](provider-playbooks/hyreflow_native.md) — `search_posts` (keyword search over public LinkedIn posts, **past week by default**, `author_title: "Recruiter"` for the agency-staff cut); one call, 10 posts per page, per request. Then `profile_posts` on a specific author only if their history matters |
 | **Who reacted to / engaged with this post** | [`provider-playbooks/hyreflow_native.md`](provider-playbooks/hyreflow_native.md) — `post_reactions` on the post's `postUrl`; 10 reactors a page, per request; `reaction_type` narrows to one kind |
 | Signal-driven BD (funding / hiring / layoffs) | the signal tool's `provider-playbooks/<tool>.md` + [`recipes/funding-to-bd.md`](recipes/funding-to-bd.md) (funding→BD) / [`recipes/layoff-signal-to-poach.md`](recipes/layoff-signal-to-poach.md) (layoffs) |
@@ -568,7 +569,7 @@ Multi-tool flows have a step-by-step recipe in `recipes/` — follow it as the e
   `locations`, `skills`, `keywords`, `seniority`) from the persona page's Search filter notes, then tighten it
   with what the user says.
 - Qualification is **agent reasoning** — the host agent reads the ICP and scores companies.
-  **No hyreflow server call, no hosted AI model call, no credits for the judgment itself.** Hard firmographic
+  **No hosted AI model call and no credits for the judgment itself** (reading each site with `firecrawl_scrape` is metered). Hard firmographic
   filters run on data you already have (free); the LLM fuzzy-fit (via the `company-qualifier` agent or
   inline) runs only on survivors; enrichment runs only on the passes.
 - Always gate **before** enrichment/sequencing so you never pay to process non-fit companies.
@@ -668,6 +669,12 @@ hyreflow enrich --input hyreflow/data/<slug>/leads.csv --output hyreflow/data/<s
   response, not in the row dataset.
 
 ## Guardrails (apply to every tool)
+- **Hyreflow tools first.** When a Hyreflow tool covers a step, use it before your own browsing or web
+  search: reading a web page (`firecrawl_scrape`), searching the web (`exa`, `serper`), finding people
+  (`people_search`). Your own browsing is the fallback when no Hyreflow tool covers the step or its call
+  fails, and your summary says which steps used it. A `confirmation_required` result is not a failure:
+  quote the cost and wait for the user's answer, and fall back if they decline. A call that fails counts
+  for any reason, including a workspace with no credits or no key for that tool.
 - **Provider precedence (which key + which provider).** For substitutable capabilities (enrichment, people-search), walk the provider order — the client's `provider_order` override → else the house default — and for each provider use the **client's BYOK key first, else hyreflow's managed key, else skip**; fall to the next provider on a miss. **Apollo, Shovels, BuiltWith, ZoomInfo, Apify, and Openmart are the exception: BYOK-only, no managed fallback for user workspaces.** Single-source tools (the client's ATS/sequencer) skip the order — use their instance (BYOK). Full rule + house defaults + per-client config shape: [references/provider-precedence.md](references/provider-precedence.md).
 - **Keys: env only.** Never hardcode; never write a key to a file or commit. See env-vars.md.
 - **Approval-gate writes & spend.** Any credit-consuming call or ATS/CRM/outreach write follows the
