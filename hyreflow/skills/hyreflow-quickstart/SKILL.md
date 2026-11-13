@@ -89,7 +89,7 @@ hyreflow enrich --input <csv_from_step_1> --output enriched.csv \
 ```
 
 Before you run it, tell the user this step walks a provider waterfall per row and takes roughly a minute,
-so the wait is expected. The command prints the provider chain it will walk (`email_enrichment: prospeo →
+so the wait is expected. The command prints the provider chain it will walk (`email_enrichment: hyreflow_native →
 …`) and an elapsed-seconds heartbeat while it runs; the run summary ends with a per-provider hit/miss tally
 (`summary.provider_stats`) — report which provider filled the emails.
 

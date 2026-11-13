@@ -62,7 +62,7 @@ before spending. LinkedIn from people-search already rides on the list, free.
 > default is **LinkedIn + personal email ONLY — never work email** (you're recruiting them *away* from
 > that employer; their work inbox is wrong and often dead post-layoff). Prompt: *"Personal email +
 > LinkedIn only (recruiting default), or also include work email?"* The answer picks the waterfall:
-> - **personal (default)** → **`leadmagic`** (`personal_email_finder`) → **`wiza`** (`start_individual_reveal`, `email_options.accept_personal`) → **`fullenrich`** (`contact.personal_emails`) — the personal-email providers + GitHub `find_user_emails` for engineers. ⚠️ do NOT use prospeo/aiark/bettercontact for personal (work email only).
+> - **personal (default)** → **`leadmagic`** (`personal_email_finder`) → **`hyreflow_native`** (`find_personal_email`) → **`wiza`** (`start_individual_reveal`, `email_options.accept_personal`) → **`fullenrich`** (`contact.personal_emails`) — the personal-email providers + GitHub `find_user_emails` for engineers. ⚠️ do NOT use prospeo/aiark/bettercontact for personal (work email only).
 > - work (only if user opts in, e.g. BD) → `email_enrichment` (work) order.
 >
 > **LinkedIn is the first/primary touchpoint** — we almost always already have it from people-search, so
