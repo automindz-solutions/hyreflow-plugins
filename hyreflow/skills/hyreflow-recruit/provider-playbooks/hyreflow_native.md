@@ -356,6 +356,40 @@ wait instead of skipping it.
 hyreflow tools execute hyreflow_native get_linkedin_profile --payload '{"linkedin_url":"https://www.linkedin.com/in/acme-dana-reed"}'
 ```
 
+## Email and phone finder: early steps of the contact waterfalls
+The finders open the work email and phone waterfalls and follow leadmagic in `personal_email`, so for a list
+run those waterfalls and let them pick; call these
+directly only for one person. Each is billed per result found and costs nothing on a miss.
+
+| Method | Takes | Waterfall | Price |
+|---|---|---|---|
+| `find_work_email_by_linkedin` | `linkedin_url` | `email_enrichment`, 1st | 0.1 cr per email |
+| `find_work_email` | `first_name` + `last_name` + `company_domain` | `email_enrichment`, 2nd | 0.1 cr per email |
+| `find_personal_email` | `linkedin_url` | `personal_email`, 2nd | 0.1 cr per email |
+| `find_phone_by_linkedin` | `linkedin_url` (US numbers only) | `phone_enrichment`, 1st | 0.1 cr per phone |
+
+Email finders return `{found, email}` (`find_work_email` adds `confidence`); phone finders `{found, phone}`.
+
+- **Work email:** only a high- or medium-confidence address comes back; a low-confidence guess is a miss
+  and the waterfall asks the next provider. Companies whose mail server won't confirm a mailbox are often a
+  miss here and found further down the chain. Inside `email_enrichment` the address still goes through the
+  usual company-domain and deliverability check. `find_work_email_by_linkedin` returns only the address of
+  the person's current job; one from a past job on the profile is a miss.
+- **Personal email:** an address already on file for that profile, not re-checked at request time. Inside
+  `personal_email` an address on the person's own company domain is rejected, as for every provider.
+
+```bash
+# one person's work email — charged only when found
+hyreflow tools execute hyreflow_native find_work_email --payload '{"first_name":"Dana","last_name":"Reed","company_domain":"acme.example.com"}'
+```
+
+## Contact database search: first step of `people_search`
+`find_people` opens the `people_search` waterfall at 0.05 cr per profile, the same as the step after it.
+It runs titles, seniority, countries or cities, and company LinkedIn URLs; a search in the Gulf (UAE, Saudi
+Arabia, Qatar, Kuwait, Bahrain, Oman) goes to the next provider first, and a query with a state or region,
+or a company named only by domain or name, skips it rather than widen. A short page is filled by the next
+provider. Run `people_search`, not this method.
+
 ## Postcode or city radius: towns within N miles (free)
 
 People databases match a person's location by **exact town name** and have **no radius filter** — no
@@ -679,6 +713,11 @@ already verified). Only safe-to-send addresses come back.
 ## Callable surface
 Call via the CLI: `hyreflow tools execute hyreflow_native <method> --payload '{...}'` (preview with `--dry-run`; `hyreflow tools get hyreflow_native <method>` returns the live contract + cost). Only the methods listed below are callable.
 
+- `find_people(filters: dict, page: int = 0, size: int = 25) -> dict` — POST /v1/find-people — people from the contact database. `filters` takes `people` (job_title, job_level, location) and `company` (linkedin_url, …) objects; `page` is 0-based, and page N works only right after page N-1 of the same search on the same server (`people_search` pages it for you); `size` is 1-50 rows. Returns {people, total, has_more}. Billed per profile returned; an empty page costs nothing.
+- `find_personal_email(linkedin_url: str) -> dict` — POST /v1/find-personal-email — one person's personal email from their LinkedIn profile URL.
+- `find_phone_by_linkedin(linkedin_url: str) -> dict` — POST /v1/find-phone-by-linkedin — one person's mobile or direct phone from their LinkedIn profile URL. US numbers only. Returns {found, phone}. Billed per phone found; a miss costs nothing.
+- `find_work_email(first_name: str, last_name: str, company_domain: str) -> dict` — POST /v1/find-work-email — one person's work email from their first name, last name and company domain.
+- `find_work_email_by_linkedin(linkedin_url: str) -> dict` — POST /v1/find-work-email-by-linkedin — one person's verified work email from their LinkedIn profile URL.
 - `get_arbeitsagentur_jobs(request_id: str, *, limit: int = 10, offset: int = 0) -> dict` — GET /v1/scrape-arbeitsagentur-jobs/async/{request_id} — poll a German hiring-signal scrape for open roles on Germany's Bundesagentur für Arbeit board (paginated result.jobs). `limit` is 1-50 (default 10); `offset` 0 or more.
 - `get_career_pages(request_id: str, *, limit: int = 10, offset: int = 0) -> dict` — GET /v1/scrape-career-pages/async/{request_id} — poll a career-page hiring-signal scrape for open roles (paginated result.jobs). `limit` is 1-50 (default 10); `offset` 0 or more.
 - `get_company_posts(username: str, start: int = 0, limit: int = 50) -> dict` — GET /v1/linkedin-company-posts — a company page's recent LinkedIn posts, newest first.
