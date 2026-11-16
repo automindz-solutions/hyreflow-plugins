@@ -51,7 +51,7 @@ Every screen runs in the background; there is no mode to pick. The call waits ab
 it, then answers one of two ways:
 
 - **Finished** — the ranking: `{run_id, status: "completed", candidates: [{row, full_name, title, …,
-  shortlist: {score, tier, categories{}, holistic{}, must_haves[], unverified[]?, basis}}], scored, count, _meta}`.
+  shortlist: {score, tier, categories{}, holistic{}, must_haves[], unverified[]?, bonus?, basis}}], scored, count, _meta}`.
   Each ranked row carries who the candidate is, `row` (its position in `_meta.dataset_id`) and the
   verdict — not the profile you sent. The full rows are in the dataset.
 - **Still running** — a handle: `{run_id, dataset_id, status, progress: {done, total},
@@ -200,13 +200,26 @@ model returns the option plus its confidence.
    written to the output dataset and left out of the inline response — ~100 numbers a row is around
    900 tokens of context per candidate, and `categories` says the same thing in ten. Read the dataset
    when you want the question-by-question audit trail.
+5. **What a profile rarely states can only add.** Each generated question is `observable` (role,
+   tenure, employer, sector, location, depth of leadership, stack: a profile shows it when true) or
+   `bonus` (results, exam outcomes, awards, research, a PhD: a strong profile often leaves it out).
+   Only observable questions feed `categories` and the score. A bonus question is asked as whether the
+   profile states it; each yes adds up to 0.5 points, at most 1.5 in all, and silence or a no costs
+   nothing. The bonus lifts the rank and the shown `score`, never the tier. `shortlist.bonus` gives
+   `base` (the observable score), `points` (the lift actually applied) and `stated[]` (the five
+   strongest bonus questions that came back yes, each with `id` and a short `claim`; the dataset row
+   has them all). On a generated set `candidates` is ordered by tier, then score, and `min_score`
+   filters the observable score before any bonus. A bonus question an empty profile also answers yes
+   to is dropped from the set when it is generated (`instrument_check.dropped_bonus_questions`);
+   `instrument_check.bonus_only_questions` names the rest.
 
 Tiers are code, not judgement, and a clearly failed gate is `no_fit` whatever the score. On a generated
 set they are drawn against the job's own ideal candidate: `tier_1` at ≥ 75% of the score the ideal
-CV earns on this set, `tier_2` at ≥ 55% (`_meta.tier_thresholds` gives the numbers — about 7.1 and
-5.2 for a typical set). A set
-you wrote yourself keeps the fixed bars, `tier_1` ≥ 7.5 and `tier_2` ≥ 5. With `min_score`,
-`candidates` holds every row at or above that score that no gate clearly failed — the tier never
+CV earns on this set's observable questions, `tier_2` at ≥ 55%, and a row's tier is read from its
+observable score before any bonus (`_meta.tier_thresholds` gives the numbers — about 7.1 and 5.2 for
+a typical set). A set you wrote yourself keeps the fixed bars, `tier_1` ≥ 7.5 and `tier_2` ≥ 5. With `min_score`,
+`candidates` holds every row at or above that score (on a generated set, the observable score
+before any bonus) that no gate clearly failed — the tier never
 filters; a high score never overrides a failed must-have. An `unverified` row stays in: say which
 requirement it is missing evidence for when you present it.
 The poll applies the `min_score` the screen was sent with (`?min_score=` overrides it).
@@ -219,7 +232,7 @@ either), or when too little of the instrument answered to rank on. None of those
 
 > **The generated composite was graded in 2026-10** against a blind senior-recruiter read of 160 real
 > candidates over 8 jobs: rank agreement ~0.84, and `tier_1`+`tier_2` matched the reader's shortlist
-> at precision ~0.8 / recall ~0.95. Every question is asked as what is *likely* true of the candidate,
+> at precision ~0.8 / recall ~0.95. Every observable question is asked as what is *likely* true of the candidate,
 > not what the profile states — asked literally, a profile that doesn't name a tool the role implies
 > scored like a weak one, and the same shortlist caught only half the reader's picks. The figures
 > below were measured earlier on the single-ladder scorer, which is still how a screen behaves when
@@ -251,6 +264,7 @@ Measured on a 52-candidate graded pool, screened live:
   costs tokens on every row and moves nobody in the ranking. They are reported, never silently
   reweighted: reweighting from the pool would make a candidate's score depend on who else happened
   to be in that request. Use it to improve a caller-supplied set or decide whether to run again.
+  Bonus questions are left out of it: most profiles never state them, so they are flat by design.
 
 **The two endpoints' scores do not mean the same thing.** They share the 0-10 range, and nothing
 more. `/qualify` runs a fixed rubric that caps a candidate at 5 for any missing must-have and again
@@ -282,7 +296,11 @@ of the question set: the generated instrument still does the ranking, and each m
 ranked, and you read the list. That is deliberate: a gate throws people away, so it should be
 something a person asked for rather than something inferred from a job ad. **Ask the user whether
 they want must-haves, and screen on what they confirm** — the JD usually implies several, and a
-pinned list makes the screen auditable against something they agreed to.
+pinned list makes the screen auditable against something they agreed to. Only must-haves gate.
+There is no input for good-to-haves: the generator picks its own bonus questions from the job ad
+(results, awards, research), so a good-to-have the user names is not guaranteed to be asked. A
+caller-written `questions` set ranks only on its one `score` question, so to make a good-to-have count
+there, write it into that question's wording; if it truly disqualifies, make it a `must_have_<n>` gate.
 
 Use gates only for requirements that genuinely disqualify. A hard gate on a nice-to-have silently
 throws away good candidates: on a real 82-applicant pool, two gates eliminated 66 of them (under an
