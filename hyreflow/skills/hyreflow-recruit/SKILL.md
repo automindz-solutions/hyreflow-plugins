@@ -400,7 +400,7 @@ reads. **Before scoring, draft the JD's implied must-haves and ask the user to c
 them** — a pinned list makes the score auditable against something they agreed to.
 
 **`/shortlist` is opt-in.** It is the bulk structured screen — one decision call per row →
-`shortlist:{score, tier, categories{}, holistic{}, must_haves[], unverified[]?}`, numbers only, no prose, up to 5000
+`shortlist:{score, tier, categories{}, holistic{}, must_haves[], unverified[]?, bonus?}`, numbers only, no prose, up to 5000
 rows, far cheaper per candidate. It writes one question set per job description, reuses it, and ranks
 on ~8 weighted categories; `must_haves` are optional hard gates and nothing is
 auto-rejected without them — ask the user before pinning any. Reach for it when the USER asks for native bulk screening, or when the pool is
