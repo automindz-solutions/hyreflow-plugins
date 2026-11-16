@@ -34,6 +34,7 @@ commit one.** The engine operator sets these in the server's secrets manager / e
 | justcall | `JUSTCALL_API_KEY`, `JUSTCALL_API_SECRET` | header `Authorization: key:secret` (no scheme) | needs JustCall's Team plan or higher; BYOK-only; the customer connects it themselves on the Integrations page (API Key + API Secret) |
 | leadmagic | `LEADMAGIC_API_KEY` | header `X-API-Key` | |
 | lemlist | `LEMLIST_API_KEY` | HTTP Basic (`'' : key`) | paths mapped from slugs — verify; connect-your-own (BYOK, self-serve) |
+| leonar | `LEONAR_API_KEY` | `Authorization: Bearer leo_…` | BYOK-only, self-serve (Integrations → Leonar: paste a `leo_` key from the Leonar V2 app's Settings → API; V1 `pk_live_` keys are refused); 2000 requests/hour per Leonar user, paced at 30 requests/minute |
 | lever | `LEVER_API_KEY` | HTTP Basic (key as username) | ATS job posting; every write needs a `perform_as` user id; connect-your-own (BYOK, self-serve) |
 | loxo | `LOXO_API_KEY`, `LOXO_AGENCY_SLUG` | Bearer | agency-scoped base URL derived from the slug, e.g. `acme`; connect-your-own (BYOK, self-serve) |
 | lusha | `LUSHA_API_KEY` | header `api_key` | |
