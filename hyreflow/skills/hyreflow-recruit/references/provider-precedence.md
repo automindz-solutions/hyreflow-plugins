@@ -23,7 +23,7 @@ engine (the server resolves the key + meters credits).
        client's own vendor credits. Connecting their key needs the Essential plan or above: on Free/Starter the
        connect is refused with a plan-required error, so tell the user to upgrade rather than retrying.
      - **The client's own sequencers, recruiting CRMs and meeting tools** — Instantly, Lemlist, HeyReach,
-       Smartlead, SendKit, EmailBison, SourceWhale, Recruit CRM, Recruiterflow, Loxo, Atlas, Fathom, Granola, Aircall, JustCall. These run on a flat plan the
+       Smartlead, SendKit, EmailBison, SourceWhale, Leonar, Recruit CRM, Recruiterflow, Loxo, Atlas, Fathom, Granola, Aircall, JustCall. These run on a flat plan the
        client already pays for, so a call costs nothing, but it only works once they've connected the
        account (dashboard **Integrations**, or `hyreflow byok set <provider> --api-key <key>`).
      - **Bullhorn** connects self-serve like the CRMs above, with four values (client ID, client secret,
@@ -36,6 +36,9 @@ engine (the server resolves the key + meters credits).
      - **Aircall** and **JustCall** each take two values. Aircall: `hyreflow byok set aircall --api-key <api_id>
        --field api_token=<token>`. JustCall (Team plan or higher): `hyreflow byok set justcall --api-key <api_key>
        --field api_secret=<secret>`.
+     - **Leonar** connects self-serve with one `leo_` API key from the Leonar V2 app (Settings → API):
+       `hyreflow byok set leonar --api-key <key>`. It is a recruiting sequencer that also keeps the contacts and project
+       pipelines: activating or resuming a sequence, enrolling contacts and sending messages reach real people, so gate them.
      - **OAuth, self-serve:** Vincere, JobAdder, TrackerRMS and Zoho Recruit. The dashboard card walks the workspace
        through the vendor-side step (JobAdder: register an app with the shown redirect URI, paste Client
        ID/Secret; TrackerRMS: ask Tracker support for a client secret with the redirect URI registered,
@@ -81,7 +84,7 @@ BYOK availability can also *bias* the order: try the providers they hold keys fo
 | company_lookalikes | **prospeo** (`enrich_company`→`company_id`→`search_company` `company_lookalike`, tiers T1/T2/T3) · **zoominfo** `company_lookalikes` · **lusha** `company_lookalikes` · **predictleads** `similar_companies` · **exa** `find_similar` (semantic, from a URL). ⚠️ **Resolve + VERIFY the seed first** (exact domain / LinkedIn match — bare shared-SaaS domains mis-resolve); see [`provider-playbooks/prospeo.md`](../provider-playbooks/prospeo.md) lookalike flow. |
 | hiring/intent signals | **`hyreflow_native` job scrapes are the DEFAULT for "who is hiring for X" / "find open roles"** — first-party, no vendor account, always available, **0.05 credits per matched job** (pay-on-match; `arbeitsagentur_jobs` adds +0.1 credits per job with recruiter details, up to 0.15 credits per job) vs theirstack's 0.9, async launch→poll: `career_pages` (a named company's own site + ATS), `linkedin_jobs` / `indeed_jobs` (title + location across companies), `arbeitsagentur_jobs` (**the German federal job board — the default source for a Germany-scoped hiring query**), `stepstone_jobs` (Germany's largest commercial board — the second German leg); see [`provider-playbooks/hyreflow_native.md`](../provider-playbooks/hyreflow_native.md) → then **theirstack** when the query needs *its* filters rather than raw postings (tech-stack / keyword-slug-filtered job or company search, technographics, buying intent — recency, excluded titles, agency-posted or description-content asks stay native) → then predictleads (job openings + tech detections) → jobs scrape: apify (**BYOK-only** — needs the client's own key) · pharma: clinicaltrials · construction: shovels · **layoffs/RIF: layoffsignal (native)** |
 | funding discovery (Series A etc.) | **predictleads (discover_financing_events — by round type + recency)** → zoominfo scoops → leadmagic company_funding (enrich-only) → exa/serper (news) |
-| sequencer | usually single-source (use the client's); fallback email: instantly→smartlead→sendkit→emailbison→lemlist→reply_io · LinkedIn: heyreach→lemlist→reply_io · recruiting: sourcewhale. SendKit is the pick when the play needs a deliverability check (mailbox health/warmup) before sending. ⚠️ Sequencers are **activation only — never enrichment** (don't use Lemlist findEmail/linkedinEnrichment etc.; enrich upstream). |
+| sequencer | usually single-source (use the client's); fallback email: instantly→smartlead→sendkit→emailbison→lemlist→reply_io · LinkedIn: heyreach→lemlist→reply_io · recruiting: sourcewhale, leonar (email+WhatsApp; also holds the contacts and project pipelines). SendKit is the pick when the play needs a deliverability check (mailbox health/warmup) before sending. ⚠️ Sequencers are **activation only — never enrichment** (don't use Lemlist findEmail/linkedinEnrichment etc.; enrich upstream). |
 | ATS | single-source — the client's: recruit-crm \| loxo \| vincere \| recruiterflow \| atlas \| bullhorn \| carerix \| crelate \| spott \| jobadder |
 | roster / team-page URL in hand | **not** `people_search` — `firecrawl_scrape` (single page) or `firecrawl_extract` (structured rows / multi-page) → `exa_agent` for fields the page omits (e.g. LinkedIn URL) → enrichment (`linkedin_profile`) for sector experience. See [`../recipes/people-from-webpage.md`](../recipes/people-from-webpage.md). |
 

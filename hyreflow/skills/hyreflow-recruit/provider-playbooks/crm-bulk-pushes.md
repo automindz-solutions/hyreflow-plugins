@@ -18,6 +18,7 @@ All CRM adapters pace writes with a token-scoped rate limiter. Defaults:
 - TrackerRMS: 600 req/min (per OAuth access token).
 - Carerix: 600 req/min (10 req/sec, per client and tenant).
 - Crelate: 100 req/min (Crelate limits by IP, about 120/min, so all Crelate calls share one paced budget).
+- Leonar: 30 req/min (Leonar allows 2,000 requests/hour per user, shared by all of that user's keys).
 
 If your CRM account allows a higher rate limit than the default above, [contact
 us](mailto:support@hyreflow.ai) and we'll see what we can do.
@@ -37,6 +38,7 @@ us](mailto:support@hyreflow.ai) and we'll see what we can do.
 | TrackerRMS | `create_resources_batch` | `create_contacts_batch` | `create_clients_batch` | `create_opportunities_batch` |
 | Carerix | `create_candidates_batch` | — | — | — |
 | Crelate | `create_contacts_batch` | `create_contacts_batch` | — | — |
+| Leonar | `create_contacts_batch` (then `add_to_pipeline_batch` onto a project) | `create_contacts_batch` | — | — |
 
 ## Bulk helper contract
 

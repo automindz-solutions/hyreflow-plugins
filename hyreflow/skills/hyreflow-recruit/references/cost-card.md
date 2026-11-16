@@ -53,6 +53,7 @@ Each method is priced on its own: what the call costs Hyreflow, marked up to a 5
 | layoffsignal | free | free | No Hyreflow credits for any method. |
 | leadmagic | `employee_finder` 0.1 cr | `b2b_profile` 5.5 cr | 13 paid methods |
 | lemlist | metered | metered | BYOK-only: customer connects their own Lemlist account |
+| leonar | metered | metered | BYOK-only: customer connects their own Leonar API key |
 | lever | metered | metered | BYOK-only: customer connects their own Lever account |
 | loxo | metered | metered | BYOK-only: customer connects their own Loxo account |
 | lusha | `company_lookalikes` 2.8 cr | `search_and_enrich_contact_phones` 13.9 cr | 17 paid methods |

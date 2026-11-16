@@ -333,7 +333,7 @@ The adapters (`lib/`) and the machine-readable call contract (`reference/tool-re
 `apify` (**BYOK-only** — needs the client's own Apify key; 0 credits, Apify bills them) · `aiark` · `firecrawl` · `serper` · `openmart` (local-business/SMB search, company enrichment, owners/people, business email, technology detection; BYOK-only) · `theirstack` (tech-stack / keyword-filtered job & company search, technographics, buying intent) · `predictleads` (funding rounds incl. Series A + job openings + tech detections — funding/hiring discovery) · `shovels` (US building permits + contractors — construction/trades) · `github` (developer sourcing — IT recruiting) · `clinicaltrials` (pharma/biotech/CRO hiring signals; no key) · `builtwith` (technographics — source/qualify companies by tech stack)
 
 **Sequencers** — outreach activation
-`instantly` (email) · `lemlist` (email+LinkedIn) · `heyreach` (LinkedIn) · `smartlead` (email) · `reply_io` (email+LinkedIn) · `sendkit` (email, dedicated-IP deliverability) · `emailbison` (email, the client's own instance: instance URL + API token) · `sourcewhale` (recruiting outreach)
+`instantly` (email) · `lemlist` (email+LinkedIn) · `heyreach` (LinkedIn) · `smartlead` (email) · `reply_io` (email+LinkedIn) · `sendkit` (email, dedicated-IP deliverability) · `emailbison` (email, the client's own instance: instance URL + API token) · `sourcewhale` (recruiting outreach) · `leonar` (recruiting email+WhatsApp sequences; also keeps the contacts and project pipelines, API key)
 
 **Recruiting CRMs** — the write targets for candidates, clients and placements
 `recruit-crm` · `loxo` · `vincere` · `recruiterflow` · `atlas` · `bullhorn` · `carerix` (client ID + client secret + Carerix URL) · `crelate` (API key) · `spott` · `jobadder` (OAuth, self-serve — one click via Hyreflow's own app; a workspace can switch to its own Client ID + Secret instead) · `trackerrms` (OAuth, self-serve — paste the client secret Tracker support issues + pick the region, then Connect) · `zoho_recruit` (OAuth, self-serve — create a Zoho app + pick the data center, then Connect; read-only here — search candidates, list/search clients, read job openings; no ATS write methods)
@@ -440,7 +440,7 @@ Preview spend first with `--dry-run`; the CLI adds bearer auth, 429/5xx retries,
 **source → qualify (ICP) → enrich → verify → sequence → push to ATS**, e.g.
 `apollo`/`aiark`/`apify`/`theirstack` (find companies/people) → **qualify against the client's ICP
 (`ICP.md` first, see below)** → `leadmagic`/`prospeo`/`fullenrich` (waterfall email+phone) → `hyreflow_native` `verify_emails` (validate
-deliverability) → `instantly`/`smartlead`/`reply_io`/`sendkit`/`emailbison`/`heyreach`/`lemlist`/`sourcewhale` (activate) →
+deliverability) → `instantly`/`smartlead`/`reply_io`/`sendkit`/`emailbison`/`heyreach`/`lemlist`/`sourcewhale`/`leonar` (activate) →
 `recruit-crm`/`bullhorn`/`carerix`/`crelate`/`loxo`/`vincere`/`recruiterflow`/`atlas`/`trackerrms` (land the record).
 `aircall`/`justcall` + `fathom` close the loop on the conversation side (call logs, transcripts → ATS activity).
 The same arc as recruiter **behaviour** (source → shortlist → outreach → slate, + BD/MPC + passive-poach)
@@ -706,7 +706,7 @@ plan step — for free/zero-cost work:
   gate, so read which kind it is:
   - **Metered data** (Apollo, ZoomInfo, BuiltWith, Shovels) — each call burns their vendor credits. Real
     money → gate the spend.
-  - **Their sequencer / ATS / CRM / meeting / telephony tool** (Instantly, Lemlist, HeyReach, Smartlead, SendKit, EmailBison,
+  - **Their sequencer / ATS / CRM / meeting / telephony tool** (Instantly, Lemlist, HeyReach, Smartlead, SendKit, EmailBison, Leonar,
     Recruit CRM, Recruiterflow, Loxo, Atlas, Carerix, Crelate, Spott, Ashby, Lever, SmartRecruiters, Recruitee,
     Fathom, Granola, Aircall, JustCall) — a flat plan, so a call costs no per-call money. Reads
     are free to make; gate the **write**, because it lands in their live account in front of candidates.
@@ -937,6 +937,9 @@ for / when to reach for it*; the quirks live in the playbook. (Keep this list cu
 - [lemlist playbook](provider-playbooks/lemlist.md)
   Summary: Use to activate email + LinkedIn outreach — build campaigns/sequences and add leads (activation only; not for enrichment).
   Last reviewed: 2026-06-02
+- [leonar playbook](provider-playbooks/leonar.md)
+  Summary: Use for Leonar, a recruiting sequencer — build and edit email/WhatsApp sequences while they are draft or paused, link them to projects, enroll contacts, activate/pause/resume, read replies, send one-off messages (activating, resuming, enrolling and sending reach real people — gate them); also its contacts, companies, project pipelines, notes, tags, tasks and enrichment.
+  Last reviewed: 2026-11-02
 - [lever playbook](provider-playbooks/lever.md)
   Summary: Use to post a job to Lever — create a posting with team/department/location categories, description and requirement lists, workplace type, salary range and requisition codes. Every write needs a `perform_as` Lever user, and `state` defaults to draft.
   Last reviewed: 2026-09-15
