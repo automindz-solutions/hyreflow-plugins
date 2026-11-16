@@ -28,8 +28,12 @@ deeper read per finalist, so say what it buys in plain words and let the user pi
 Both endpoints score on the history the row carries. **Enrich before you screen** — a sourcing row
 has the current title, employer and location only, so run the `linkedin_profile` waterfall over the
 pool first and screen on dated `experience[]`. A pasted resume in `profile.about` is also read in
-full when no structured history is present. Each row reports its `basis`: `work_history`,
-`resume_text`, or `title_only` (a web row's page text in `text` counts as resume text). A row carrying the
+full when no structured history is present. Pass AI Ark `people_search` rows through as they came
+back: their `position_groups[]` is a dated history and is read as one. If you build your own rows,
+put the history in `experience[]`, or as text in `work_history`; a field the screen doesn't read is
+a candidate scored on the title alone. Each row reports its `basis`: `work_history`,
+`resume_text`, or `title_only` (a web row's page text in `text`, or a history written as text,
+counts as resume text). A row carrying the
 candidate's own site (`portfolio`, `website`, or a non-LinkedIn `url`) is scored with it and returns it as
 `portfolio_url`; show it to the recruiter, it is often the strongest evidence for a designer. A batch
 where every row is `title_only` is refused (422
@@ -70,7 +74,8 @@ For a generated instrument, `_meta` carries `questions_source` (`generated`, `re
 and the stored set stays active), the `question_set` id, `instrument_unchecked` when the set was never
 graded, `questions_asked`, `categories` and their weights, `generator_model`,
 `instrument_check`, and `low_signal_questions` when any question barely varied. With `min_score`,
-`_meta.filtered_out` counts the scored rows the filter removed.
+`_meta.filtered_out` counts the scored rows the filter removed, except `insufficient_data` rows,
+which `_meta.insufficient_data` counts instead.
 
 ## The question set is written for you
 
@@ -222,6 +227,16 @@ a typical set). A set you wrote yourself keeps the fixed bars, `tier_1` ≥ 7.5 
 before any bonus) that no gate clearly failed — the tier never
 filters; a high score never overrides a failed must-have. An `unverified` row stays in: say which
 requirement it is missing evidence for when you present it.
+
+A `title_only` row that scores below the `tier_2` bar comes back `insufficient_data`, not `no_fit`:
+on title, employer and location alone a strong candidate scores as low as a weak one, so it is not a
+rejection. `_meta.insufficient_data` counts them and `_meta.title_only_share` gives the share of the
+pool screened on title alone. Never tell the user these candidates don't fit, tell them there isn't
+enough data to judge. What to do next depends on `_meta.warning`: rows it calls "not enriched yet"
+are worth enriching with the `linkedin_profile` waterfall and screening again; rows it calls "already
+enriched with no profile found", and a pool you screened with `allow_thin_profiles` because it will
+never have more (a referral list), won't improve on a second pass, so don't pay for one. A must-have
+the row clearly fails still makes it `no_fit`.
 The poll applies the `min_score` the screen was sent with (`?min_score=` overrides it).
 
 A row comes back `unscored`, and is reported in `_meta.not_scored` rather than ranked, when the batch
