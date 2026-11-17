@@ -8,11 +8,11 @@ Per-operation **credit costs**, resolved from Hyreflow's pricing source of truth
 
 ## How pricing works
 
-Each method is priced on its own: what the call costs Hyreflow, marked up to a 50% margin floor and rounded up to the nearest 0.1 credit. Paid methods run from **0.01 credit** to **13.9 credits**, and a cheaper provider is a cheaper call: the waterfalls try the low-cost providers first. Read a method's exact price from its `cost` block in the tool registry rather than memorising a number.
+Each method is priced on its own: what the call costs Hyreflow, marked up to a 50% margin floor and rounded up to the nearest 0.1 credit. Paid methods run from **0.01 credit** to **12.6 credits**, and a cheaper provider is a cheaper call: the waterfalls try the low-cost providers first. Read a method's exact price from its `cost` block in the tool registry rather than memorising a number.
 
 | Billing mode | What you pay |
 |---|---|
-| paid | 0.01–13.9 credits, charged per result returned, per request, or per page, and each method states which |
+| paid | 0.01–12.6 credits, charged per result returned, per request, or per page, and each method states which |
 | free | 0 credits: account, catalog, ping and masked-preview calls |
 | byok | 0 credits: add your own vendor key and the call runs on your account |
 | metered | provider-metered, no fixed per-action price |
@@ -22,13 +22,13 @@ Each method is priced on its own: what the call costs Hyreflow, marked up to a 5
 
 | Tool | Cheapest paid op | Priciest paid op | Notes |
 |---|---|---|---|
-| aiark | `company_search` 0.01 cr | `reverse_lookup` 1.4 cr | 9 paid methods |
+| aiark | `company_search` 0.01 cr | `mobile_phone_finder` 2.0 cr | 9 paid methods |
 | aircall | metered | metered | BYOK-only: customer connects their own Aircall account |
 | apify | metered | metered | BYOK-only: customer pays Apify directly |
 | apollo | metered | metered | BYOK-only: customer pays Apollo directly |
 | ashby | metered | metered | BYOK-only: customer connects their own Ashby account |
 | atlas | metered | metered | BYOK-only: customer connects their own Atlas account |
-| bettercontact | `start_enrichment` 0.5 cr | `start_enrichment` 0.5 cr | 1 paid method |
+| bettercontact | `start_enrichment` 0.8 cr | `start_enrichment` 0.8 cr | 1 paid method |
 | breezy | metered | metered | BYOK-only: customer connects their own Breezy HR account |
 | builtwith | metered | metered | BYOK-only: customer pays BuiltWith directly |
 | bullhorn | metered | metered | BYOK-only: customer connects their own Bullhorn API user |
@@ -45,8 +45,8 @@ Each method is priced on its own: what the call costs Hyreflow, marked up to a 5
 | granola | metered | metered | BYOK-only: customer connects their own Granola account |
 | heyreach | metered | metered | BYOK-only: customer connects their own HeyReach account |
 | hyreflow_agent | metered | metered | Provider-metered — no fixed per-action price. |
-| hyreflow_native | `find_people` 0.05 cr | `search_posts` 0.2 cr | 16 paid methods; `get_arbeitsagentur_jobs` +0.1 credits per job with recruiter details |
-| icypeas | `email_verification` 0.1 cr | `email_search` 0.5 cr | 3 paid methods |
+| hyreflow_native | `find_people` 0.05 cr | `find_phone_by_linkedin` 1.5 cr | 16 paid methods; `get_arbeitsagentur_jobs` +0.1 credits per job with recruiter details |
+| icypeas | `email_verification` 0.1 cr | `email_search` 0.7 cr | 3 paid methods |
 | instantly | metered | metered | BYOK-only: customer connects their own Instantly account |
 | jobadder | free | free | No Hyreflow credits for any method. |
 | justcall | metered | metered | BYOK-only: customer connects their own JustCall account |
@@ -56,7 +56,7 @@ Each method is priced on its own: what the call costs Hyreflow, marked up to a 5
 | leonar | metered | metered | BYOK-only: customer connects their own Leonar API key |
 | lever | metered | metered | BYOK-only: customer connects their own Lever account |
 | loxo | metered | metered | BYOK-only: customer connects their own Loxo account |
-| lusha | `company_lookalikes` 2.8 cr | `search_and_enrich_contact_phones` 13.9 cr | 17 paid methods |
+| lusha | metered | metered | BYOK-only: customer pays Lusha directly |
 | openmart | metered | metered | BYOK-only: customer pays Openmart directly |
 | predictleads | `company` 0.8 cr | `technologies` 2.4 cr | 28 paid methods |
 | prospeo | `search_suggestions` 0.1 cr | `mobile_finder` 3.4 cr | 12 paid methods |
@@ -74,7 +74,7 @@ Each method is priced on its own: what the call costs Hyreflow, marked up to a 5
 | theirstack | `search_jobs` 0.9 cr | `search_companies` 2.7 cr | 4 paid methods |
 | trackerrms | free | free | No Hyreflow credits for any method. |
 | vincere | free | free | No Hyreflow credits for any method. |
-| wiza | `create_list` 1.0 cr | `start_individual_reveal` 1.0 cr | 5 paid methods |
+| wiza | `enrich_company` 1.0 cr | `start_individual_reveal` 1.5 cr | 5 paid methods |
 | zoho_recruit | free | free | No Hyreflow credits for any method. |
 | zoominfo | metered | metered | BYOK-only: customer pays ZoomInfo directly |
 
