@@ -363,10 +363,10 @@ directly only for one person. Each is billed per result found and costs nothing 
 
 | Method | Takes | Waterfall | Price |
 |---|---|---|---|
-| `find_work_email_by_linkedin` | `linkedin_url` | `email_enrichment`, 1st | 0.1 cr per email |
-| `find_work_email` | `first_name` + `last_name` + `company_domain` | `email_enrichment`, 2nd | 0.1 cr per email |
-| `find_personal_email` | `linkedin_url` | `personal_email`, 2nd | 0.1 cr per email |
-| `find_phone_by_linkedin` | `linkedin_url` (US numbers only) | `phone_enrichment`, 1st | 0.1 cr per phone |
+| `find_work_email_by_linkedin` | `linkedin_url` | `email_enrichment`, 1st | 0.2 cr per email |
+| `find_work_email` | `first_name` + `last_name` + `company_domain` | `email_enrichment`, 2nd | 0.2 cr per email |
+| `find_personal_email` | `linkedin_url` | `personal_email`, 2nd | 0.8 cr per email |
+| `find_phone_by_linkedin` | `linkedin_url` (US numbers only) | `phone_enrichment`, 1st | 1.5 cr per phone |
 
 Email finders return `{found, email}` (`find_work_email` adds `confidence`); phone finders `{found, phone}`.
 

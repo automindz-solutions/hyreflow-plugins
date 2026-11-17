@@ -37,7 +37,7 @@ commit one.** The engine operator sets these in the server's secrets manager / e
 | leonar | `LEONAR_API_KEY` | `Authorization: Bearer leo_…` | BYOK-only, self-serve (Integrations → Leonar: paste a `leo_` key from the Leonar V2 app's Settings → API; V1 `pk_live_` keys are refused); 2000 requests/hour per Leonar user, paced at 30 requests/minute |
 | lever | `LEVER_API_KEY` | HTTP Basic (key as username) | ATS job posting; every write needs a `perform_as` user id; connect-your-own (BYOK, self-serve) |
 | loxo | `LOXO_API_KEY`, `LOXO_AGENCY_SLUG` | Bearer | agency-scoped base URL derived from the slug, e.g. `acme`; connect-your-own (BYOK, self-serve) |
-| lusha | `LUSHA_API_KEY` | header `api_key` | |
+| lusha | `LUSHA_API_KEY` | header `api_key` | BYOK-only (ENG-945): no managed key, the workspace connects its own on the Integrations page |
 | openmart | `OPENMART_API_KEY` | `Authorization: Bearer` | BYOK-only, self-serve; search/enrich calls and async batch starts run on the client's Openmart account; account balance and batch status/task-ID/result reads are free |
 | prospeo | `PROSPEO_API_KEY` | header `X-KEY` | enrich/search/suggestions live-confirmed |
 | recruit_crm | `RECRUITCRM_API_KEY` | Bearer | 30 methods; full CRUD; connect-your-own (BYOK, self-serve) |

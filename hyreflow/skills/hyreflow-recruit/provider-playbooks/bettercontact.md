@@ -21,11 +21,11 @@
 
 ## Pricing
 
-- Hyreflow bills once, on retrieval, when the result carries data: 0.5 credits for an email reveal, rising
-  to 4.8 when `enrich_phone_number: true` also returns a phone. Check
+- Hyreflow bills once, on retrieval, when the result carries data: 0.8 credits for an email reveal, rising
+  to 7.5 when `enrich_phone_number: true` also returns a phone. Check
   `hyreflow tools get bettercontact start_enrichment` for the live rate.
 - `bettercontact_get_enrichment` returns the vendor's own `credits_consumed` field, but that's BetterContact's internal accounting and does not change what Hyreflow bills.
-- Enabling `enrich_phone_number: true` raises the charge from 0.5 to 4.8 credits.
+- Enabling `enrich_phone_number: true` raises the charge from 0.8 to 7.5 credits.
 
 ## When to use
 

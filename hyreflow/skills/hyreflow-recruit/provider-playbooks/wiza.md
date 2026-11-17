@@ -8,8 +8,8 @@ Wiza for LinkedIn → email/phone enrichment. **Accepts Sales Navigator and Link
 
 - **Input required**: LinkedIn URL (including Sales Nav), email, or name+company
 - **Geographic coverage**: Global
-- **Credit cost**: scales with enrichment level — 1.0 credits base, rising to 2.5 for a `phone` reveal
-  and 3.5 for `full`; charged once when the retrieved result carries data — check
+- **Credit cost**: scales with enrichment level — 1.5 credits base, rising to 3.5 for a `phone` reveal
+  and 5.0 for `full`; charged once when the retrieved result carries data — check
   `hyreflow tools get wiza start_individual_reveal` for the live rate
 - **Enrichment levels**: `none` (profile only), `partial` (email), `phone`, `full` (email+phone) — the level
   controls both what's returned and the price
@@ -76,17 +76,17 @@ Typical flow: search → get LinkedIn URLs → feed into `wiza_start_individual_
 
 | Level     | Returns             | Cost      |
 | --------- | ------------------- | --------- |
-| `none`    | Profile data only   | 1.0 cr    |
-| `partial` | Emails only         | 1.0 cr    |
-| `phone`   | Phone numbers only  | 2.5 cr    |
-| `full`    | Emails + phones     | 3.5 cr    |
+| `none`    | Profile data only   | 1.5 cr    |
+| `partial` | Emails only         | 1.5 cr    |
+| `phone`   | Phone numbers only  | 3.5 cr    |
+| `full`    | Emails + phones     | 5.0 cr    |
 
 Pricing is billed once, on retrieval, when the result carries data — the `enrichment_level` you request
 does change the credit cost. Check `hyreflow tools get wiza start_individual_reveal` for the live rate.
 
 ## Anti-patterns
 
-- Don't over-request `enrichment_level: "full"` reflexively — it costs more than `partial` (3.5 vs 1.0 credits) and a phone match takes longer/is less reliable, so only ask for it when the workflow actually needs a phone number
+- Don't over-request `enrichment_level: "full"` reflexively — it costs more than `partial` (5.0 vs 1.5 credits) and a phone match takes longer/is less reliable, so only ask for it when the workflow actually needs a phone number
 - Don't skip polling — reveals are async, status starts as "queued"
 - Don't expect more than 30 results from search per call
 

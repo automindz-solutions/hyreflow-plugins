@@ -2,7 +2,9 @@
 
 ## When to use
 
-Lusha for B2B email + direct dial enrichment. Strong North American and European coverage with intent signal data. Good for sales prospecting workflows where direct dials matter. Email and phone are separate methods at separate prices — reach for `lusha_enrich_person_email` unless the play needs to dial; check `hyreflow tools get lusha enrich_person_email` for the live cost.
+Lusha for B2B email + direct dial enrichment. Strong North American and European coverage with intent signal data. Good for sales prospecting workflows where direct dials matter. Email and phone are separate methods — reach for `lusha_enrich_person_email` unless the play needs to dial.
+
+**BYOK-only.** Hyreflow holds no Lusha account, so Lusha runs only on a workspace's own connected key and costs 0 hyreflow credits; the workspace pays Lusha directly. With no key connected, a Lusha call answers `no_key` and its waterfall step is skipped with no call and no charge. Connecting a key needs the Essential plan or above.
 
 **Key strength**: Direct dials (not just HQ numbers). Lusha often surfaces mobile and desk direct numbers that other providers miss.
 
@@ -10,9 +12,9 @@ Lusha for B2B email + direct dial enrichment. Strong North American and European
 
 - **Input required**: LinkedIn URL (best), email, or first_name+last_name+(company_name or company_domain)
 - **Geographic coverage**: Global, strongest in North America + Europe
-- **Credit cost**: per revealed record, set by the method you call — an `*_email` method bills the base
-  rate, a `*_phone` method several times more (a phone reveal costs Lusha 5x an email one). Company
-  enrich is a flat rate. Lusha charges per call whatever it returns, so a 0-result search still bills.
+- **Credit cost**: 0 hyreflow credits (BYOK-only). On the workspace's own Lusha account, a reveal is
+  billed per record at the rate of the field the method reveals: a phone costs 5x an email. Lusha charges
+  at least one credit per call whatever it returns, so a 0-result search still uses Lusha credits.
   A handful of filter/catalog/usage lookups are free
 - **LinkedIn URL requirement**: Must contain "linkedin.com/in/". Sales Navigator URLs not supported.
 

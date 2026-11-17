@@ -156,7 +156,7 @@ building against a provider.
   practice) — use it; `catch_all_not_safe` should be avoided. BetterContact's multi-provider waterfall can
   out-cover a single-source lookup on catch-all domains. These remain **work** emails — BD use, not
   personal-email candidate acquisition (that's FullEnrich/LeadMagic/Wiza).
-- Billing: charged once, when the retrieved result carries data — 0.5 credits for an email reveal, 4.8
+- Billing: charged once, when the retrieved result carries data — 0.8 credits for an email reveal, 7.5
   for a phone reveal (email included) — check `hyreflow tools get bettercontact start_enrichment` for
   the live rate.
 
@@ -233,12 +233,12 @@ building against a provider.
   in one call. Convenience `enrich_person_email`/`enrich_person_phone`/`enrich_company` wrap a
   single-target search-and-enrich. Also available: prospecting, lookalikes,
   signals, filter-discovery, `get_usage`.
-- **Billing is per matched result, at the price of the field the method reveals** — an `*_email` method
-  bills the base rate, its `*_phone` twin several times more; check
-  `hyreflow tools get lusha enrich_person_email` for the live rate. There is no field argument, so an
-  email-only play never pays for a phone reveal. Lusha bills per call regardless of outcome — a 0-result search still costs the listed
-  rate. `canReveal` in the search response tells you whether a field is revealable before you spend
-  credits on it.
+- **BYOK-only: 0 hyreflow credits.** Lusha runs only on the workspace's own key; with none connected the
+  step is skipped (`no_key`). On that key, Lusha bills per matched result at the price of the field the
+  method reveals: an `*_email` method the base rate, its `*_phone` twin 5x. There is no field argument, so
+  an email-only play never pays for a phone reveal. Lusha bills per call regardless of outcome, so a
+  0-result search still uses Lusha credits. `canReveal` in the search response tells you whether a field
+  is revealable before you spend credits on it.
 - `get_usage.used` reflects transient holds that settle, not real spend — the authoritative number per
   call is the response's `billing.creditsCharged`. `get_usage` reads Lusha's own account usage and is
   callable only on a connected Lusha key; reconcile the workspace's total spend via

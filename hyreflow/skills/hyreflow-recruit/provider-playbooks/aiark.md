@@ -159,8 +159,8 @@ Sourcing + enrichment: company→people search → email/phone (export/find-emai
 > The filter shapes, mode enum (`SMART`/`WORD`/`STRICT`), field names, and response shape are documented from the spec in the **Filter structure** section above.
 
 **Credit costs:** company search 0.01/result; people search 0.05/result; reverse lookup 1.4/req;
-**mobile phone finder 0.332/req** (use only after a high-confidence match); export people/export single
-0.06/result; one-person find emails (no `trackId`) 0.06/found email, free on a miss;
+**mobile phone finder 2/req** (use only after a high-confidence match); export people 0.06/result;
+export single 0.3/found email; one-person find emails (no `trackId`) 0.3/found email, free on a miss;
 bulk find emails (`trackId`) 0.034/start; email-finder results 0.034/result;
 people analysis 0.266/req; polling, statistics, export results = **free**.
 
