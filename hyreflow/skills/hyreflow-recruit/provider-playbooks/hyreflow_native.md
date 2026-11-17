@@ -386,9 +386,10 @@ hyreflow tools execute hyreflow_native find_work_email --payload '{"first_name":
 ## Contact database search: first step of `people_search`
 `find_people` opens the `people_search` waterfall at 0.05 cr per profile, the same as the step after it.
 It runs titles, seniority, countries or cities, and company LinkedIn URLs; a search in the Gulf (UAE, Saudi
-Arabia, Qatar, Kuwait, Bahrain, Oman) goes to the next provider first, and a query with a state or region,
-or a company named only by domain or name, skips it rather than widen. A short page is filled by the next
-provider. Run `people_search`, not this method.
+Arabia, Qatar, Kuwait, Bahrain, Oman) goes to the next provider first. A US city with its state ("Austin, TX")
+runs here and keeps only that state's people; a state on its own, a region, or a company named only by domain
+or name skips it rather than widen. A short page is filled by the next provider. Run `people_search`, not this
+method.
 
 ## Postcode or city radius: towns within N miles (free)
 
