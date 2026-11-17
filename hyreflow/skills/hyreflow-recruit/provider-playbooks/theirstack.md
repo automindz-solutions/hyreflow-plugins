@@ -70,8 +70,8 @@ Call via the CLI: `hyreflow tools execute theirstack <method> --payload '{...}'`
 - `company_technographics(*, company_domain: str | None = None, company_name: str | None = None, company_linkedin_url: str | None = None, **extra) -> Any` — POST /v1/companies/technologies — technologies a company uses (3 TheirStack credits, vendor-side).
 - `create_company_list(payload: dict) -> Any` — POST /v0/company_lists — create a company list.
 - `credit_balance() -> Any` — GET /v0/billing/credit-balance — remaining credits on the caller's own TheirStack account; requires the workspace's own key.
-- `get_company_list(list_id: str | int) -> Any` — GET /v0/company_lists/{id}.
-- `list_company_lists(**params) -> Any` — GET /v0/company_lists — all company lists for the team.
+- `get_company_list(list_id: str | int) -> Any` — GET /v0/company_lists/{id} — one list this workspace created (`create_company_list`), by its id.
+- `list_company_lists(**params) -> Any` — GET /v0/company_lists — all company lists on the account (your own TheirStack key only).
 - `search_companies(filters: dict | None = None, *, page: int = 0, limit: int = 25, blur_company_data: bool | None = None, **extra) -> Any` — POST /v1/companies/search — company search. **3 THEIRSTACK credits per company returned** (vendor-side; hyreflow's price is this method's `cost` block).
 - `search_jobs(filters: dict | None = None, *, page: int = 0, limit: int = 25, **extra) -> Any` — POST /v1/jobs/search — hiring-signal job search. **1 THEIRSTACK credit per job returned** (vendor-side; the hyreflow price you budget with is this method's `cost` block).
 

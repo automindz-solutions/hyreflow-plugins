@@ -25,7 +25,7 @@ Call via the CLI: `hyreflow tools execute icypeas <method> --payload '{...}'` (p
 - `email_search(payload: dict) -> dict` — POST /email-search — launch an email-finder search (async). Returns a job id.
 - `email_verification(payload: dict) -> dict` — POST /email-verification — verify an email (async).
 - `ping() -> dict` — Hyreflow-managed-key verification probe (icypeas has no customer BYOK today). Icypeas' subscription endpoint requires the account email, so this launches a minimal email-search (returns a job id) to confirm the key authenticates — ICYPEAS credits are charged on a found result, so a junk lead is typically free vendor-side, but NOT guaranteed. hyreflow charges 0 for this probe (`unit: free`).
-- `read_results(payload: dict) -> dict` — POST /bulk-single-searchs/read — poll results for launched searches (by id/filters).
+- `read_results(payload: dict) -> dict` — POST /bulk-single-searchs/read — poll one launched search's result by its id: `{"mode": "single", "id": "<_id>"}`.
 - `subscription_information(email: str | None = None) -> dict` — POST /a/actions/subscription-information — plan + remaining credits: {plan, status, credits, quotas: {daily}, currency} — NOT callable by a workspace. It reads Hyreflow's own Icypeas account, not a per-workspace one (icypeas has no customer BYOK today); the engine refuses it on the workspace path regardless. Requires that account's email in the body — a wrong email 401s.
 
 <!-- API-SURFACE:END -->

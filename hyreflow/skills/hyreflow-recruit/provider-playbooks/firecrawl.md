@@ -38,7 +38,7 @@
 Call via the CLI: `hyreflow tools execute firecrawl <method> --payload '{...}'` (preview with `--dry-run`; `hyreflow tools get firecrawl <method>` returns the live contract + cost). Base: `https://api.firecrawl.dev`. Only the methods listed below are callable.
 
 - `extract(urls: list[str], *, prompt: str | None = None, schema: dict | None = None, **opts) -> dict` — POST /v2/extract — LLM structured extraction across URLs.
-- `get_crawl(crawl_id: str) -> dict` — GET /v2/crawl/{id} — poll crawl status + collected pages.
+- `get_crawl(crawl_id: str) -> dict` — GET /v2/crawl/{id} — poll crawl status + collected pages of a crawl this workspace started.
 - `get_credit_usage() -> dict` — GET /v2/team/credit-usage — remaining team credits + billing period. Free, no args — the BYOK key-verification probe.
 - `map(url: str, *, search: str | None = None, limit: int | None = None, **opts) -> dict` — POST /v2/map — discover all URLs on a site (sitemap). Use to find endpoint/doc pages.
 - `scrape(url: str, *, formats: list[str] | None = None, only_main_content: bool = True, **opts) -> dict` — POST /v2/scrape — render & scrape one URL. formats e.g. ['markdown','html','links'].
