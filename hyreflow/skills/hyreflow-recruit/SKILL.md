@@ -327,7 +327,7 @@ The adapters (`lib/`) and the machine-readable call contract (`reference/tool-re
 `apollo` · `zoominfo` (OAuth; enrich/search/intent/scoops, lookalikes & recommendations)
 
 **Enrichment** — emails/phones/contact + company data
-`lusha` · `leadmagic` · `icypeas` · `prospeo` · `fullenrich` · `bettercontact` · `wiza` · `exa` · `enrichley` (email validation — only when the user names it; the native `verify_emails` is the default)
+`lusha` (BYOK-only) · `leadmagic` · `icypeas` · `prospeo` · `fullenrich` · `bettercontact` (BYOK-only) · `wiza` · `exa` · `enrichley` (email validation — only when the user names it; the native `verify_emails` is the default)
 
 **Data / sourcing** — search, scrape, actors, signals
 `apify` (**BYOK-only** — needs the client's own Apify key; 0 credits, Apify bills them) · `aiark` · `firecrawl` · `serper` · `openmart` (local-business/SMB search, company enrichment, owners/people, business email, technology detection; BYOK-only) · `theirstack` (tech-stack / keyword-filtered job & company search, technographics, buying intent) · `predictleads` (funding rounds incl. Series A + job openings + tech detections — funding/hiring discovery) · `shovels` (US building permits + contractors — construction/trades) · `github` (developer sourcing — IT recruiting) · `clinicaltrials` (pharma/biotech/CRO hiring signals; no key) · `builtwith` (technographics — source/qualify companies by tech stack)

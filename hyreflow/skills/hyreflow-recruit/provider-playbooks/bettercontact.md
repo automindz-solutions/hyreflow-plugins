@@ -11,6 +11,11 @@
 > (`enrich_email_address: false, enrich_phone_number: true`), which is how the `phone_enrichment`
 > waterfall calls it and skips both the refusal and the work-email meta/warning.
 
+**BYOK-only.** Hyreflow holds no BetterContact account, so BetterContact runs only on a workspace's own
+connected key and costs 0 hyreflow credits; the workspace pays BetterContact directly. With no key
+connected, a BetterContact call answers `no_key` and its `phone_enrichment` step is skipped with no call and
+no charge. Connecting a key needs the Essential plan or above.
+
 ## Key patterns
 
 - **Enrichment is async.** `bettercontact_start_enrichment` launches a BetterContact job (one method — it always accepts a list, so single and bulk both go through it) and returns a request id immediately. Use `bettercontact_get_enrichment` to fetch terminal results.
@@ -21,11 +26,11 @@
 
 ## Pricing
 
-- Hyreflow bills once, on retrieval, when the result carries data: 0.8 credits for an email reveal, rising
-  to 7.5 when `enrich_phone_number: true` also returns a phone. Check
-  `hyreflow tools get bettercontact start_enrichment` for the live rate.
-- `bettercontact_get_enrichment` returns the vendor's own `credits_consumed` field, but that's BetterContact's internal accounting and does not change what Hyreflow bills.
-- Enabling `enrich_phone_number: true` raises the charge from 0.8 to 7.5 credits.
+- 0 hyreflow credits (BYOK-only). The job spends BetterContact credits on the workspace's own account, only
+  for a result that carries data: not-found and catch-all rows are free on BetterContact's side.
+- `bettercontact_get_enrichment` returns `credits_consumed`: what the job cost on that BetterContact account.
+- `enrich_phone_number: true` costs roughly ten times an email on BetterContact's side, so leave it off unless
+  the play needs a phone.
 
 ## When to use
 

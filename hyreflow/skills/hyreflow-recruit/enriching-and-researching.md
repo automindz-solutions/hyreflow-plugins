@@ -121,9 +121,10 @@ Each provider wants the identifier in a different field/shape — the waterfall 
   is usable** (send it); only `undeliverable` / `catch_all_not_safe` are unusable.
 
 ## Provider quirks (rest in each `provider-playbooks/<tool>.md`)
-- **BetterContact** — **BD / work-email flows only.** Not part of any waterfall; on an `email_enrichment`
-  (work-email) run you may call it directly (`bettercontact_start_enrichment`) when single-provider
-  finders miss. It returns **work** addresses (`data[].contact_email_address`) — never use it on a
+- **BetterContact** — **BD / work-email flows only.** BYOK-only: it runs only on the workspace's own
+  BetterContact key. Not in the email waterfalls (it runs in `phone_enrichment`, phone-only); on an
+  `email_enrichment` (work-email) run you may call it directly (`bettercontact_start_enrichment`) when
+  single-provider finders miss. It returns **work** addresses (`data[].contact_email_address`) — never use it on a
   candidate / `personal_email` pipeline, whatever the waterfall's hit rate was. Batch + async; ~30–40s to
   terminate; `_status:"deliverable"` marks a usable hit. The engine stamps `_meta.channel: "work_email"`
   + a `work_email_only` warning on its responses as a reminder.

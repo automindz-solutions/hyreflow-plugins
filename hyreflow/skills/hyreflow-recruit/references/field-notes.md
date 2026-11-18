@@ -156,9 +156,8 @@ building against a provider.
   practice) — use it; `catch_all_not_safe` should be avoided. BetterContact's multi-provider waterfall can
   out-cover a single-source lookup on catch-all domains. These remain **work** emails — BD use, not
   personal-email candidate acquisition (that's FullEnrich/LeadMagic/Wiza).
-- Billing: charged once, when the retrieved result carries data — 0.8 credits for an email reveal, 7.5
-  for a phone reveal (email included) — check `hyreflow tools get bettercontact start_enrichment` for
-  the live rate.
+- Billing: BYOK-only, so 0 hyreflow credits. BetterContact charges the workspace's own account once,
+  when the retrieved result carries data, and a phone reveal costs roughly ten times an email one.
 
 ## Exa
 - Auth is `x-api-key`. `search(query, num_results=N)` returns real results plus `costDollars` in the
