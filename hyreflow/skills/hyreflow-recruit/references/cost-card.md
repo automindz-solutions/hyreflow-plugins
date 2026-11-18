@@ -28,7 +28,7 @@ Each method is priced on its own: what the call costs Hyreflow, marked up to a 5
 | apollo | metered | metered | BYOK-only: customer pays Apollo directly |
 | ashby | metered | metered | BYOK-only: customer connects their own Ashby account |
 | atlas | metered | metered | BYOK-only: customer connects their own Atlas account |
-| bettercontact | `start_enrichment` 0.8 cr | `start_enrichment` 0.8 cr | 1 paid method |
+| bettercontact | metered | metered | BYOK-only: customer pays BetterContact directly |
 | breezy | metered | metered | BYOK-only: customer connects their own Breezy HR account |
 | builtwith | metered | metered | BYOK-only: customer pays BuiltWith directly |
 | bullhorn | metered | metered | BYOK-only: customer connects their own Bullhorn API user |

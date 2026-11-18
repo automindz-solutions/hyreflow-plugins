@@ -17,7 +17,7 @@ commit one.** The engine operator sets these in the server's secrets manager / e
 | apollo | `APOLLO_API_KEY` | header `x-api-key` | BYOK-only for user workspaces; no managed fallback for workspace calls; page/per_page |
 | ashby | `ASHBY_API_KEY` | HTTP Basic (key as username) | ATS job posting; needs the vendor's `jobsWrite` permission; connect-your-own (BYOK, self-serve) |
 | atlas | `ATLAS_API_KEY` | `Authorization: Bearer` | AI-native ATS/CRM; 30 methods; connect-your-own (BYOK, self-serve) |
-| bettercontact | `BETTERCONTACT_API_KEY` | header `X-API-Key` | async: start job → poll |
+| bettercontact | `BETTERCONTACT_API_KEY` | header `X-API-Key` | async: start job → poll. BYOK-only: no managed key, the workspace connects its own on the Integrations page |
 | breezy | `BREEZY_API_KEY`, `BREEZY_COMPANY_ID` | header `Authorization` (RAW token, **no** `Bearer` prefix) | ATS job posting; company id is a path segment; BYOK-only, **not self-serve — coming soon** while the vendor finishes its v3 API |
 | bullhorn | `BULLHORN_CLIENT_ID`, `BULLHORN_CLIENT_SECRET`, `BULLHORN_USERNAME`, `BULLHORN_PASSWORD` (+ optional `BULLHORN_REDIRECT_URI`) | loginInfo → 3-leg OAuth → BhRestToken | datacenter hosts resolved per username via loginInfo; leave redirect_uri unset unless the OAuth app needs it; BYOK-only, self-serve (connect your own API user) |
 | carerix | `CARERIX_CLIENT_ID`, `CARERIX_CLIENT_SECRET`, `CARERIX_TENANT` | OAuth client credentials → `Authorization: Bearer <token>` | BYOK-only, self-serve (Integrations → Carerix: Client ID + Client Secret + tenant name; the login host is found automatically); the token is fetched and refreshed for you |
