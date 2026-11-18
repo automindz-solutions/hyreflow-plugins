@@ -1,6 +1,6 @@
 ---
 name: spott
-description: "Read from and write to Spott (recruiting CRM/ATS — candidates, clients, client contacts, jobs, applications, notes, placements, tasks, opportunities, lists) via its REST API. Use when the user mentions Spott, pushing candidates/leads into the ATS, syncing clients/contacts, reading jobs, moving applications through pipeline stages, logging notes/tasks against a candidate, or adding candidates or clients to a named list. Pairs with the sourcing/enrichment layer: that produces an enriched CSV, this skill loads it into Spott. Keys: BYOK — connect your own Spott account."
+description: "Read from and write to Spott (recruiting CRM/ATS — candidates, clients, client contacts, jobs, applications, notes, placements, tasks, opportunities, lists, outreach sequences) via its REST API. Use when the user mentions Spott, pushing candidates/leads into the ATS, syncing clients/contacts, reading jobs, moving applications through pipeline stages, logging notes/tasks against a candidate, adding candidates or clients to a named list, or enrolling people into an outreach sequence. Pairs with the sourcing/enrichment layer: that produces an enriched CSV, this skill loads it into Spott. Keys: BYOK — connect your own Spott account."
 ---
 
 # Spott — Integration Meta Skill
@@ -57,6 +57,13 @@ pagination instead.
   `add_to_list_by_name`, which resolves internally), and confirm the resolved list with the user before
   writing — then link in batches of at most 250 ids. Use `list_lists` to browse existing lists and
   `create_list` to make a new one first. `remove_from_list_by_name` is the reverse.
+- **Enroll people into an outreach sequence.** Resolve the sequence with `find_outreach_sequence` (by
+  name) or browse with `list_outreach_sequences`, check its `status` and `purpose`, and confirm the
+  resolved sequence with the user. Then `enroll_in_outreach_sequence` once per person: a plain
+  candidate needs `candidate_id`; a client contact needs the `candidate_id` it is linked to (see
+  `get_client_contact_by_candidate`) plus its `client_contact_id`. It returns the run id. For many
+  people there is no bulk endpoint — use `batch` with
+  `{"args": [sequence_id, candidate_id, client_contact_id]}` per person (paced).
 
 ## 5) Approval gates (writes & bulk operations)
 
@@ -68,6 +75,9 @@ Spott writes are real changes to a production ATS. Before any create/update or b
    (applications also need `statusId`) — call the matching `get_*_stages` lookup and confirm the
    mapping before writing.
 3. **Get explicit go-ahead** before writing more than one record.
+4. **Enrolling into a sequence is outreach, not a record write.** Once the sequence is ONGOING, each
+   run drives real outreach. Show the user the sequence (name, status,
+   purpose) and the people to enroll, and get a go-ahead before the first enrol — also for a rerun.
 
 ## 6) Gotchas
 
@@ -87,6 +97,22 @@ Spott writes are real changes to a production ATS. Before any create/update or b
 - **`add_to_list_by_name` won't create a missing list.** If the name doesn't resolve, create the list
   first.
 - **Removing records from a list does not delete the records** — it only unlinks them from that list.
+- **Already enrolled is success, not an error.** If the person already has a run in the sequence,
+  `enroll_in_outreach_sequence` returns `already_enrolled: true` (with the existing run id when Spott
+  gives one), so a weekly rerun over the same list is safe: nobody already enrolled is sent anything again. A 409 "busy" (lock timeout) is different:
+  it raises — retry it later. A server error (5xx) or a lost response is not retried automatically,
+  because Spott may already have enrolled the person; the error says the enrolment "may have
+  applied". Never report that person as not enrolled: run the enrolment again, which is safe and
+  reports `already_enrolled` if it went through.
+- **Delegated sending.** A 403 means the API key's Spott user is not the sequence owner and delegated
+  sending is off. Have the owner enable delegated sending in Spott, or have the owner run the enrolment
+  with their own key. Never connect the owner's key in another member's slot: every Spott write that
+  member makes would then be recorded under the owner.
+- **Recipient type must fit the sequence purpose.** A 400 most often means e.g. a client contact into a
+  `VACANCY_PRESENTATION` sequence; check the sequence's `purpose` first, then the ids. A 404 means the
+  sequence, candidate or client contact id is wrong.
+- **Sequence names can repeat.** `find_outreach_sequence` raises on two same-named sequences rather
+  than guessing; pass the sequence id directly.
 
 ## 7) Handoff from the sourcing/enrichment layer
 
@@ -128,7 +154,9 @@ Call via the CLI: `hyreflow tools execute spott <method> --payload '{...}'` (pre
   - requires: content, dueDate, assignedToUserId, links
   - each `links` item requires: taskLinkId, entityType, entityId
   - example: `{"content":"Follow up with candidate","dueDate":"2026-09-05","assignedToUserId":"user-123","links":[{"taskLinkId":null,"entityType":"candidate","entityId":"candidate-123"}]}`
+- `enroll_in_outreach_sequence(sequence_id: str, candidate_id: str, client_contact_id: str | None = None) -> dict` — POST /outreach-sequences/{id}/runs — enroll a recipient in an outreach sequence.
 - `find_list(name: str, entity_type: str | None = None, list_type: str | None = None) -> dict | None` — GET /lists — resolve a list by NAME.
+- `find_outreach_sequence(name: str) -> dict | None` — GET /outreach-sequences — resolve an outreach sequence by NAME, like `find_list`.
 - `get_application(application_id: str) -> dict` — GET /applications/{id} — single application by id. CONFIRMED.
 - `get_candidate(candidate_id: str) -> dict` — GET /candidates/{id} — single candidate by id. CONFIRMED.
 - `get_client(client_id: str) -> dict` — GET /clients/{id} — single client by id. CONFIRMED.
@@ -154,6 +182,7 @@ Call via the CLI: `hyreflow tools execute spott <method> --payload '{...}'` (pre
 - `list_lists(limit: int = 25, list_type: str | None = None, cursor: str | None = None, max_items: int | None = None) -> Iterator[dict]` — GET /lists — iterate all lists. `list_type`, when given, must be `PERSONAL` or `WORKSPACE` — rejected, never coerced. The wire query param is literally `type`; the Python arg is named `list_type` to avoid shadowing the builtin. The response envelope is the `{items, pagination:{cursor}}` form with a documented STRING cursor (unlike the inferred object-cursor round-trip on applications/opportunities), which `_next_cursor`/`_encode_cursor` already pass through unchanged. CONFIRMED.
 - `list_notes(limit: int = 25, modified_since: str | None = None, modified_until: str | None = None, candidate_id: str | None = None, client_contact_id: str | None = None, source: str | None = None, label_ids: list | None = None, cursor: str | None = None, max_items: int | None = None) -> Iterator[dict]` — GET /notes — iterate all notes, auto-paginating. `limit` is the vendor PAGE SIZE (max 50); `max_items` caps total records, `cursor` resumes a truncated call. CONFIRMED.
 - `list_opportunities(limit: int = 25, modified_since: str | None = None, company_ids: list | None = None, cursor: str | None = None, max_items: int | None = None) -> Iterator[dict]` — GET /opportunities — iterate all opportunities, auto-paginating. `cursor` accepts a Hyreflow resume token (`hfp1_…` from a truncated call's `_meta.pagination.next_cursor`) or a raw vendor cursor; `max_items` caps total records. The dict-cursor round-trip (re-encoding an object `pagination.cursor` back into the `cursor` request param) is inferred, not spec-verified — see `_encode_cursor`'s docstring. Verify on first pilot before relying on it.
+- `list_outreach_sequences(limit: int = 25, search_query: str | None = None, cursor: str | None = None, max_items: int | None = None) -> Iterator[dict]` — GET /outreach-sequences — list outreach sequences, auto-paginating.
 - `list_placements(page: int = 0, page_size: int = 20, company_id: str | None = None, modified_since: str | None = None, modified_until: str | None = None, cursor: str | None = None, max_items: int | None = None) -> Iterator[dict]` — GET /placements — iterate all placements (offset pagination, NOT cursor), auto-paginating. `max_items` caps total records; `cursor` resumes a truncated call via the `_meta.pagination.next_cursor` token (it carries the page index + intra-page offset).
 - `list_tasks(limit: int = 25, modified_since: str | None = None, modified_until: str | None = None, candidate_ids: list | None = None, client_contact_ids: list | None = None, vacancy_ids: list | None = None, company_ids: list | None = None, opportunity_ids: list | None = None, sources: list | None = None, label_ids: list | None = None, cursor: str | None = None, max_items: int | None = None) -> Iterator[dict]` — GET /tasks — iterate all tasks, auto-paginating. `limit` is the vendor PAGE SIZE (max 50); `max_items` caps total records, `cursor` resumes a truncated call. CONFIRMED.
 - `move_application(application_id: str, payload: dict) -> None` — PUT /applications/{id}/move — move an application to another stage. Required: stageId (does not accept null). CONFIRMED.
