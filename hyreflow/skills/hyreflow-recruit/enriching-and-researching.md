@@ -102,9 +102,11 @@ Each provider wants the identifier in a different field/shape — the waterfall 
 - **A failing own key is not a miss.** When the user's OWN provider key fails (out of credits, refused by the
   provider, or throttled), the response carries `_meta.provider_errors[]` with the provider, a `reason`
   (`out_of_credits` / `rejected` / `rate_limited`), a plain-language `message` and how many rows it touched. Tell
-  the user that message as written: it is their own account with that provider, so they fix it there. Those
-  rows had that provider skipped, not searched, so do NOT report them as "no email found". Any rows that got
-  an email from another provider are real.
+  the user that message as written: it is their own account with that provider, so they fix it there. When the
+  provider is one Hyreflow also runs on its own account, those rows are searched there instead, billed in
+  credits: the entry's `rows_on_hyreflow_key` counts them and their step says `"fallback": "managed"`, and a miss
+  there is a real miss. Any other rows had that provider skipped, not searched, so do NOT report them as "no
+  email found". Any rows that got an email from another provider are real.
 - **Count-before-pay + over-provision ~1.4×.** Coverage is a property of the person — a bare profile / tiny-co
   contact has near-zero coverage everywhere. Deliver the best **N complete** rows; drop the incomplete.
 
