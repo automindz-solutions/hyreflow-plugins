@@ -48,7 +48,7 @@ commit one.** The engine operator sets these in the server's secrets manager / e
 | serper | `SERPER_API_KEY` | header `X-API-KEY` | google.serper.dev + scrape.serper.dev |
 | smartlead | `SMARTLEAD_API_KEY` | **query param** `api_key` | not a header; connect-your-own (BYOK, self-serve) |
 | smartrecruiters | `SMARTRECRUITERS_API_KEY` | header `x-smarttoken` | ATS job posting; connect-your-own (BYOK, self-serve) |
-| spott | `SPOTT_API_KEY` | header `x-api-key` | 61 methods; read + create/update, no record delete; connect-your-own (BYOK, self-serve) |
+| spott | `SPOTT_API_KEY` | header `x-api-key` | 64 methods; read + create/update, no record delete; connect-your-own (BYOK, self-serve) |
 | theirstack | `THEIRSTACK_API_KEY` | `Authorization: Bearer` | credits: jobs + companies billed per result (check `hyreflow tools get theirstack <method>` for the live rate); blur_company_data=free preview |
 | predictleads | `PREDICTLEADS_API_KEY`, `PREDICTLEADS_API_TOKEN` | headers `X-Api-Key` + `X-Api-Token` (**inferred — verify**) | funding/hiring discovery; JSON:API; base `/api/v3`; company endpoints per-request (≤1000), discover per-result; paths/auth flagged verify-on-pilot |
 | shovels | `SHOVELS_API_KEY` | header `X-API-Key` | BYOK-only for user workspaces; no managed fallback for workspace calls; US building permits + contractors; cursor pagination; searches need geo_id+permit_from/to |
