@@ -345,7 +345,7 @@ The adapters (`lib/`) and the machine-readable call contract (`reference/tool-re
 `instantly` (email) · `lemlist` (email+LinkedIn) · `heyreach` (LinkedIn) · `smartlead` (email) · `reply_io` (email+LinkedIn) · `sendkit` (email, dedicated-IP deliverability) · `emailbison` (email, the client's own instance: instance URL + API token) · `sourcewhale` (recruiting outreach) · `leonar` (recruiting email+WhatsApp sequences; also keeps the contacts and project pipelines, API key)
 
 **Recruiting CRMs** — the write targets for candidates, clients and placements
-`recruit-crm` · `loxo` · `vincere` · `recruiterflow` · `atlas` · `bullhorn` · `carerix` (client ID + client secret + Carerix URL) · `crelate` (API key) · `spott` · `jobadder` (OAuth, self-serve — one click via Hyreflow's own app; a workspace can switch to its own Client ID + Secret instead) · `trackerrms` (OAuth, self-serve — paste the client secret Tracker support issues + pick the region, then Connect) · `zoho_recruit` (OAuth, self-serve — create a Zoho app + pick the data center, then Connect; read-only here — search candidates, list/search clients, read job openings; no ATS write methods)
+`recruit-crm` · `loxo` · `vincere` · `recruiterflow` · `atlas` · `bullhorn` · `carerix` (client ID + client secret + Carerix URL) · `crelate` (API key) · `spott` · `stardex` (organization API key from an admin) · `jobadder` (OAuth, self-serve — one click via Hyreflow's own app; a workspace can switch to its own Client ID + Secret instead) · `trackerrms` (OAuth, self-serve — paste the client secret Tracker support issues + pick the region, then Connect) · `zoho_recruit` (OAuth, self-serve — create a Zoho app + pick the data center, then Connect; read-only here — search candidates, list/search clients, read job openings; no ATS write methods)
 
 **ATS** — stand a role up and take it live
 `ashby` · `lever` · `smartrecruiters` · `recruitee` — all BYOK-only — plus `breezy` (**coming soon — vendor API in progress, not connectable**). `create_job` never publishes in any of them; taking the role live is a second call. To post one role to several at once, follow [`recipes/multi-ats-job-posting.md`](recipes/multi-ats-job-posting.md).
@@ -450,7 +450,7 @@ Preview spend first with `--dry-run`; the CLI adds bearer auth, 429/5xx retries,
 `apollo`/`aiark`/`apify`/`theirstack` (find companies/people) → **qualify against the client's ICP
 (`ICP.md` first, see below)** → `leadmagic`/`prospeo`/`fullenrich` (waterfall email+phone) → `hyreflow_native` `verify_emails` (validate
 deliverability) → `instantly`/`smartlead`/`reply_io`/`sendkit`/`emailbison`/`heyreach`/`lemlist`/`sourcewhale`/`leonar` (activate) →
-`recruit-crm`/`bullhorn`/`carerix`/`crelate`/`loxo`/`vincere`/`recruiterflow`/`atlas`/`trackerrms` (land the record).
+`recruit-crm`/`bullhorn`/`carerix`/`crelate`/`stardex`/`loxo`/`vincere`/`recruiterflow`/`atlas`/`trackerrms` (land the record).
 `aircall`/`justcall` + `fathom` close the loop on the conversation side (call logs, transcripts → ATS activity).
 The same arc as recruiter **behaviour** (source → shortlist → outreach → slate, + BD/MPC + passive-poach)
 — the decision at each stage and *why* — is in [`recruiter-craft.md`](recruiter-craft.md) §B.
@@ -721,7 +721,7 @@ plan step — for free/zero-cost work:
   - **Metered data** (Apollo, ZoomInfo, BuiltWith, Shovels) — each call burns their vendor credits. Real
     money → gate the spend.
   - **Their sequencer / ATS / CRM / meeting / telephony tool** (Instantly, Lemlist, HeyReach, Smartlead, SendKit, EmailBison, Leonar,
-    Recruit CRM, Recruiterflow, Loxo, Atlas, Carerix, Crelate, Spott, Ashby, Lever, SmartRecruiters, Recruitee,
+    Recruit CRM, Recruiterflow, Loxo, Atlas, Carerix, Crelate, Spott, Stardex, Ashby, Lever, SmartRecruiters, Recruitee,
     Fathom, Granola, Aircall, JustCall) — a flat plan, so a call costs no per-call money. Reads
     are free to make; gate the **write**, because it lands in their live account in front of candidates.
     **Narrow carve-out for sequencers whose playbook documents a non-sending campaign state** (draft or
@@ -1008,6 +1008,9 @@ for / when to reach for it*; the quirks live in the playbook. (Keep this list cu
 - [spott playbook](provider-playbooks/spott.md)
   Summary: Use as the Spott ATS — sync candidates, clients, contacts and jobs, and move applications through the hiring pipeline.
   Last reviewed: 2026-06-01
+- [stardex playbook](provider-playbooks/stardex.md)
+  Summary: Use as the Stardex ATS/CRM — search, create and update people (candidates), client contacts, companies and jobs, put people on a job and move their pipeline stage, add notes and tasks (create_person matches by LinkedIn URL and can merge into an existing person).
+  Last reviewed: 2026-11-17
 - [theirstack playbook](provider-playbooks/theirstack.md)
   Summary: Use for tech-stack / keyword-filtered job and company search, technographic and buying-intent data — plain open-roles queries go to the Hyreflow native job scrapes instead.
   Last reviewed: 2026-06-01
