@@ -113,6 +113,13 @@ quoted in **credits**; a money figure is stated as an explicit **USD** amount, n
 another currency. Full vocabulary, the proactive bounds, the user-language canon, and the funnel
 behaviour canon live in [`recruiter-craft.md`](recruiter-craft.md) — read it at session start.
 
+## Second brain: read it first, offer to save after
+At the start of a new task or chat (shortlist, sourcing, outreach, BD, qualify, or a named client), read only
+the second-brain notes that fit the use case, never all of them, and say which you used. After a good run, or
+when the user states something durable about their agency, **offer** to save it ("Save this to your second
+brain?") with the exact text, and write only after a clear yes. Which notes, and how to save:
+[`references/second-brain.md`](references/second-brain.md).
+
 ## Automating a pipeline → `/hyreflow-workflows`
 If the user wants to **automate, schedule, or wire a repeatable multi-step pipeline** (cron/webhook,
 "every Monday…", "when X happens…", a reusable workflow), route to **`/hyreflow-workflows`** — it builds
@@ -122,7 +129,7 @@ tool/endpoint for each step inside that workflow.
 ## Documentation hierarchy
 - **L1 — `SKILL.md`** (this file): router — decision model, guardrails, credit/approval gates, where to read next.
 - **L2 — `recruiter-craft.md`**: always-on — recruiter voice/vocabulary + the full-funnel behaviour canon (what to do next, and why); recipes point back to it.
-- **L2 — `references/*.md`**: cross-cutting *how* — `provider-precedence.md`, `async-jobs.md`, `architecture.md`, `cost-card.md`, `env-vars.md`, `recruiter-playbooks/` (Boolean/X-ray craft + corpus intake).
+- **L2 — `references/*.md`**: cross-cutting *how* — `provider-precedence.md`, `async-jobs.md`, `architecture.md`, `cost-card.md`, `env-vars.md`, `second-brain.md` (which brain notes to read per task, and the save offer), `recruiter-playbooks/` (Boolean/X-ray craft + corpus intake).
 - **L2 — `references/client-preferences.md`**: one note per client in the brain's `Clients` group — read before building for that client, saved only with the user's yes.
 - **L2.5 — `recipes/*.md`**: step-by-step task playbooks — when one matches, **follow it as your plan**.
 - **L3 — `provider-playbooks/<tool>.md`**: per-provider auth, methods, gotchas + the auto-generated **Callable surface**.
@@ -558,15 +565,20 @@ Multi-tool flows have a step-by-step recipe in `recipes/` — follow it as the e
 - **The client's own `ICP.md` wins.** Built by **`/icp`** and kept in the client's working directory
   (per-client **data**, NOT in this skill), it is what they wrote and checked, so use it whenever it exists.
 - **Else read the second brain**, when you have the `hyreflow_knowledge_*` tools (an MCP connection; it may
-  be empty): `hyreflow_knowledge_index`, then `hyreflow_knowledge_read` the ICP and persona
-  pages and any `imported-*` notes (`hyreflow_knowledge_search` for a topic), before asking the user about
-  their business, roles, ICP or messaging. Most notes are built from the company's public site: a `draft` page
-  is a guess, so confirm it with the user before you rely on it. An `imported-*` note is the user's own file
+  be empty): `hyreflow_knowledge_index`, then `hyreflow_knowledge_read` the notes that fit the
+  task (the table in [`references/second-brain.md`](references/second-brain.md)) and any `imported-*` notes
+  (`hyreflow_knowledge_search` for a topic), before asking the user about
+  their business, roles, ICP or messaging. Most notes are built from the company's public site: a `draft` of a
+  built type (persona, angle, proof...) is a guess, so confirm it with the user before you rely on it. A note
+  the user saved with a yes is `active`: use it. An `imported-*` note is the user's own file
   (folder Imported), so weigh it like `ICP.md`. Ask the user only when neither exists.
-- **Keep the brain right.** When the user corrects something about their business, roles, ICP or messaging,
-  show them the changed note text, then save it with `hyreflow_knowledge_write` (it changes only the fields
-  sent, every teammate's agent reads it at once, and there is no undo). A confirmed `draft` becomes
-  `active`. On the CLI there is no brain to write to: update `ICP.md` instead.
+- **Keep the brain right.** When the user asks you to change a note, or corrects something about their
+  business, roles, ICP or messaging, show them the changed note text and save it with `hyreflow_knowledge_write`
+  only after a clear yes, or when they asked you to save it (it changes only the fields sent, every teammate's
+  agent reads it at once, and there is no undo). A note the build wrote changes only when the user asks to
+  change that note; a new rule or learning goes in a new note. A confirmed `draft` becomes `active`. The save
+  offer is in [`references/second-brain.md`](references/second-brain.md). On the CLI there is no brain to write
+  to: update `ICP.md` instead.
 - **Searches start from the persona** when the brain has one: build the `people_search` payload (`titles`,
   `locations`, `skills`, `keywords`, `seniority`) from the persona page's Search filter notes, then tighten it
   with what the user says.
