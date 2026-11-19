@@ -10,6 +10,9 @@ capabilities below — not a hard-coded pipeline.
 > **What's next + why:** this is the *source → shortlist* leg; the funnel continues to outreach → slate.
 > See [`../recruiter-craft.md`](../recruiter-craft.md) §B for the recruiter decision at each stage.
 
+> **Shortlist for a named client?** Read that client's note first and apply it:
+> [`../references/client-preferences.md`](../references/client-preferences.md).
+
 > **Key rule:** the **competitor leg is an ADD-ON that *prioritizes*, never an exclusive filter.** You always run
 > the general search; competitor-sourced candidates are *boosted to the top* because they carry the domain logic
 > (they already sell/build for the same category). General profiles still fill the rest of the shortlist.

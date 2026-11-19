@@ -123,6 +123,7 @@ tool/endpoint for each step inside that workflow.
 - **L1 — `SKILL.md`** (this file): router — decision model, guardrails, credit/approval gates, where to read next.
 - **L2 — `recruiter-craft.md`**: always-on — recruiter voice/vocabulary + the full-funnel behaviour canon (what to do next, and why); recipes point back to it.
 - **L2 — `references/*.md`**: cross-cutting *how* — `provider-precedence.md`, `async-jobs.md`, `architecture.md`, `cost-card.md`, `env-vars.md`, `recruiter-playbooks/` (Boolean/X-ray craft + corpus intake).
+- **L2 — `references/client-preferences.md`**: one note per client in the brain's `Clients` group — read before building for that client, saved only with the user's yes.
 - **L2.5 — `recipes/*.md`**: step-by-step task playbooks — when one matches, **follow it as your plan**.
 - **L3 — `provider-playbooks/<tool>.md`**: per-provider auth, methods, gotchas + the auto-generated **Callable surface**.
 - **Field notes — `references/field-notes.md`**: live-verified provider behaviour per provider (filter shapes, billing units, coverage limits) — the specifics vendor docs get wrong or omit.
@@ -137,6 +138,7 @@ filter and pulling the entire DB). Reading more than one is normal and encourage
 
 | When the task is… | Read first |
 |---|---|
+| Any shortlist, sourcing, outreach or BD task **for a named client** ("for Acme") | [`references/client-preferences.md`](references/client-preferences.md) (read that client's note first and apply it), then the task's own doc below |
 | The user asks to **run Hyreflow onboarding** / get started (their first prompt) | call `hyreflow_onboarding` and follow what it returns; the same text is the **`hyreflow-onboarding`** skill |
 | Talk like a recruiter / what's the better next move / reframe recruitability | [`recruiter-craft.md`](recruiter-craft.md) (voice + vocabulary + full-funnel behaviour canon) |
 | Construct a **Boolean / X-ray** search string | [`references/recruiter-playbooks/boolean-search.md`](references/recruiter-playbooks/boolean-search.md) (operators, `site:` X-ray, mapping onto `people_search`) |
