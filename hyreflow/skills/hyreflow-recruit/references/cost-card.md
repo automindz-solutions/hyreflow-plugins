@@ -71,6 +71,7 @@ Each method is priced on its own: what the call costs Hyreflow, marked up to a 5
 | smartrecruiters | metered | metered | BYOK-only: customer connects their own SmartRecruiters account |
 | sourcewhale | metered | metered | BYOK-only: customer connects their own SourceWhale account (API key + user email) |
 | spott | metered | metered | BYOK-only: customer connects their own Spott account |
+| stardex | metered | metered | BYOK-only: customer connects their own Stardex API key |
 | theirstack | `search_jobs` 0.9 cr | `search_companies` 2.7 cr | 4 paid methods |
 | trackerrms | free | free | No Hyreflow credits for any method. |
 | vincere | free | free | No Hyreflow credits for any method. |
