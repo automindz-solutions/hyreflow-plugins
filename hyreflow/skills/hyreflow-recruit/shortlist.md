@@ -48,6 +48,7 @@ POST /shortlist {"job_spec": <JD text>,            # required
                  "must_haves": ["…"],              # optional HARD GATES — ask the user first
                  "questions": {…},                 # optional: your own set, skips generation
                  "regenerate_questions": true,     # optional: replace this JD's stored set
+                 "owner_check": false,             # optional: only for a founder/partner role
                  "min_score": <0-10>}              # optional
 ```
 
@@ -55,7 +56,7 @@ Every screen runs in the background; there is no mode to pick. The call waits ab
 it, then answers one of two ways:
 
 - **Finished** — the ranking: `{run_id, status: "completed", candidates: [{row, full_name, title, …,
-  shortlist: {score, tier, categories{}, holistic{}, must_haves[], unverified[]?, bonus?, basis}}], scored, count, _meta}`.
+  shortlist: {score, tier, categories{}, holistic{}, must_haves[], unverified[]?, flags[]?, runs_own_firm?, bonus?, basis}}], scored, count, _meta}`.
   Each ranked row carries who the candidate is, `row` (its position in `_meta.dataset_id`) and the
   verdict — not the profile you sent. The full rows are in the dataset.
 - **Still running** — a handle: `{run_id, dataset_id, status, progress: {done, total},
@@ -227,6 +228,20 @@ a typical set). A set you wrote yourself keeps the fixed bars, `tier_1` ≥ 7.5 
 before any bonus) that no gate clearly failed — the tier never
 filters; a high score never overrides a failed must-have. An `unverified` row stays in: say which
 requirement it is missing evidence for when you present it.
+
+**Someone who runs their own firm is flagged, not rejected.** Every screen also asks whether the
+profile says the candidate currently owns or runs their own firm or business (founder, owner, managing
+partner, sole practitioner). `shortlist.runs_own_firm` is that probability; at 0.7 or more the row
+carries `flags: ["runs_own_firm"]`, is kept out of `tier_1` (at most `tier_2`) and ranks below every
+`tier_1` row; on a generated set a flagged `tier_2` row also ranks below the unflagged `tier_2` rows. A
+flagged row below `tier_2` (`no_fit`, `insufficient_data`) ranks by its score like any other. Its score is unchanged, so you can still see where it would have ranked.
+The check is one more question on every row, so a screen costs a little more than it did without it;
+a `dry_run` quote includes it.
+`_meta.runs_own_firm` counts them. When you present one, say they appear to run their own firm and
+are unlikely to move for an employed role. Set `owner_check: false` (over MCP or `POST /shortlist`; the
+`hyreflow shortlist` command has no flag for it) when the role is itself a founder, co-founder or partner
+role. `runs_own_firm` is a reserved name: a `questions` set of your own may not
+use it.
 
 A `title_only` row that scores below the `tier_2` bar comes back `insufficient_data`, not `no_fit`:
 on title, employer and location alone a strong candidate scores as low as a weak one, so it is not a
