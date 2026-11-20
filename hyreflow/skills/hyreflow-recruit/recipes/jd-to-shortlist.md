@@ -86,6 +86,13 @@ Docs this leans on: [`finding-companies-and-contacts.md`](../finding-companies-a
   Tag `_source = general`.
   → direct: `POST /search/people_search` `{query:{...target filters}, coverage:"single", limit:~1.4×N}`
   → promotion: `POST /search/people_search` `{query:{...feeder filters}, coverage:"single", limit:~0.5×N}`.
+- **Leave firm owners out:** every candidate search here sets `exclude_owners: true`, so founders, owners,
+  managing partners and sole practitioners (and people at a firm named after themselves) never enter the
+  pool. They are not realistic hires for an employed or consultancy role. Leave it off only when the role is
+  itself a founder or partner role. It can cost more than the same search without it: left-out rows are
+  still charged, and the search pages further to fill `limit` with people it keeps. Expect about twice
+  the rows when roughly half are owners, and more when owners are the majority (60% owners is about 3x).
+  Over MCP the search stops at the approved quote and returns fewer people instead.
 - **Merge + dedup** by `linkedin_url`; union `_source` and `_candidate_path` when a person appears in several
   calls. Do not rank on title or promotion potential until dated work history arrives. Count-before-pay and put
   every added promotion-path call inside the same pilot/approval estimate as the direct path.
@@ -105,6 +112,10 @@ Docs this leans on: [`finding-companies-and-contacts.md`](../finding-companies-a
 - Score each candidate's profile vs the JD must-haves → a 0-10 `qualify.score`; **drop candidates below your bar**
   (or below `min_score` if set). This is the precision step (raw search is recall). Competitor-sourced
   candidates usually score higher but still get qualified.
+- `/qualify` does not check whether someone runs their own firm, and the search filter reads only the title
+  and headline. When a profile shows the candidate currently owns or runs their own firm (founder, owner,
+  managing partner, sole practitioner), rank them below the rest and say why, unless the role is itself a
+  founder or partner role.
   → `POST /provider-playbooks/hyreflow_agent/infer` per candidate (or batch).
   - **For a batch, use the `/qualify` endpoint** (the standard way to score all candidates in one call):
     `POST /qualify {"job_spec": <JD text>, "candidates": [Person, …], "min_score": <0-10 optional>}` →
