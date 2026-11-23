@@ -36,7 +36,10 @@ Mandatory workflow:
    - `../enriching-and-researching.md` for known-company contact finding / persona lookup
 4. Decide which path applies:
    - Candidate sourcing (people-first): default to the `people_search` waterfall tool with a canonical
-     query (`titles`/`locations`/`company_domains`/`seniority`/`limit`). Only drop to a single provider's
+     query (`titles`/`locations`/`company_domains`/`seniority`/`limit`). `seniority` is a derived-by-default
+     hard filter on the current title level — always set the band the ask implies (canonical values in
+     `finding-companies-and-contacts.md`), so above-level people never reach the list. Only drop to a
+     single provider's
      flat search (`apollo_search_people`, `aiark_people_search`, …) when you need provider-level filter
      control or the user named one provider.
    - Signal/BD (company-first): find the accounts/signals first — open-roles signals go to

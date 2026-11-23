@@ -51,7 +51,10 @@ Planning rules:
 
 - Sourcing DEFAULT is the **`people_search` waterfall tool**: name the `tools execute people_search`
   call + canonical query (`titles`/`locations`/`company_domains`/`seniority`/`limit`) per
-  `finding-companies-and-contacts.md`. A single provider's flat search (`tools execute <provider>_<search>`)
+  `finding-companies-and-contacts.md`. Derive `seniority` whenever the ask names or implies a level — it
+  is a hard filter on the current title level, and a plan without it shortlists above-level people. An
+  ask stated only in years goes on the years filters (see that doc's seniority note). A single provider's
+  flat search (`tools execute <provider>_<search>`)
   is the advanced/override path — only when provider-level filter control is needed.
 - Prefer `hyreflow enrich` (the waterfall) for row-level email/phone/LinkedIn and repeated transforms.
 - For people search, **expand the title to its job function** — plan an expanded `titles[]` (spelling

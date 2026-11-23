@@ -40,6 +40,32 @@ provider, each paged only as far as `limit` needs — the union can exceed `limi
 row it returns and the engine sizes each vendor page from `limit` — "find me 5 engineers" with no
 `limit` fetches and pays for 25 rows to show 5.
 
+> **`seniority` is a hard AND filter on the person's CURRENT title level** — canonical values
+> `intern | entry | mid-level | senior | manager | head | director | vp | partner | c_suite | founder |
+> owner` (`junior` → `entry`, `mid` → `mid-level`). Each provider maps it to its own enum and drops a value it
+> has none for, so a provider never runs unfiltered and never gets Manager or above for an IC ask (AI Ark has
+> `mid-level`; Apollo and Prospeo have no mid band, so `mid-level` goes out as the IC levels around it, wider
+> than mid but never Manager or above;
+> ZoomInfo's enum is only `manager | director | vp | c_suite` plus non-manager, so it is skipped for `senior`,
+> `entry`, `mid-level`, `head`, `founder`, `owner` and `partner`, and `["senior","manager"]` runs it as Manager
+> only). A value no provider maps (e.g. `lead`, `principal`) is reported in `_meta.seniority_not_bound`
+> with the canonical list. Whenever the ask names a level ("intermediate",
+> "senior hire", "working planners, not heads") or a job spec implies one, send the matching band —
+> don't leave it off. A provider that can't bind ANY of the values is **skipped, never run unfiltered**; the
+> contact database binds only `manager | director | vp | c_suite` and skips the whole ask when one value is
+> outside those (e.g. `["manager","head"]`), so the next provider answers. A web search
+> can't prove a person's level, so a seniority query skips the web fallbacks while any database finds
+> someone. When the databases all find nobody (a company none of them covers), the web fallbacks run
+> once more without the level, and those rows carry `filters_relaxed: ["seniority"]`: check each
+> person's current title against the level before you ship them. A matching PAST
+> title doesn't count: someone who has since moved up is excluded.
+>
+> The level comes from the title, not from years. A plain title with no level word ("Recruiter",
+> "Software Engineer", "Transport Planner") is `mid-level`; `entry` is a title that says Junior,
+> Graduate, Trainee or Associate. So an ask stated only in years ("intern level to 4 years") goes on
+> `max_experience_years`, with `seniority` left off or set to `entry` and `mid-level` together —
+> never `entry` alone, which drops every plain-titled junior and can return nobody.
+
 > **For IT/role sourcing, `skills` is the precision lever — use it over title-only filtering.** It's
 > pushed down to aiark `contact.skill` (SMART match) and **prefilters at the source**, instead of a
 > broad title-only pull + client-side filtering of the returned `skills[]` (which wastes credits on
@@ -66,7 +92,7 @@ row it returns and the engine sizes each vendor page from `limit` — "find me 5
 > the badge directly with `profile_badges`, always with `titles` or `locations`. Providers that can't express a field (`skills`: every
 > provider but AI Ark; `keywords`: Prospeo and Apollo when there are several) are skipped with
 > `outcome: "unsupported_fields"`. If AI Ark answered and the whole search found no one, those providers
-> run once more without `skills`/`keywords` (never after an AI Ark error). Those rows are **billed**, carry
+> run once more without `skills`/`keywords`/`seniority` (never after an AI Ark error). Those rows are **billed**, carry
 > `filters_relaxed: [...]`, and are **not confirmed to match the dropped filter**: screen them and tell the
 > recruiter the filter was relaxed. Web rows whose location is outside `locations` carry
 > `outside_locations: true`; flag them, never present them as in-region.
@@ -91,9 +117,10 @@ covers it. (`coverage:"max"` visits every source, so it runs them alongside ever
   returned rows but none could be verified as at the requested company, that step reports `outcome:
   "company_mismatch"` with `verify_dropped` (how many rows were dropped) — distinguishing a leg that
   contributed nothing from one that found nobody at all.
-- These steps read the company anchor plus `titles`, `locations`, `seniority`, `keywords`,
-  `min_experience_years`. A query carrying `skills`, `max_experience_years`, a tenure window, `departments` or firmographics stops
-  at the databases — a web result can't prove those, so it isn't asked to.
+- These steps read the company anchor plus `titles`, `locations`, `keywords`,
+  `min_experience_years`. A query carrying `skills`, `seniority`, `max_experience_years`, a tenure window, `departments` or firmographics stops
+  at the databases — a web result can't prove those, so it isn't asked to. The exception is an empty search:
+  then they rerun without `skills`, `keywords` or `seniority`, flagged `filters_relaxed`.
 - A row with **`verification_required: true`** came from a profile *search result*, not a profile record:
   confirm the company and title on the profile before you ship or contact it. `_meta.warnings` counts them.
 - A web search is charged per request whether or not it finds anyone (a people-DB miss stays free).
@@ -343,7 +370,8 @@ FP&A, tax …) with their LinkedIn link" — a headhunter mapping an org from a 
 
 ### Executive talent map with no company list ("CFO in <city>, from 50–250-person SaaS companies, with M&A")
 `people_search` has **no industry filter**, so a business-model constraint (subscription/licence tech) cannot ride
-the query. Headcount can, but only AI Ark applies it: `company_employee_min` / `company_employee_max`.
+the query. Headcount can — AI Ark, Prospeo and ZoomInfo apply `company_employee_min` / `company_employee_max`.
+
 1. Build the target-company list first (`exa_search` / `aiark_company_search` for subscription/licence-model tech
    companies in the market, then check each against the headcount band), keep the verified domains. If the band
    alone is enough, skip this and pass `company_employee_min`/`_max` straight to `people_search`.
@@ -354,6 +382,13 @@ the query. Headcount can, but only AI Ark applies it: `company_employee_min` / `
 3. Past-employer fit (a candidate who *used to* work at a qualifying company) is a `linkedin_profile`
    job-history check on the URLs `people_search` already returned — never a reason to call a profile tool
    without a URL.
+
+> **Company-size default for company-first lists (BD, "companies like X", target-account maps — not candidate
+> sourcing).** Take the size band from the user's context when they give one. When they don't, assume **SME
+> (up to ~250 employees)** and say that is what you assumed so they can correct it — pass
+> `company_employee_max: 250` on the company search, or the equivalent headcount filter on a company-search
+> tool. On `people_search` that field limits the chain to AI Ark, Prospeo and ZoomInfo (the others can't
+> filter on size), so don't add it to a candidate search.
 
 ## Hiring-manager identification — `people_search` per company, reporting line first (UNIVERSAL RULE)
 When the task is "find the hiring manager for this role" — BD on companies with live roles, a job posting,
