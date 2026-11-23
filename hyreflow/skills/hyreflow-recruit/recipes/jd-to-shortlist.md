@@ -48,6 +48,16 @@ Docs this leans on: [`finding-companies-and-contacts.md`](../finding-companies-a
 **1 — PARSE the JD → canonical `PeopleQuery`** *(AI step — `hyreflow_agent.infer` with a schema)*
 - Extract `{ titles[] (target-level role + EN/DE searchable variations), seniority, feeder_titles[],
   feeder_seniority, skills[] (must-haves only), certifications[], min_experience_years, locations[], keywords[] }`
+- **`seniority` is required, not optional** — always derive the level band the JD implies, from its own
+  seniority words or the scope the role reports into, and pass it on every `people_search` call. Use the
+  canonical levels `intern | entry | mid-level | senior | manager | head | director | vp | partner |
+  c_suite | founder | owner` (`junior` → `entry`, `mid` → `mid-level`). It is a hard AND filter on the
+  candidate's **current** title level — a "Transport Planner" spec that also matches Transport Managers
+  and Heads of is exactly the failure this prevents. Include at most one level above the role, and only
+  when the JD asks for it; one level below rides the promotion lane below, never the direct query.
+  The level is read from the title: a plain title with no level word ("Transport Planner") is
+  `mid-level`. A JD that sets its level in years ("2–4 years' experience") puts that on
+  `min_experience_years` / `max_experience_years` and sends `entry` with `mid-level`, never `entry` alone.
   **plus** the **hiring company** `{name, domain, category}` **plus `reports_to`** (the manager role named in
   any reporting line / interview-panel title — used by the reporting-line-first hiring-manager rule in
   [`finding-companies-and-contacts.md`](../finding-companies-and-contacts.md)).
@@ -71,7 +81,10 @@ Docs this leans on: [`finding-companies-and-contacts.md`](../finding-companies-a
 
 **3 — SEARCH (two source groups × two title paths → one deduped pool)**
 - **Direct-fit path:** use `titles[]` + target `seniority` with the JD's must-have skills, certifications,
-  experience floor and location. Run it across both source groups below.
+  experience floor and location. Run it across both source groups below. Keep `seniority` on **every**
+  call — providers that can't bind it are skipped. The one exception: when every database finds nobody,
+  the web fallbacks rerun once without the level, billed, and their rows carry `filters_relaxed:
+  ["seniority"]`. Check each of those titles against the level before shortlisting.
 - **Promotion path:** make a **separate** `people_search` call passing `feeder_titles[]` as its `titles` field and
   `feeder_seniority` as its `seniority` field, while
   keeping the **same must-have** skills, certifications, experience floor and location. Do not mix feeder titles
@@ -116,6 +129,11 @@ Docs this leans on: [`finding-companies-and-contacts.md`](../finding-companies-a
   and headline. When a profile shows the candidate currently owns or runs their own firm (founder, owner,
   managing partner, sole practitioner), rank them below the rest and say why, unless the role is itself a
   founder or partner role.
+- **Drop anyone whose CURRENT title sits more than one level above the target band** (a Head of or
+  Director for a Planner/Manager spec), unless the user asked for reach candidates. A matching past
+  title is not a fit — someone who has since moved up is out. These are dropped for level, not for
+  score: keep them out of the shortlist and **name them in the delivered summary** under a
+  "dropped — above level" list so the recruiter can see the filter worked.
   → `POST /provider-playbooks/hyreflow_agent/infer` per candidate (or batch).
   - **For a batch, use the `/qualify` endpoint** (the standard way to score all candidates in one call):
     `POST /qualify {"job_spec": <JD text>, "candidates": [Person, …], "min_score": <0-10 optional>}` →
@@ -185,7 +203,9 @@ Free: dedup, ranking, the location/channel rules.
 
 ## Output
 A **ranked, JD-qualified shortlist** containing direct-fit and credible promotion-ready candidates — with source
-lineage, `_candidate_path`, promotion evidence/gaps and LinkedIn (already known from sourcing + step 4, free).
+lineage, `_candidate_path`, promotion evidence/gaps and LinkedIn (already known from sourcing + step 4, free),
+plus a short "dropped — above level" list naming anyone excluded for sitting more than one level above the
+role's band.
 **The shortlist itself ends here** — personal email is step 6's separate, opt-in enrichment, run only when
 the user explicitly asks.
 Then render it with the **`hyreflow-artifact`** skill by default (candidates view, table first), unless the user asked for the CSV only.
