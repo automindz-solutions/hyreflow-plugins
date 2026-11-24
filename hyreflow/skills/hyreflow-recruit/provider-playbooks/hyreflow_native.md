@@ -383,13 +383,13 @@ Email finders return `{found, email}` (`find_work_email` adds `confidence`); pho
 hyreflow tools execute hyreflow_native find_work_email --payload '{"first_name":"Dana","last_name":"Reed","company_domain":"acme.example.com"}'
 ```
 
-## Contact database search: first step of `people_search`
-`find_people` opens the `people_search` waterfall at 0.05 cr per profile, the same as the step after it.
-It runs titles, seniority, countries or cities, and company LinkedIn URLs; a search in the Gulf (UAE, Saudi
-Arabia, Qatar, Kuwait, Bahrain, Oman) goes to the next provider first. A US city with its state ("Austin, TX")
-runs here and keeps only that state's people; a state on its own, a region, or a company named only by domain
-or name skips it rather than widen. A short page is filled by the next provider. Run `people_search`, not this
-method.
+## Contact database search: paused in `people_search`
+`find_people` is off the `people_search` waterfall for now, so AI Ark is first in the house order
+(a provider you've connected your own key for still goes ahead of it).
+Run `people_search` for net-new people, not this method.
+While it is paused, `people_search` with `providers: ["hyreflow_native"]` returns a 400 naming the
+providers still in the waterfall, and the rerun without `keywords`, `skills` or `seniority` (when AI Ark
+finds nobody) no longer includes the contact database.
 
 ## Postcode or city radius: towns within N miles (free)
 
