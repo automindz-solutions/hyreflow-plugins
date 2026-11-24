@@ -25,8 +25,8 @@ When the user gives you a skill's name from the dashboard's **Copy name** button
 Call `hyreflow_custom_skills_list`. If a skill already covers this topic, read it with
 `hyreflow_custom_skill_read` and save a new version of it (pass its `skill_id`) instead of creating a
 second one that says nearly the same thing. If that skill shows `draft_by_other: true`, another
-member's update is already waiting for the owner, and a new version will be refused until the owner
-decides. Tell the user before you draft anything.
+member's update is already waiting for the owner or an admin, and a new version will be refused until
+one of them decides. Tell the user before you draft anything.
 
 ## 3. Ask, in plain words, at most three questions
 
@@ -88,11 +88,11 @@ Go by what the save returns, not by who you think the user is. Check `changed` f
 
 - **`changed: false`:** nothing new was saved, because it matches the latest version. Say so.
 - **`status: approved`:** live now. For a team skill, that means for everyone (the user is the workspace
-  owner).
-- **`status: pending`:** **waiting for the workspace owner's approval** on the dashboard; Hyreflow lets
-  the owner know by email. Don't tell the user it's live. Until the owner approves, the team keeps the
+  owner or an admin).
+- **`status: pending`:** **waiting for a workspace owner or admin to approve it** on the dashboard; Hyreflow
+  emails them. Don't tell the user it's live. Until one of them approves, the team keeps the
   last approved version, or has nothing yet if this skill has never been approved.
-- **Refused because another member's update is waiting:** you can't save a new version until the owner
+- **Refused because another member's update is waiting:** you can't save a new version until an owner or admin
   approves or rejects that one. Tell the user, and offer to keep the draft until then.
 
 ## If a save is refused
