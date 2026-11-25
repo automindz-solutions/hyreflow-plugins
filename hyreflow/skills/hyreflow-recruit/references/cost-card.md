@@ -64,6 +64,7 @@ Each method is priced on its own: what the call costs Hyreflow, marked up to a 5
 | recruitee | metered | metered | BYOK-only: customer connects their own Recruitee account |
 | recruiterflow | metered | metered | BYOK-only: customer connects their own Recruiterflow account |
 | reply_io | metered | metered | BYOK-only: customer connects their own Reply.io account |
+| retell | metered | metered | BYOK-only: customer connects their own Retell AI account |
 | sendkit | metered | metered | BYOK-only: customer connects their own SendKit account |
 | serper | `autocomplete` 0.1 cr | `search` 0.1 cr | 9 paid methods |
 | shovels | metered | metered | BYOK-only: customer pays Shovels directly |

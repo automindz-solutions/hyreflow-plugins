@@ -44,6 +44,7 @@ commit one.** The engine operator sets these in the server's secrets manager / e
 | recruitee | `RECRUITEE_API_KEY`, `RECRUITEE_COMPANY_ID` | `Authorization: Bearer` | ATS job posting; token is per user AND per company; company id or subdomain is a path segment; connect-your-own (BYOK, self-serve) |
 | recruiterflow | `RECRUITERFLOW_API_KEY` | header `RF-Api-Key` | connect-your-own (BYOK, self-serve) |
 | reply_io | `REPLY_IO_API_KEY` | `Authorization: Bearer` | scoped `domain:verb` keys (e.g. `sequences:operate`); connect-your-own (BYOK, self-serve) |
+| retell | `RETELL_API_KEY` | Bearer | reads calls, agents, numbers; writes only knowledge base sources (Edit on Build > Agent), never deletes; BYOK-only; the customer connects it themselves on the Integrations page (API key) |
 | sendkit | `SENDKIT_API_KEY` | header `X-Api-Key` | workspace key only (`sk_...`); a platform key (`sk_user_...`) is rejected; deliverability reads (mailbox health, warmup, inbox-placement/blacklist tests); connect-your-own (BYOK, self-serve) |
 | serper | `SERPER_API_KEY` | header `X-API-KEY` | google.serper.dev + scrape.serper.dev |
 | smartlead | `SMARTLEAD_API_KEY` | **query param** `api_key` | not a header; connect-your-own (BYOK, self-serve) |
