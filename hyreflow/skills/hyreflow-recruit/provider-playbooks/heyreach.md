@@ -6,9 +6,11 @@ description: "LinkedIn outreach automation via the HeyReach API — list campaig
 Use HeyReach for outbound activation after qualification and verification are complete.
 
 - Always list campaigns first and resolve the exact campaign target before inserts.
-- HeyReach public API does not expose campaign creation. Do not attempt to create campaigns via API tools; create campaigns in HeyReach UI first, then reference the resulting `campaign_id`.
+- HeyReach public API does not expose campaign creation or deletion. Do not attempt to create or delete campaigns via API tools; create campaigns in HeyReach UI first, then reference the resulting `campaign_id`.
 - Batch writes in small chunks and validate response shape before scaling.
 - Pull campaign stats after insert operations to confirm downstream effects.
+- To reply in an existing LinkedIn inbox conversation, find it with `get_conversations` first, then call `send_message` with that conversation's `id` and `linkedInAccountId`.
+- **Ask the user before every real send.** `send_message` puts a real LinkedIn message in front of a real person, and `add_leads_to_campaign` starts real outreach. Hyreflow does not stop these calls for you, and they cost no credits, so no cost confirmation will appear either. Before calling either one, show the user who it goes to, which sender account it goes from, and the exact message text (or the leads and campaign), then call it only after they say yes in this conversation. Never send on your own initiative, and ask again if they change the text.
 
 ```bash
 hyreflow tools execute heyreach_list_campaigns --payload '{}'
@@ -35,5 +37,6 @@ Call via the CLI: `hyreflow tools execute heyreach <method> --payload '{...}'` (
 - `get_overall_stats(**filters) -> Any` — POST /stats/GetOverallStats — account/campaign aggregate stats.
 - `pause_campaign(campaign_id: int) -> Any`
 - `resume_campaign(campaign_id: int) -> Any`
+- `send_message(conversation_id: str, linkedin_account_id: int, message: str, subject: str | None = None) -> Any` — POST /inbox/SendMessage — sends a real LinkedIn reply in an inbox conversation — approval-gate.
 
 <!-- API-SURFACE:END -->
