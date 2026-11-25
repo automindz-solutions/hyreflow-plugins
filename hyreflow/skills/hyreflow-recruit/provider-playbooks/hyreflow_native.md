@@ -94,7 +94,8 @@ launch the next: that serial shape multiplies the wait by the number of scrapes.
 # 1. launch several scrapes back-to-back (all free, all return immediately)
 # `linkedin_jobs` / `indeed_jobs`: `country` selects the regional site (upstream's own default is the
 # US site when omitted; `indeed_jobs` additionally defaults the param itself to "United States"), so a
-# non-US sweep must set it. `arbeitsagentur_jobs` and `stepstone_jobs` are Germany-only and take no `country`.
+# non-US sweep must set it. Pass the full English name ("United Kingdom", "Germany").
+# `arbeitsagentur_jobs` and `stepstone_jobs` are Germany-only and take no `country`.
 hyreflow tools execute linkedin_jobs --payload '{"titles_query":"recruiter","locations":["Berlin"],"country":"Germany"}'
 #    → {"request_id":"r1", "status":"QUEUED"}
 hyreflow tools execute indeed_jobs --payload '{"titles_query":"recruiter","locations":["Munich"],"country":"Germany"}'
