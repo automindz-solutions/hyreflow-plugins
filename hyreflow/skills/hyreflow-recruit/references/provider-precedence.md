@@ -37,7 +37,8 @@ engine (the server resolves the key + meters credits).
        other integrations → API access & Webhooks): `hyreflow byok set stardex --api-key <key>`.
      - **Aircall** and **JustCall** each take two values. Aircall: `hyreflow byok set aircall --api-key <api_id>
        --field api_token=<token>`. JustCall (Team plan or higher): `hyreflow byok set justcall --api-key <api_key>
-       --field api_secret=<secret>`.
+       --field api_secret=<secret>`. Retell AI takes one API key (Retell dashboard → Settings → API Keys):
+       `hyreflow byok set retell --api-key <key>`.
      - **Leonar** connects self-serve with one `leo_` API key from the Leonar V2 app (Settings → API):
        `hyreflow byok set leonar --api-key <key>`. It is a recruiting sequencer that also keeps the contacts and project
        pipelines: activating or resuming a sequence, enrolling contacts and sending messages reach real people, so gate them.

@@ -325,7 +325,7 @@ hyreflow-recruit/                    <- this skill package (installed to ~/.agen
 The adapters (`lib/`) and the machine-readable call contract (`reference/tool-registry.json`) live
 **server-side** in the hosted engine — you reach them through the `hyreflow` CLI / API, not local files.
 
-## Tool catalog (55 playbooks — 51 adapters + 3 Hyreflow Natives + 1 parked)
+## Tool catalog (56 playbooks — 52 adapters + 3 Hyreflow Natives + 1 parked)
 
 > **Two tool classes.** **Adapters** wrap a third-party vendor API (BYOK or hyreflow-managed key; obey
 > the provider-precedence waterfall). **Hyreflow Natives** are first-party capabilities with no external
@@ -351,7 +351,7 @@ The adapters (`lib/`) and the machine-readable call contract (`reference/tool-re
 `ashby` · `lever` · `smartrecruiters` · `recruitee` — all BYOK-only — plus `breezy` (**coming soon — vendor API in progress, not connectable**). `create_job` never publishes in any of them; taking the role live is a second call. To post one role to several at once, follow [`recipes/multi-ats-job-posting.md`](recipes/multi-ats-job-posting.md).
 
 **Comms** — calls & meeting intelligence
-`aircall` (phone) · `justcall` (phone + SMS + Sales Dialer) · `fathom` (meeting notetaker API) · `granola` (meeting notes) · `quil` (**parked — no public API**)
+`aircall` (phone) · `justcall` (phone + SMS + Sales Dialer) · `retell` (voice-AI agent calls: transcripts, summaries, extracted fields; adds second-brain folder links to its knowledge base) · `fathom` (meeting notetaker API) · `granola` (meeting notes) · `quil` (**parked — no public API**)
 
 **Hyreflow Natives** — first-party, no external vendor, always credit-metered (no BYOK)
 `layoffsignal` (layoff/RIF recruiting trigger — built on free public news RSS; poach displaced talent + BD signal) · `hyreflow_native` (first-party tools — (a) job scrapers for career pages, LinkedIn, Indeed, Arbeitsagentur, StepStone; async launch→poll, pay-on-match per job, and (b) **LinkedIn post feeds** for a person or a company via `profile_posts`/`company_posts`; one call, per request, 50 posts a page — reach for these on "what has X been posting" or any launch/hiring/funding/exec-commentary signal, and (c) **LinkedIn post search** via `search_posts`: keyword across every public post, past week by default, `author_title` to narrow to recruiters — reach for it on "who is posting about X" / "find hiring posts by agency staff", and (d) **postcode radius** via `postcode_radius`: towns within N miles of a postcode or city as a `locations` list for `people_search` — free, and (e) **post reactions** via `post_reactions` — the people who reacted to a LinkedIn post, 10 reactors a page, per request, and (f) **LinkedIn profile lookup** via `get_linkedin_profile`: one person's profile and dated work history by URL, no contact detail, per request — the second step of the `linkedin_profile` waterfall, so reach it through `linkedin_profile`, and (g) **repost scan** via `repost_scan`: a company's reposted, long-open and monthly-relisted roles from its PredictLeads job history, free apart from the history pages it pulls — the detection step of the repost recipe, and (h) **email verification** via `verify_emails` (inbox-level, async, 0.05 cr per address submitted, charged at launch, returns only the addresses safe to send to; `email_enrichment` and `personal_email` already run it on every email they find) — the default for verifying emails, and (i) **email and phone finder** via `find_work_email_by_linkedin` / `find_work_email` / `find_personal_email` / `find_phone_by_linkedin`: early steps of `email_enrichment`, `personal_email` (after leadmagic) and `phone_enrichment`, billed per result found, so reach them through those waterfalls, and (j) **contact database search** via `find_people`: paused, so `people_search` starts with AI Ark) · `hyreflow-agent` (AI reasoning agent — hosted AI model + adapter toolbelt; `infer` plain + `research` agentic; the metered reasoning layer for batch/headless — interactive reasoning stays free on the host agent). **Within N miles of a postcode or city** → `postcode_radius` (`hyreflow_native.places_within_radius`, free) turns it into the town list for `people_search` `locations`
@@ -451,7 +451,7 @@ Preview spend first with `--dry-run`; the CLI adds bearer auth, 429/5xx retries,
 (`ICP.md` first, see below)** → `leadmagic`/`prospeo`/`fullenrich` (waterfall email+phone) → `hyreflow_native` `verify_emails` (validate
 deliverability) → `instantly`/`smartlead`/`reply_io`/`sendkit`/`emailbison`/`heyreach`/`lemlist`/`sourcewhale`/`leonar` (activate) →
 `recruit-crm`/`bullhorn`/`carerix`/`crelate`/`stardex`/`loxo`/`vincere`/`recruiterflow`/`atlas`/`trackerrms` (land the record).
-`aircall`/`justcall` + `fathom` close the loop on the conversation side (call logs, transcripts → ATS activity).
+`aircall`/`justcall`/`retell` + `fathom` close the loop on the conversation side (call logs, transcripts → ATS activity).
 The same arc as recruiter **behaviour** (source → shortlist → outreach → slate, + BD/MPC + passive-poach)
 — the decision at each stage and *why* — is in [`recruiter-craft.md`](recruiter-craft.md) §B.
 
@@ -987,6 +987,9 @@ for / when to reach for it*; the quirks live in the playbook. (Keep this list cu
 - [reply_io playbook](provider-playbooks/reply_io.md)
   Summary: Use to resolve/create sequences, link mailboxes, enroll contacts, and start/pause multichannel outreach.
   Last reviewed: 2026-09-14
+- [retell playbook](provider-playbooks/retell.md)
+  Summary: Use to read Retell AI voice-agent calls — transcripts, post-call summaries and extracted fields — and save them as candidate call notes in the ATS, or to add second-brain folder links to a Retell knowledge base.
+  Last reviewed: 2026-11-25
 - [sendkit playbook](provider-playbooks/sendkit.md)
   Summary: Use to push leads into cold-email campaigns and check mailbox health/warmup/deliverability before sending.
   Last reviewed: 2026-08-28
