@@ -45,7 +45,7 @@ us](mailto:support@hyreflow.ai) and we'll see what we can do.
 ## Bulk helper contract
 
 - Signature: `<batch_name>(payloads: list[dict], *, stop_on_error: bool = False) -> dict`
-- Return: `{created: [...], failed: [{payload, error, status}], total, elapsed_ms}`
+- Return: `{created: [...], failed: [{payload, error, status}], total, elapsed_ms}`. A failed row also carries `error_code` when the CRM gave one.
 - Errors on individual rows are collected in `failed`; the loop continues unless `stop_on_error=True`.
 - Batch helpers call the existing single-record create methods, so any field/payload validation still applies.
 
@@ -57,7 +57,7 @@ stop_on_error=False)` to fan **any** read/update method across many inputs with 
 - Each entry in `calls` is a plain value → `method(value)` (an id, a query string), or
   `{"args": [...], "kwargs": {...}}` → `method(*args, **kwargs)` (multi-arg methods like
   `update_candidate(slug, payload)` or bullhorn's `update_entity(entity, id, payload)`).
-- Return: `{results: [...], failed: [{call, error, status}], total, elapsed_ms}`.
+- Return: `{results: [...], failed: [{call, error, status}], total, elapsed_ms}`. A failed row also carries `error_code` when the CRM gave one; Carerix `CONTACT_MISMATCH` means the write landed, so fix that record instead of re-running the row.
 - **Deletes are refused** — `batch` blocks destructive verbs and the adapters expose no record-delete op.
 
 Examples: bulk update = `batch("update_candidate", [{"args":[slug, payload]}, ...])`; bulk fetch =
