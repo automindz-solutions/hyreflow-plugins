@@ -48,9 +48,13 @@ something durable about their agency ("we never place contractors", "our best pr
 - On yes, call `hyreflow_knowledge_write`. A new note is saved as `active` (the default): the user confirmed
   it, so there is no draft step. Pass no `type` (it defaults to `note`) and the `folder` from the table above
   that fits it (Candidate personas, Angles, Proof, Client ICP...), so the next run that reads that row finds
-  it. For an existing note, read it first and merge: send the whole merged text, never overwrite what is
-  there, and keep its folder. A built `draft` the user just confirmed becomes `active` (the ICP qualify gate
-  in `SKILL.md` says the same).
+  it. A member may have renamed that folder: then use the folder its notes are in now
+  (`hyreflow_knowledge_index`). For an existing note, read it first and merge: send the whole merged text,
+  never overwrite what is there, and keep its folder. A built `draft` the user just confirmed becomes
+  `active` (the ICP qualify gate in `SKILL.md` says the same).
+- Folders have permanent ids. Renaming a folder is `hyreflow_knowledge_rename_folder` (current name, new name):
+  the id and every note in it stay. Changing one note's `folder` with `hyreflow_knowledge_write` moves only
+  that note into another folder, so never rename a folder by rewriting each note's folder.
 - Never save one-off job details (a single role, a single deadline) or personal data about a candidate or
   contact. The brain holds patterns, not records.
 - It is shared: every teammate's agent reads a saved note at once, and there is no undo. That is why the
