@@ -39,7 +39,7 @@ Each method is priced on its own: what the call costs Hyreflow, marked up to a 5
 | enrichley | `validate_email` 0.25 cr | `validate_email` 0.25 cr | 1 paid method |
 | exa | `answer` 0.1 cr | `start_agent_run` 0.5 cr | 5 paid methods |
 | fathom | metered | metered | BYOK-only: customer connects their own Fathom account |
-| firecrawl | `map` 0.1 cr | `start_crawl` 0.1 cr | 4 paid methods |
+| firecrawl | `extract` 0.1 cr | `start_crawl` 0.1 cr | 5 paid methods |
 | fullenrich | `search_company` 0.4 cr | `start_mobile_enrichment` 12.6 cr | 5 paid methods |
 | github | free | free | No Hyreflow credits for any method. |
 | granola | metered | metered | BYOK-only: customer connects their own Granola account |

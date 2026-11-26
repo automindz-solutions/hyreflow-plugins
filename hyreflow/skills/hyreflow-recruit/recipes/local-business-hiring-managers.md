@@ -172,8 +172,9 @@ email_source, email_status`
 
 - **Run one business end-to-end first** (search → Impressum extract → prioritise → email → LinkedIn →
   re-enrich → verify) before fanning the play out across a region.
-- `firecrawl_extract` is usage-priced — check `_meta.credits_charged`, don't assume it costs the same as a
-  single scrape.
+- `firecrawl_extract` is 0.1 credit per URL read, one scrape per page you pass it (a URL in `errors` is
+  free; a 403/404 page comes back in `data` and is charged). Each page's result is its own row in `data`:
+  merge the `json` of the Impressum and team pages per business.
 - Openmart is **BYOK-only**; `lookup_people` and `lookup_business_email` are async batches — poll, don't
   resubmit while a batch is still processing.
 - `exa_search` and `serper search` are each charged per call, including a call that matches nothing — keep

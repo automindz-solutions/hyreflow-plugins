@@ -22,8 +22,9 @@ Provider details: [`../provider-playbooks/firecrawl.md`](../provider-playbooks/f
 `firecrawl_scrape` for a single page (returns markdown, 0.1 credit per page). `firecrawl_extract` with a
 JSON schema when you want the roster back as structured rows, or when the roster spans several URLs
 (departmental/paginated team pages — `firecrawl_map` to enumerate them first, 0.1 credit per call).
-`firecrawl_extract` is LLM extraction billed on usage, not a fixed per-request fee — check the
-`_meta.credits_charged` on the result before running it across many pages. Take name + job title **as printed** —
+`firecrawl_extract` is 0.1 credit per URL read (a URL in `errors` is free; a 403/404 page comes back in
+`data` and is charged), up to 10 URLs a call, and returns one row per page in `data` (`{url, json}`): merge
+each page's `json` yourself. Take name + job title **as printed** —
 the page's own title is more current than a database's.
 
 ```bash

@@ -71,7 +71,7 @@ hyreflow tools execute firecrawl_map --payload '{"url":"https://pflegeheim-examp
 
 ## Step 3 — extract names + titles as printed
 `firecrawl_extract` across the URLs you kept, one schema, one call per employer (not one call per person).
-It's usage-priced — check `_meta.credits_charged` before running it across many employers.
+It's 0.1 credit per URL read and returns one `{url, json}` row per page in `data`: merge them per employer.
 
 ```bash
 hyreflow tools execute firecrawl_extract --payload '{
@@ -116,8 +116,8 @@ hyreflow tools execute email_enrichment --rows '[{"first_name":"Markus","last_na
 ## Cost notes
 - **Count employers before you fan out.** Run one employer end-to-end (find → map/search → extract →
   qualify → enrich) before repeating the play across the rest of the region.
-- `firecrawl_extract` is usage-priced, not a flat per-request fee — check `_meta.credits_charged` on the
-  result rather than assuming it costs the same as `firecrawl_scrape`.
+- `firecrawl_extract` is 0.1 credit per URL read (a URL in `errors` is free; a 403/404 page comes back in
+  `data` and is charged, so check its `status_code`).
 - Bound `exa_search` with a tight `numResults` — every search is charged, including one that matches
   nothing.
 - Public pages only. **Never guess a name off a photo or a PDF** you haven't actually read the text of —
