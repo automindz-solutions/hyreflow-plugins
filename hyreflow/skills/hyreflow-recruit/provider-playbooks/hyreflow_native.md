@@ -121,8 +121,10 @@ back), `has_more` (more pages exist), and `warnings` (non-fatal issues with this
 always returns valid JSON, including on a transient upstream hiccup, so check `warnings` rather than
 assuming silence means clean). The root object also carries `credits_consumed`, `credits_left`,
 `started_at`, `finished_at`.
-**StepStone names the run total `total_found`** (not `jobs_total`), adds `pages_scraped`, and has no
-`jobs_filtered_out` — read `total_found` wherever this page says `jobs_total`.
+**StepStone and Arbeitsagentur report `total_found` instead of `jobs_total`, and it counts the matches
+on the board**, not what the run collected: a 25-row StepStone run can report 60. StepStone also adds
+`pages_scraped` and has no `jobs_filtered_out`. What the run collected is the jobs its pages deliver (see
+"Keeping a job search complete" below).
 
 - **`rows` (launch) and `limit` (poll) are different knobs — size BOTH to the ask.** `rows` on
   `scrape_linkedin_jobs` / `scrape_indeed_jobs` bounds what the scraper collects upstream (LinkedIn
@@ -139,8 +141,10 @@ assuming silence means clean). The root object also carries `credits_consumed`, 
   `scrape_stepstone_jobs` takes `rows` but only in **whole pages of 25** (25/50/75/100, default 25 —
   anything else is rejected): for "find me 15 roles" send the default `rows: 25` and `limit: 15` on the
   poll. StepStone has no result offset, so page a deeper search by stepping `start_page` by `rows / 25`
-  across runs (`rows: 50` → `start_page` 1, 3, 5 …) and stop at the first run whose `result.total_found` is 0 (or once you have enough). Don't stop on a
-  merely short run: a full StepStone page can come back a listing or two short, and an empty run is free.
+  across runs (`rows: 50` → `start_page` 1, 3, 5 …). A run's last page carries `_meta.next_start_page`
+  while the board lists more matches than your runs have covered; stop when it no longer does, or once you
+  have enough. Don't stop on a merely short run: a full StepStone page can come back a listing or two
+  short.
   A LinkedIn **direct fetch** (`linkedin_job_urls` / `linkedin_job_ids`) takes no `rows` either — its size
   is the number of distinct references you sent, so the poll's `limit` is the only knob. 100 references
   exceed one page: poll `offset: 0` then `offset: 50`, and expect up to 100 jobs ⇒ up to 5.0 credits.
@@ -190,6 +194,46 @@ if you want more than 50, take another page.
   agreed), loop: call with `offset=0`, then keep incrementing `offset += limit` and re-polling while
   `has_more` is `true`, concatenating `jobs` across calls. Re-polling any window you already paid for
   stays free.
+
+### Keeping a job search complete
+Jobs go missing from a search in three ways: a scrape nobody read back, a page nobody read, and a
+posting dropped because its page would not open. Avoid all three:
+
+- **Read back every scrape you start.** A launch returns only an id, and its jobs exist for you only
+  once a poll returns them. The launch and every still-running poll carry `_meta.next` (the poll to
+  call, with its payload: its `limit` is the size you set on the launch, up to 50, else the default 10;
+  StepStone's whole-page `rows` is not a size, so set your ask as `limit` there yourself)
+  and `_meta.poll_after_s`; follow it while `status` is QUEUED or RUNNING. Any other status that is not
+  COMPLETED or PARTIAL ends the scrape: report it, do not keep polling. An unread scrape costs nothing
+  and returns nothing. Before you answer, check that no `request_id` you launched is still QUEUED or
+  RUNNING.
+- **Say what you left unread.** A delivered page that is not the last carries `_meta.next_offset` and
+  `_meta.next` (the same poll at the next offset), plus `_meta.jobs_unread` when the run reports how many
+  it collected (`jobs_total`). Page to the ask as above, but when you stop early, tell the user per board
+  how many jobs you did not read ("LinkedIn: 50 of 120 read").
+- **A German-board run collects less than the board lists.** Its `total_found` is the matches on the
+  board (`_meta.total_on_board`), not what the run collected. An Arbeitsagentur run collects at most `max_pages` ×
+  `page_size` postings (default 3 × 25 = 75), so a `max_pages: 4` run can end with 100 jobs read while
+  the board lists 811. The last page then carries `_meta.not_collected`. Paging cannot reach those jobs,
+  so size `max_pages` to the ask at launch: raise it for a wide search, keep it small for a small one.
+  When the user asked for more than you have, tell them how many matches were not collected. A relaunch
+  with a higher `max_pages` is a new scrape: it collects the same first jobs again and bills every job you
+  read from it, so offer it with its cost and launch it only when the user agrees. A StepStone run
+  collects `rows` from board page `start_page`, so its last page carries `_meta.not_collected` and
+  `_meta.next_start_page` when the board lists more. When the user asked for more, launch the same search
+  at that `start_page`: it collects only board pages the earlier run did not. A listing that moved to a
+  later page between the runs can come back and bill again, so dedup on `job_url`.
+- **Filter for age at launch, not by opening job pages.** Use `hours` on `linkedin_jobs`, `max_age_days`
+  on `indeed_jobs` and `posted_within_days` on `stepstone_jobs`. Where a posting carries `posted_at`
+  (LinkedIn, Indeed, Arbeitsagentur, and StepStone with its default details), drop the ones older than
+  the user wants.
+  A scrape reads the board as it stands when it runs, so a returned posting is listed on the board; its
+  age is its posting date, not whether its page opens for you.
+- **A page you cannot open is unchecked, not gone.** Indeed, StepStone, some medical boards and career
+  sites that build the page in the browser often refuse automated reads. Do not drop a posting because
+  its page would not load. When the user wants a posting checked, read it with `firecrawl_scrape`
+  (it renders such pages; 0.1 credits each), and only for the shortlist. If that fails too, keep the job,
+  mark it "not checked", and tell the user how many are unchecked.
 
 ## Post feeds: one call, one page
 

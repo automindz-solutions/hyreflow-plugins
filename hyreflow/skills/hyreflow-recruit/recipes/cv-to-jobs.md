@@ -76,6 +76,13 @@ download résumé (`recruit-crm` candidate get; `bullhorn`: `get_candidate_cv(ca
 > ground as the Apify actors below; reach for an Apify actor only when the client has their own Apify key
 > connected **and** you need that actor's specific fields/filters. Run whichever legs apply concurrently,
 > then merge.
+>
+> **Keep the native legs complete** (details in the playbook's "Keeping a job search complete"):
+> set recency on the launch (`hours` on `linkedin_jobs`, `max_age_days` on `indeed_jobs`,
+> `posted_within_days` on `stepstone_jobs`); raise `max_pages` on `arbeitsagentur_jobs` for a wide
+> region (it collects at most `max_pages` × `page_size`, 75 by default); follow `_meta.next` until every
+> launched scrape is read; and report per board what you did not get: jobs left unread when you stop
+> paging early, and `_meta.not_collected` (Arbeitsagentur or StepStone matches the run never collected).
 
 **LinkedIn (Apify actor, optional — the native `linkedin_jobs` scrape already covers this board)** —
 actor `vIGxjRrHqDTPuE6M4`:
@@ -121,6 +128,9 @@ bills per result, so modest limits keep the run cheap — that spend is on the c
 - **Strip agencies:** denylist + LinkedIn agency flag (we keep `removeAgency:false`, so filter here).
 - **Size floor:** drop `< 20` employees when known; keep when unknown.
 - **Location verify:** confirm each job sits in the candidate's region / commute belt (geocode).
+- **Age:** where a posting carries `posted_at`, drop it when it is older than the run's window. Judge age by the date, not by
+  opening the posting: a scraped posting is listed on its board, and many boards and career sites refuse
+  automated page reads. A posting you could not open stays in the list, marked "not checked".
 - **Size soft-rank:** nudge toward preferred buckets (don't hard-drop unless exactly one bucket).
 
 ## STEP 5 — Match & score each job ↔ CV  (inverse `/qualify`, 0-10)
