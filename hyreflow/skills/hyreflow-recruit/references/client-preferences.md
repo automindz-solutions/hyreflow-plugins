@@ -7,15 +7,16 @@ tells you more. The CLI has no second brain: there, keep a `clients.md` next to 
 
 ## The note
 
-- Folder `Clients`, tag `client`, title = the client's name, slug `clients-<name>`: the name lowercased,
+- Folder `Clients` (a member may have renamed it: then the folder the other `client`-tagged notes are in), tag
+  `client`, title = the client's name, slug `clients-<name>`: the name lowercased,
   apostrophes dropped, every other run of characters that is not ASCII `a-z` or `0-9` turned into one hyphen
   (`Acme's Partners` -> `clients-acmes-partners`, `Acmé Grüp` -> `clients-acm-gr-p`), no hyphen at either
   end, the whole slug (prefix included) at most 100 characters. If nothing is left (a name in another
   script), use a short Latin transliteration and say which. The `clients-` prefix keeps a client called
   "Company" or "Persona X" from colliding with the build's own `company` and `client-persona-*` notes.
-- Only a note in folder `Clients` whose title is this client's name is this client's note (ignore case and a
+- Only a note tagged `client` whose title is this client's name is this client's note (ignore case and a
   legal suffix such as Inc. or GmbH: "ACME" and "Acme Inc." are Acme). Two names can give one slug (`Acmé`
-  and `Acmè`): if the folder or title does not match, it is not this client's, so never edit it; search the
+  and `Acmè`): if the tag or title does not match, it is not this client's, so never edit it; search the
   client name instead, ask the user when unsure, and for a new client add a short suffix to the slug.
 - Body = a short `Preferences` bullet list: language, remote or onsite, seniority, must-haves, exclusions, the
   kinds of profile they turned down before (never a named person), fees or terms only if the user states them.
