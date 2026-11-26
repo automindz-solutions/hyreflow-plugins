@@ -6,11 +6,11 @@
 - **Web search + content** → `firecrawl_search`. Replaces Google search + individual page scraping in one call.
 - **Site discovery** → `firecrawl_map` first to enumerate URLs, then `firecrawl_scrape` the ones you need.
 - **Full site crawl** → `firecrawl_start_crawl`. Returns a job id; poll it with `firecrawl_get_crawl`.
-- **Structured extraction** → `firecrawl_extract` with a JSON schema or natural language prompt.
+- **Structured extraction** → `firecrawl_extract` with a JSON schema or natural language prompt (at least one), up to 10 `urls` (exact pages, no `*` wildcards). Sync: `data` holds one `{url, json, status_code}` per page read, `errors` the URLs that failed. A PDF is read to its first 5 pages.
 
 ## Budget awareness
 
-- Credit costs: `scrape` and `map` are 0.1 credit per request; `search` starts at 0.1 and is priced from what Firecrawl reports it used, so a high `limit` or `scrape_options` (a scrape per result) costs more: keep `limit` to what you need; `start_crawl` is 0.1 credit per page; `extract` is runtime/usage-priced.
+- Credit costs: `scrape` and `map` are 0.1 credit per request; `search` starts at 0.1 and is priced from what Firecrawl reports it used, so a high `limit` or `scrape_options` (a scrape per result) costs more: keep `limit` to what you need; `start_crawl` is 0.1 credit per page; `extract` is 0.1 credit per URL read: a URL in `errors` is free, but a blocked or missing page still comes back in `data` (check `status_code`, e.g. 403/404) and is charged.
 - Firecrawl can charge when infrastructure processes a request even if the target returns 403/404. Avoid blind retries of blocked URLs; inspect `metadata.statusCode`.
 - Crawl defaults to `limit: 10000` and Firecrawl preflights available credits against that limit. Always pass an explicit lower `limit` unless a 10000-page crawl is intentional.
 - Budget against `hyreflow billing balance` before committing to a large run. `firecrawl_get_credit_usage`
@@ -19,7 +19,7 @@
 
 ## Async operations
 
-- `start_crawl` and `extract` are async. `start_crawl` returns a job id (`{id}`) immediately.
+- `start_crawl` is async and returns a job id (`{id}`) immediately. `extract` is synchronous: the rows come back in the same call.
 - For non-blocking usage, poll `firecrawl_get_crawl` with the returned `crawl_id` manually.
 
 ## Format recommendations
@@ -37,7 +37,7 @@
 ## Callable surface
 Call via the CLI: `hyreflow tools execute firecrawl <method> --payload '{...}'` (preview with `--dry-run`; `hyreflow tools get firecrawl <method>` returns the live contract + cost). Base: `https://api.firecrawl.dev`. Only the methods listed below are callable.
 
-- `extract(urls: list[str], *, prompt: str | None = None, schema: dict | None = None, **opts) -> dict` — POST /v2/extract — LLM structured extraction across URLs.
+- `extract(urls: list[str], *, prompt: str | None = None, schema: dict | None = None, **opts) -> dict` — POST /v2/scrape — LLM structured extraction: one JSON-format scrape per URL, max 10 URLs.
 - `get_crawl(crawl_id: str) -> dict` — GET /v2/crawl/{id} — poll crawl status + collected pages of a crawl this workspace started.
 - `get_credit_usage() -> dict` — GET /v2/team/credit-usage — remaining team credits + billing period. Free, no args — the BYOK key-verification probe.
 - `map(url: str, *, search: str | None = None, limit: int | None = None, **opts) -> dict` — POST /v2/map — discover all URLs on a site (sitemap). Use to find endpoint/doc pages.
