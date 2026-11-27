@@ -15,6 +15,11 @@ HOW in `lib/hyreflow_native.py`.
 - **Eight capabilities, five billing shapes — check which one you're calling.**
   - **Job scrapes** (`scrape_*` / `get_*`): async, pay-on-match. Launching is **free**; charged **per job
     returned** on the retrieval poll (an empty or still-running result costs nothing).
+    **Except career pages:** `scrape_career_pages` is charged **when the scrape starts**, on its `max_pages`
+    (default 10, above 25 clamped to 25): 0.35 credits covering 5 pages plus 0.07 per page over 5, so **0.70**
+    by default and 1.75 at 25, plus the per-job charge on `get_career_pages`. Started and never read back still costs the
+    launch, so launch only the career-page scrapes you will read, and keep `max_pages` to what the site needs.
+    A launch that doesn't start is free; one that starts and later ends FAILED keeps its launch charge.
   - **Post feeds** (`get_profile_posts` / `get_company_posts`): a single call, charged **per request** —
     one page of up to 50 posts, whatever the page carries, including a page that carries nothing.
   - **Post search** (`search_posts`): same per-request contract, but **a page is 10 posts**, not 50.
@@ -32,7 +37,8 @@ HOW in `lib/hyreflow_native.py`.
 
 ## Job scrapes: the two-call (async) flow
 Every job scraper is asynchronous — a scrape takes a few minutes:
-1. **Launch** with `scrape_*` (or its short alias) → returns `{request_id, status: "QUEUED"}`. Free.
+1. **Launch** with `scrape_*` (or its short alias) → returns `{request_id, status: "QUEUED"}`. Free,
+   except `scrape_career_pages`, charged at launch on `max_pages` (see above).
 2. **Poll** with `get_*` passing that `request_id` → `status` moves QUEUED → RUNNING → COMPLETED. When
    COMPLETED, `result` carries the scraped roles plus counts (see below). A LinkedIn run can also end
    **PARTIAL**: finished, but some postings failed to load — treat it as done (see below). Poll every
@@ -67,8 +73,8 @@ Every run that reaches COMPLETED or PARTIAL bills its page the moment you poll i
 spend at once; that's the same pre-billing the ⚠️ caution above is guarding against, just multiplied by the
 size of the batch.
 
-**Launch every scrape first, then poll them together.** A launch is free and returns immediately, so fire
-all the `scrape_*` calls up front, collect their `request_id`s, and only then start polling. Wall-clock
+**Launch every scrape first, then poll them together.** A launch returns immediately (and is free, a
+career-page one aside), so fire all the `scrape_*` calls up front, collect their `request_id`s, and only then start polling. Wall-clock
 becomes the slowest single scrape instead of the sum of all of them — never launch → poll to completion →
 launch the next: that serial shape multiplies the wait by the number of scrapes.
 
@@ -91,7 +97,7 @@ launch the next: that serial shape multiplies the wait by the number of scrapes.
   together and polled as one batch.
 
 ```bash
-# 1. launch several scrapes back-to-back (all free, all return immediately)
+# 1. launch several scrapes back-to-back (all return immediately, free except career_pages)
 # `linkedin_jobs` / `indeed_jobs`: `country` selects the regional site (upstream's own default is the
 # US site when omitted; `indeed_jobs` additionally defaults the param itself to "United States"), so a
 # non-US sweep must set it. Pass the full English name ("United Kingdom", "Germany").
@@ -204,9 +210,9 @@ posting dropped because its page would not open. Avoid all three:
   call, with its payload: its `limit` is the size you set on the launch, up to 50, else the default 10;
   StepStone's whole-page `rows` is not a size, so set your ask as `limit` there yourself)
   and `_meta.poll_after_s`; follow it while `status` is QUEUED or RUNNING. Any other status that is not
-  COMPLETED or PARTIAL ends the scrape: report it, do not keep polling. An unread scrape costs nothing
-  and returns nothing. Before you answer, check that no `request_id` you launched is still QUEUED or
-  RUNNING.
+  COMPLETED or PARTIAL ends the scrape: report it, do not keep polling. An unread scrape returns nothing
+  and costs nothing, except a career-page scrape, which paid at launch. Before you answer, check that no
+  `request_id` you launched is still QUEUED or RUNNING.
 - **Say what you left unread.** A delivered page that is not the last carries `_meta.next_offset` and
   `_meta.next` (the same poll at the next offset), plus `_meta.jobs_unread` when the run reports how many
   it collected (`jobs_total`). Page to the ask as above, but when you stop early, tell the user per board
