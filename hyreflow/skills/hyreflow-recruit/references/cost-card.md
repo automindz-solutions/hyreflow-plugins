@@ -20,7 +20,7 @@ Each method is priced on its own: what the call costs Hyreflow, marked up to a 5
 
 ## Per-tool paid-method highlights
 
-| Tool | Cheapest paid op | Priciest paid op | Notes |
+| Tool | Cheapest paid op | Priciest paid op (worst case) | Notes |
 |---|---|---|---|
 | aiark | `company_search` 0.01 cr | `mobile_phone_finder` 2.0 cr | 9 paid methods |
 | aircall | metered | metered | BYOK-only: customer connects their own Aircall account |
@@ -37,7 +37,7 @@ Each method is priced on its own: what the call costs Hyreflow, marked up to a 5
 | crelate | metered | metered | BYOK-only: customer connects their own Crelate API key |
 | emailbison | metered | metered | BYOK-only: customer connects their own EmailBison instance |
 | enrichley | `validate_email` 0.25 cr | `validate_email` 0.25 cr | 1 paid method |
-| exa | `answer` 0.1 cr | `start_agent_run` 0.5 cr | 5 paid methods |
+| exa | `answer` 0.1 cr | `start_agent_run` 40.0 cr | 5 paid methods |
 | fathom | metered | metered | BYOK-only: customer connects their own Fathom account |
 | firecrawl | `extract` 0.1 cr | `start_crawl` 0.1 cr | 5 paid methods |
 | fullenrich | `search_company` 0.4 cr | `start_mobile_enrichment` 12.6 cr | 5 paid methods |
@@ -45,7 +45,7 @@ Each method is priced on its own: what the call costs Hyreflow, marked up to a 5
 | granola | metered | metered | BYOK-only: customer connects their own Granola account |
 | heyreach | metered | metered | BYOK-only: customer connects their own HeyReach account |
 | hyreflow_agent | metered | metered | Provider-metered — no fixed per-action price. |
-| hyreflow_native | `find_people` 0.05 cr | `find_phone_by_linkedin` 1.5 cr | 16 paid methods; `get_arbeitsagentur_jobs` +0.1 credits per job with recruiter details |
+| hyreflow_native | `find_people` 0.05 cr | `scrape_career_pages` 1.75 cr | 17 paid methods; `get_arbeitsagentur_jobs` +0.1 credits per job with recruiter details |
 | icypeas | `email_verification` 0.1 cr | `email_search` 0.7 cr | 3 paid methods |
 | instantly | metered | metered | BYOK-only: customer connects their own Instantly account |
 | jobadder | free | free | No Hyreflow credits for any method. |
@@ -76,7 +76,7 @@ Each method is priced on its own: what the call costs Hyreflow, marked up to a 5
 | theirstack | `search_jobs` 0.9 cr | `search_companies` 2.7 cr | 4 paid methods |
 | trackerrms | free | free | No Hyreflow credits for any method. |
 | vincere | free | free | No Hyreflow credits for any method. |
-| wiza | `enrich_company` 1.0 cr | `start_individual_reveal` 1.5 cr | 5 paid methods |
+| wiza | `enrich_company` 1.0 cr | `start_individual_reveal` 5.0 cr | 5 paid methods |
 | zoho_recruit | free | free | No Hyreflow credits for any method. |
 | zoominfo | metered | metered | BYOK-only: customer pays ZoomInfo directly |
 
